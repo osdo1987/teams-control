@@ -38,3 +38,7 @@ class AttendanceService:
     @staticmethod
     def get_athlete_attendance(athlete_id):
         return Attendance.query.filter_by(athlete_id=athlete_id).order_by(Attendance.date.desc()).all()
+
+    @staticmethod
+    def get_group_attendance(group_id):
+        return Attendance.query.filter_by(group_id=group_id).order_by(Attendance.date.desc()).all()

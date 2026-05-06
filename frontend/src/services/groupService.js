@@ -24,5 +24,18 @@ export const groupService = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+
+  updateGroup: async (id, groupData) => {
+    return await api(`/groups/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(groupData)
+    });
+  },
+
+  deleteGroup: async (id) => {
+    return await api(`/groups/${id}`, {
+      method: 'DELETE'
+    });
   }
 };

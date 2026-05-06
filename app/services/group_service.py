@@ -72,3 +72,18 @@ class GroupService:
         db.session.add(join_history)
         db.session.commit()
         return True, "Athlete changed group successfully"
+
+    @staticmethod
+    def delete_group(group_id):
+        group = Group.query.get(group_id)
+        if not group:
+            return False, "Group not found"
+        
+        # Clear athletes associations
+        group.athletes = []
+        # Clear trainers associations
+        group.trainers = []
+        
+        db.session.delete(group)
+        db.session.commit()
+        return True, "Group deleted successfully"

@@ -125,3 +125,41 @@ def get_athlete(id):
     if not athlete:
         return jsonify({"error": "Not found"}), 404
     return jsonify(athlete_schema.dump(athlete)), 200
+
+@athlete_bp.route('/<int:id>', methods=['PUT'])
+@jwt_required()
+@role_required(['ADMIN', 'TRAINER'])
+def update_athlete(id):
+    """
+    Update Athlete (Admin/Trainer)
+    """
+    data = request.get_json()
+    from app.models.athlete import Athlete
+    from app.models.user import User
+    athlete = Athlete.query.get_or_404(id)
+    user = User.query.get(athlete.user_id)
+    
+    if 'user' in data:
+        for k, v in data['user'].items():
+            if hasattr(user, k) and k != 'password':
+                setattr(user, k, v)
+    
+    if 'athlete' in data:
+        for k, v in data['athlete'].items():
+            if hasattr(athlete, k):
+                setattr(athlete, k, v)
+                
+    db.session.commit()
+    return jsonify(athlete_schema.dump(athlete)), 200
+
+@athlete_bp.route('/<int:id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['ADMIN'])
+def delete_athlete(id):
+    """
+    Delete Athlete (Admin Only)
+    """
+    success, message = AthleteService.delete_athlete(id)
+    if success:
+        return jsonify({"message": message}), 200
+    return jsonify({"error": message}), 404

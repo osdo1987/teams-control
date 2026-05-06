@@ -64,3 +64,12 @@ def get_athlete_attendance(athlete_id):
     """
     records = AttendanceService.get_athlete_attendance(athlete_id)
     return jsonify(attendance_schema.dump(records)), 200
+
+@attendance_bp.route('/group/<int:group_id>', methods=['GET'])
+@jwt_required()
+def get_group_attendance(group_id):
+    """
+    Get Group Attendance History
+    """
+    records = AttendanceService.get_group_attendance(group_id)
+    return jsonify(attendance_schema.dump(records)), 200

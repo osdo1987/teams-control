@@ -151,3 +151,34 @@ def change_athlete():
     if success:
         return jsonify({"message": message}), 200
     return jsonify({"error": message}), 400
+
+@group_bp.route('/<int:id>', methods=['PUT'])
+@jwt_required()
+@role_required(['ADMIN'])
+def update_group(id):
+    """
+    Update Group
+    """
+    from app import db
+    from app.models.group import Group
+    group = Group.query.get_or_404(id)
+    data = request.get_json()
+    
+    if 'name' in data: group.name = data['name']
+    if 'schedule' in data: group.schedule = data['schedule']
+    if 'club_id' in data: group.club_id = data['club_id']
+    
+    db.session.commit()
+    return jsonify(group_schema.dump(group)), 200
+
+@group_bp.route('/<int:id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['ADMIN'])
+def delete_group(id):
+    """
+    Delete Group
+    """
+    success, message = GroupService.delete_group(id)
+    if success:
+        return jsonify({"message": message}), 200
+    return jsonify({"error": message}), 404

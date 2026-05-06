@@ -15,7 +15,8 @@ const Login = () => {
     setLoading(true);
     try {
       const data = await authService.login(email, password);
-      if (data.user.role === 'ADMIN') navigate('/admin');
+      if (data.user.role === 'SUPER_ADMIN') navigate('/super-admin');
+      else if (data.user.role === 'ADMIN') navigate('/admin');
       else if (data.user.role === 'TRAINER') navigate('/trainer');
       else navigate('/athlete');
     } catch (err) {

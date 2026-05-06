@@ -10,5 +10,18 @@ export const userService = {
       method: 'POST',
       body: JSON.stringify(userData)
     });
+  },
+
+  updateUser: async (id, userData) => {
+    return await api(`/auth/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData)
+    });
+  },
+
+  deleteUser: async (id) => {
+    return await api(`/auth/users/${id}`, {
+      method: 'DELETE'
+    });
   }
 };

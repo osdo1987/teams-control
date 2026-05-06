@@ -102,3 +102,23 @@ def get_users():
     users = User.query.all()
     return jsonify(UserSchema(many=True).dump(users)), 200
 
+@auth_bp.route('/users/<int:id>', methods=['PUT'])
+def update_user(id):
+    """
+    Update User
+    """
+    data = request.get_json()
+    user = AuthService.update_user(id, data)
+    if user:
+        return jsonify(UserSchema().dump(user)), 200
+    return jsonify({"error": "User not found"}), 404
+
+@auth_bp.route('/users/<int:id>', methods=['DELETE'])
+def delete_user(id):
+    """
+    Delete User
+    """
+    if AuthService.delete_user(id):
+        return jsonify({"message": "User deleted"}), 200
+    return jsonify({"error": "User not found"}), 404
+

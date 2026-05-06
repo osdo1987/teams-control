@@ -18,6 +18,18 @@ def seed_data():
         db.session.add(club)
         db.session.flush()
 
+        # 1.1 Create Super Admin
+        super_admin = User(
+            email="superadmin@example.com",
+            first_name="Super",
+            last_name="Admin",
+            role="SUPER_ADMIN",
+            club_id=None
+        )
+        super_admin.set_password("super123")
+        db.session.add(super_admin)
+
+
         # 2. Create Admin
         admin = User(
             email="admin@example.com",

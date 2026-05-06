@@ -10,6 +10,8 @@ import GroupList from './pages/admin/GroupList';
 import UserList from './pages/admin/UserList';
 import PaymentList from './pages/admin/PaymentList';
 import AttendanceList from './pages/admin/AttendanceList';
+import SuperAdminLayout from './components/SuperAdmin/SuperAdminLayout';
+import ClubList from './pages/superadmin/ClubList';
 
 // Placeholder for missing Dashboards
 const TrainerDashboard = () => <div className="card"><h2>Trainer Dashboard</h2><p>Welcome, Trainer!</p></div>;
@@ -40,6 +42,15 @@ function App() {
           <Route path="users" element={<UserList />} />
           <Route path="payments" element={<PaymentList />} />
           <Route path="attendance" element={<AttendanceList />} />
+        </Route>
+        
+        <Route path="/super-admin" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+            <SuperAdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<ClubList />} />
+          <Route path="users" element={<UserList />} />
         </Route>
         
         <Route path="/trainer/*" element={

@@ -5,7 +5,7 @@ import Modal from '../../components/UI/Modal';
 
 const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
-const initials = (first = '?', last = '?') => `${first[0]}${last[0]}`.toUpperCase();
+const initials = (first = '?', last = '?') => `${first[0] || '?'}${last[0] || '?'}`.toUpperCase();
 
 const AthleteList = () => {
   const [athletes, setAthletes] = useState([]);
@@ -13,7 +13,8 @@ const AthleteList = () => {
   const [error, setError] = useState('');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState(null);
   const [formData, setFormData] = useState({
     email: '', first_name: '', last_name: '', club_id: 1, birth_date: '', phone: ''
   });
@@ -30,22 +31,55 @@ const AthleteList = () => {
 
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleCreateAthlete = async e => {
+  const openCreateModal = () => {
+    setEditingAthlete(null);
+    setFormData({ email: '', first_name: '', last_name: '', club_id: 1, birth_date: '', phone: '' });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (athlete) => {
+    setEditingAthlete(athlete);
+    setFormData({
+      email: athlete.user?.email || '',
+      first_name: athlete.user?.first_name || '',
+      last_name: athlete.user?.last_name || '',
+      club_id: athlete.user?.club_id || 1,
+      birth_date: athlete.birth_date ? athlete.birth_date.split('T')[0] : '',
+      phone: athlete.phone || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await athleteService.createAthlete({
+      const payload = {
         user: { email: formData.email, first_name: formData.first_name, last_name: formData.last_name, club_id: parseInt(formData.club_id) },
         athlete: { birth_date: formData.birth_date, phone: formData.phone }
-      });
-      setIsCreateModalOpen(false);
+      };
+
+      if (editingAthlete) {
+        await athleteService.updateAthlete(editingAthlete.id, payload);
+      } else {
+        await athleteService.createAthlete(payload);
+      }
+      
+      setIsModalOpen(false);
       fetchAthletes();
-      setFormData({ email: '', first_name: '', last_name: '', club_id: 1, birth_date: '', phone: '' });
-    } catch (err) { setError(err.message || 'Error creating athlete'); }
+    } catch (err) { setError(err.message || 'Error saving athlete'); }
   };
 
   const confirmDelete = async () => {
-    console.log('Deleting athlete:', athleteToDelete?.id);
-    setIsConfirmOpen(false);
+    if (!athleteToDelete) return;
+    try {
+      await athleteService.deleteAthlete(athleteToDelete.id);
+      fetchAthletes();
+    } catch (err) {
+      setError('Error deleting athlete');
+    } finally {
+      setIsConfirmOpen(false);
+      setAthleteToDelete(null);
+    }
   };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading athletes...</div>;
@@ -58,7 +92,7 @@ const AthleteList = () => {
           <h1>Athletes</h1>
           <p className="text-muted">Manage all registered athletes and their profiles.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setIsCreateModalOpen(true)}>+ New Athlete</button>
+        <button className="btn btn-primary" onClick={openCreateModal}>+ New Athlete</button>
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
@@ -96,7 +130,7 @@ const AthleteList = () => {
                 <td><span className="badge badge-primary">Club {athlete.user?.club_id}</span></td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm">Edit</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>Edit</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
                       onClick={() => { setAthleteToDelete(athlete); setIsConfirmOpen(true); }}>Delete</button>
                   </div>
@@ -114,9 +148,9 @@ const AthleteList = () => {
         message={`Are you sure you want to delete ${athleteToDelete?.user?.first_name}? This action cannot be undone.`}
       />
 
-      {/* Create Modal */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create New Athlete">
-        <form onSubmit={handleCreateAthlete} style={{ display: 'contents' }}>
+      {/* Create/Edit Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingAthlete ? "Edit Athlete" : "Create New Athlete"}>
+        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
               <label className="form-label">First Name</label>
@@ -146,8 +180,8 @@ const AthleteList = () => {
             <input type="number" name="club_id" value={formData.club_id} onChange={handleInputChange} className="form-input" required />
           </div>
           <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsCreateModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Create Athlete</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">{editingAthlete ? "Save Changes" : "Create Athlete"}</button>
           </div>
         </form>
       </Modal>

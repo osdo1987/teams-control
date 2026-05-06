@@ -21,6 +21,28 @@ class PaymentService:
         return Payment.query.filter_by(athlete_id=athlete_id).order_by(Payment.payment_date.desc()).all()
 
     @staticmethod
+    def get_all_payments():
+        return Payment.query.order_by(Payment.payment_date.desc()).all()
+
+    @staticmethod
+    def update_payment(payment_id, data):
+        payment = Payment.query.get(payment_id)
+        if not payment: return None
+        for k, v in data.items():
+            if hasattr(payment, k):
+                setattr(payment, k, v)
+        db.session.commit()
+        return payment
+
+    @staticmethod
+    def delete_payment(payment_id):
+        payment = Payment.query.get(payment_id)
+        if not payment: return False
+        db.session.delete(payment)
+        db.session.commit()
+        return True
+
+    @staticmethod
     def update_payment_status(payment_id, status):
         payment = Payment.query.get(payment_id)
         if not payment:

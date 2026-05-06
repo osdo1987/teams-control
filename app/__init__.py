@@ -32,12 +32,14 @@ def create_app(config_class=Config):
     from app.routes.group_routes import group_bp
     from app.routes.attendance_routes import attendance_bp
     from app.routes.payment_routes import payment_bp
+    from app.routes.club_routes import club_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(athlete_bp, url_prefix='/api/athletes')
     app.register_blueprint(group_bp, url_prefix='/api/groups')
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(payment_bp, url_prefix='/api/payments')
+    app.register_blueprint(club_bp, url_prefix='/api/clubs')
 
 
     # Global Error Handler

@@ -14,5 +14,18 @@ export const athleteService = {
   
   getAthlete: async (id) => {
     return await api(`/athletes/${id}`);
+  },
+
+  updateAthlete: async (id, data) => {
+    return await api(`/athletes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteAthlete: async (id) => {
+    return await api(`/athletes/${id}`, {
+      method: 'DELETE'
+    });
   }
 };

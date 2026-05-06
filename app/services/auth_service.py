@@ -29,9 +29,32 @@ class AuthService:
             first_name=data['first_name'],
             last_name=data['last_name'],
             role=data.get('role', 'ATHLETE'),
-            club_id=data['club_id']
+            club_id=data.get('club_id')
         )
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
         return user, 201
+
+    @staticmethod
+    def update_user(user_id, data):
+        user = User.query.get(user_id)
+        if not user: return None
+        
+        if 'email' in data: user.email = data['email']
+        if 'first_name' in data: user.first_name = data['first_name']
+        if 'last_name' in data: user.last_name = data['last_name']
+        if 'role' in data: user.role = data['role']
+        if 'club_id' in data: user.club_id = data['club_id']
+        if 'password' in data: user.set_password(data['password'])
+        
+        db.session.commit()
+        return user
+
+    @staticmethod
+    def delete_user(user_id):
+        user = User.query.get(user_id)
+        if not user: return False
+        db.session.delete(user)
+        db.session.commit()
+        return True

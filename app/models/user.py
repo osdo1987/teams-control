@@ -10,7 +10,7 @@ class User(db.Model):
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     role = db.Column(db.String(20), nullable=False) # ADMIN, TRAINER, ATHLETE
-    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     athlete_profile = db.relationship('Athlete', backref='user', uselist=False)

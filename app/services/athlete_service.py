@@ -58,3 +58,16 @@ class AthleteService:
 
         db.session.commit()
         return athlete
+
+    @staticmethod
+    def delete_athlete(athlete_id):
+        athlete = Athlete.query.get(athlete_id)
+        if not athlete:
+            return False, "Athlete not found"
+        
+        user = User.query.get(athlete.user_id)
+        db.session.delete(athlete)
+        if user:
+            db.session.delete(user)
+        db.session.commit()
+        return True, "Athlete deleted successfully"
