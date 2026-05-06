@@ -1,0 +1,104 @@
+from flask import Blueprint, request, jsonify
+from app.services.auth_service import AuthService
+from app.schemas.user_schema import LoginSchema, UserSchema
+
+auth_bp = Blueprint('auth', __name__)
+login_schema = LoginSchema()
+user_schema = UserSchema()
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    """
+    User Login Endpoint
+    ---
+    tags:
+      - Auth
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: admin@example.com
+            password:
+              type: string
+              example: admin123
+    responses:
+      200:
+        description: Successful login
+      400:
+        description: Validation error
+      401:
+        description: Invalid credentials
+    """
+    data = request.get_json()
+    errors = login_schema.validate(data)
+    if errors:
+        return jsonify(errors), 400
+    
+    result, status = AuthService.login(data['email'], data['password'])
+    return jsonify(result), status
+
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    """
+    Register a New User
+    ---
+    tags:
+      - Auth
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: trainer@example.com
+            password:
+              type: string
+              example: trainer123
+            first_name:
+              type: string
+              example: John
+            last_name:
+              type: string
+              example: Doe
+            role:
+              type: string
+              example: TRAINER
+            club_id:
+              type: integer
+              example: 1
+    responses:
+      201:
+        description: User created successfully
+      400:
+        description: Email already exists
+    """
+    data = request.get_json()
+    # Simple registration logic (usually done by ADMIN in this system)
+    user, status = AuthService.register_user(data)
+    if status == 201:
+        return jsonify(user_schema.dump(user)), 201
+    return jsonify(user), status
+
+@auth_bp.route('/users', methods=['GET'])
+def get_users():
+    """
+    Get All Users (Admin Only)
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: List of users
+    """
+    from app.models.user import User
+    users = User.query.all()
+    return jsonify(UserSchema(many=True).dump(users)), 200
+
