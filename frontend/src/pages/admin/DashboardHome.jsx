@@ -1,136 +1,132 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { athleteService } from '../../services/athleteService';
+import { groupService } from '../../services/groupService';
+import { paymentService } from '../../services/paymentService';
+import { authService } from '../../services/authService';
 
-const AVATAR_COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9','#f59e0b'];
-const colorFor = (str = '') => AVATAR_COLORS[str.charCodeAt(0) % AVATAR_COLORS.length];
-const initials  = (firstName, lastName) =>
-  `${(firstName || '?')[0]}${(lastName || '?')[0]}`.toUpperCase();
+const DashboardHome = () => {
+  const [stats, setStats] = useState({
+    athletes: 0,
+    groups: 0,
+    trainers: 0,
+    recap: 0,
+    pending: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const user = authService.getCurrentUser();
 
-const recentAthletes = [
-  { first_name: 'Carlos',   last_name: 'R.', group: 'U-18 Soccer',   status: 'Activo'   },
-  { first_name: 'María',    last_name: 'P.', group: 'Vóley fem.',     status: 'Activo'   },
-  { first_name: 'Juan',     last_name: 'M.', group: 'Básquet U-20',   status: 'Inactivo' },
-  { first_name: 'Laura',    last_name: 'G.', group: 'U-18 Soccer',    status: 'Activo'   },
-];
-const pendingPayments = [
-  { name: 'Carlos R.', amount: '$120.000', status: 'Pendiente' },
-  { name: 'Pedro S.',  amount: '$85.000',  status: 'Vencido'   },
-  { name: 'Ana T.',    amount: '$120.000', status: 'Pagado'    },
-  { name: 'Luis F.',   amount: '$85.000',  status: 'Pagado'    },
-];
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
-const paymentBadge = (s) => {
-  if (s === 'Pendiente') return 'badge badge-warning';
-  if (s === 'Vencido')   return 'badge badge-danger';
-  return 'badge badge-success';
+  const fetchStats = async () => {
+    try {
+      const [athletes, groups, payments, trainers] = await Promise.all([
+        athleteService.getAthletes(),
+        groupService.getGroups(),
+        paymentService.getPayments(),
+        authService.getTrainers()
+      ]);
+
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+
+      // Cálculo de pagos del mes
+      const paidThisMonth = payments.filter(p => {
+        const d = new Date(p.payment_date);
+        return p.status === 'PAID' && d.getMonth() === month && d.getFullYear() === year;
+      });
+
+      const totalReceived = paidThisMonth.reduce((acc, p) => acc + Number(p.amount), 0);
+
+      // Cálculo de pendientes
+      let totalPending = 0;
+      athletes.forEach(a => {
+        const hasPaid = payments.some(p => {
+          const d = new Date(p.payment_date);
+          return p.athlete_id === a.id && p.status === 'PAID' && d.getMonth() === month && d.getFullYear() === year;
+        });
+        if (!hasPaid) {
+          totalPending += Number(a.current_groups?.[0]?.monthly_fee || 0);
+        }
+      });
+
+      setStats({
+        athletes: athletes.length,
+        groups: groups.length,
+        trainers: trainers.length,
+        recap: totalReceived,
+        pending: totalPending
+      });
+    } catch (err) {
+      console.error("Error al cargar estadísticas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando resumen...</div>;
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1>Panel de Control</h1>
+          <p className="text-muted">Bienvenido al resumen de {user.club_name || 'tu club'}.</p>
+        </div>
+        <div style={{ padding: '10px 20px', background: 'var(--primary-color)', color: '#fff', borderRadius: '12px', fontWeight: 600 }}>
+          {new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).toUpperCase()}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #3b82f6' }}>
+          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>ATLETAS</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.athletes}</div>
+          <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginTop: '4px' }}>Registrados activamente</div>
+        </div>
+        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #10b981' }}>
+          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>GRUPOS</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.groups}</div>
+          <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>Equipos en entrenamiento</div>
+        </div>
+        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #8b5cf6' }}>
+          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>ENTRENADORES</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.trainers}</div>
+          <div style={{ fontSize: '0.75rem', color: '#8b5cf6', marginTop: '4px' }}>Personal técnico</div>
+        </div>
+      </div>
+
+      <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', fontWeight: 700 }}>Resumen Financiero del Mes</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="card" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '24px', background: '#f0fdf4' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>💰</div>
+          <div>
+            <div style={{ color: '#166534', fontWeight: 600, fontSize: '0.9rem' }}>RECAUDACIÓN ACTUAL</div>
+            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#14532d' }}>${stats.recap.toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="card" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '24px', background: '#fffbeb' }}>
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>⏳</div>
+          <div>
+            <div style={{ color: '#92400e', fontWeight: 600, fontSize: '0.9rem' }}>PENDIENTE POR COBRAR</div>
+            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#78350f' }}>${stats.pending.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Acciones Rápidas */}
+      <div style={{ marginTop: '40px' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Acciones Rápidas</h3>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <a href="/admin/attendance" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Tomar Asistencia Hoy</a>
+          <a href="/admin/payments" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Registrar Pagos</a>
+          <a href="/admin/users" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Ver Usuarios</a>
+        </div>
+      </div>
+    </div>
+  );
 };
-
-const DashboardHome = () => (
-  <div>
-    {/* Header */}
-    <div className="page-header">
-      <div>
-        <h1>Dashboard</h1>
-        <p className="text-muted">Resumen general del club</p>
-      </div>
-      <button className="btn btn-primary">+ Registrar ingreso</button>
-    </div>
-
-    {/* Stat cards */}
-    <div className="stat-grid">
-      <div className="stat-card">
-        <div className="stat-icon blue">🏃</div>
-        <div className="stat-value">148</div>
-        <div className="stat-label">Atletas activos</div>
-        <div className="stat-trend up">↑ +12 este mes</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon orange">👥</div>
-        <div className="stat-value">9</div>
-        <div className="stat-label">Grupos activos</div>
-        <div className="stat-trend up">↑ +2 nuevos</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon green">💰</div>
-        <div className="stat-value">$4.2M</div>
-        <div className="stat-label">Ingresos del mes</div>
-        <div className="stat-trend up">↑ +8% vs anterior</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-icon yellow">📊</div>
-        <div className="stat-value">87%</div>
-        <div className="stat-label">Asistencia promedio</div>
-        <div className="stat-trend down">↓ -3% vs anterior</div>
-      </div>
-    </div>
-
-    {/* Bottom tables */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-
-      {/* Recent Athletes */}
-      <div className="card">
-        <div className="card-header">
-          <h3>Atletas recientes</h3>
-          <a href="/admin/athletes">Ver todos</a>
-        </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Atleta</th>
-              <th>Grupo</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentAthletes.map((a, i) => (
-              <tr key={i}>
-                <td>
-                  <div className="table-cell-name">
-                    <div className="table-avatar" style={{ background: colorFor(a.first_name) }}>
-                      {initials(a.first_name, a.last_name)}
-                    </div>
-                    <strong>{a.first_name} {a.last_name}</strong>
-                  </div>
-                </td>
-                <td style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>{a.group}</td>
-                <td>
-                  <span className={a.status === 'Activo' ? 'badge badge-success' : 'badge badge-inactive'}>
-                    {a.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pending Payments */}
-      <div className="card">
-        <div className="card-header">
-          <h3>Pagos pendientes</h3>
-          <a href="/admin/payments">Ver todos</a>
-        </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Atleta</th>
-              <th>Monto</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingPayments.map((p, i) => (
-              <tr key={i}>
-                <td><strong>{p.name}</strong></td>
-                <td style={{ fontWeight: 700 }}>{p.amount}</td>
-                <td><span className={paymentBadge(p.status)}>{p.status}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-  </div>
-);
 
 export default DashboardHome;

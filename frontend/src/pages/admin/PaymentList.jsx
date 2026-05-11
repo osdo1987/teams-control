@@ -12,15 +12,13 @@ const PaymentList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Filtros Globales
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filtros por Grupo (Almacenamos el estado de filtro de cada grupo en un objeto {groupId: 'all' | 'paid' | 'unpaid'})
   const [groupFilters, setGroupFilters] = useState({});
+  const [collapsedGroups, setCollapsedGroups] = useState({}); // {groupId: true/false}
 
-  // Modales
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedAthlete, setSelectedAthlete] = useState(null);
@@ -61,19 +59,34 @@ const PaymentList = () => {
     });
   };
 
-  // Cálculo de métricas filtradas por MES
+  // --- CÁLCULO FINANCIERO REAL ---
   const monthlyMetrics = (() => {
-    const filtered = payments.filter(p => {
+    let totalReceived = 0;
+    let totalPending = 0;
+    
+    // 1. Sumar lo que ya se recibió este mes
+    const paidThisMonth = payments.filter(p => {
       const pDate = new Date(p.payment_date);
-      return pDate.getMonth() === selectedMonth && pDate.getFullYear() === selectedYear;
+      return p.status === 'PAID' && pDate.getMonth() === selectedMonth && pDate.getFullYear() === selectedYear;
+    });
+    totalReceived = paidThisMonth.reduce((acc, p) => acc + Number(p.amount), 0);
+
+    // 2. Calcular lo pendiente (Atletas que NO han pagado este mes * su mensualidad)
+    athletes.forEach(athlete => {
+      const hasPaid = getAthleteStatus(athlete.id);
+      if (!hasPaid) {
+        // Si no ha pagado, sumamos el costo de su grupo (o un default si no tiene)
+        const groupFee = athlete.current_groups?.[0]?.monthly_fee || 0;
+        totalPending += Number(groupFee);
+      }
     });
     
-    return {
-      received: filtered.filter(p => p.status === 'PAID').reduce((acc, p) => acc + Number(p.amount), 0),
-      pending: filtered.filter(p => p.status === 'PENDING').reduce((acc, p) => acc + Number(p.amount), 0),
-      count: filtered.length
-    };
+    return { received: totalReceived, pending: totalPending, count: paidThisMonth.length };
   })();
+
+  const toggleCollapse = (id) => {
+    setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const openQuickPayment = (athlete) => {
     const group = athlete.current_groups?.[0];
@@ -94,9 +107,7 @@ const PaymentList = () => {
       const history = await paymentService.getAthletePayments(athlete.id);
       setAthleteHistory(history);
       setIsHistoryModalOpen(true);
-    } catch {
-      setError('Error al cargar el historial.');
-    }
+    } catch { setError('Error al cargar el historial.'); }
   };
 
   const handleSubmit = async e => {
@@ -112,9 +123,8 @@ const PaymentList = () => {
     } catch (err) { setError('Error al registrar el pago.'); }
   };
 
-  if (loading && athletes.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando panel financiero...</div>;
-
   const renderAthleteTable = (groupAthletes, groupId) => {
+    const isCollapsed = collapsedGroups[groupId];
     const currentFilter = groupFilters[groupId] || 'all';
     
     const filteredList = groupAthletes.filter(athlete => {
@@ -125,139 +135,140 @@ const PaymentList = () => {
     });
 
     return (
-      <div className="card" style={{ marginBottom: '24px', padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>{groupId === 'none' ? 'Atletas sin Grupo' : groups.find(g => g.id === groupId)?.name}</h3>
-            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{filteredList.length} atletas mostrados</span>
+      <div className="card" style={{ marginBottom: '16px', padding: '0', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 24px', background: 'var(--bg-main)', borderBottom: isCollapsed ? 'none' : '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => toggleCollapse(groupId)}>
+            <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '0.8rem' }}>▼</span>
+            <div>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>
+                {groupId === 'none' ? 'Atletas sin Grupo' : groups.find(g => g.id === groupId)?.name}
+              </h3>
+              {!isCollapsed && <span className="text-muted" style={{ fontSize: '0.72rem' }}>{filteredList.length} atletas en lista</span>}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Filtro:</span>
-            <select 
-              className="form-input" 
-              style={{ padding: '4px 8px', fontSize: '0.75rem', width: 'auto', height: 'auto' }}
-              value={currentFilter}
-              onChange={(e) => setGroupFilters({...groupFilters, [groupId]: e.target.value})}
-            >
-              <option value="all">Todos</option>
-              <option value="paid">Pagados</option>
-              <option value="unpaid">Pendientes</option>
-            </select>
-          </div>
+          {!isCollapsed && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select 
+                className="form-input" 
+                style={{ padding: '4px 8px', fontSize: '0.75rem', width: 'auto', height: 'auto', borderRadius: '8px' }}
+                value={currentFilter}
+                onChange={(e) => setGroupFilters({...groupFilters, [groupId]: e.target.value})}
+              >
+                <option value="all">Todos</option>
+                <option value="paid">Pagados</option>
+                <option value="unpaid">Pendientes</option>
+              </select>
+            </div>
+          )}
+          {isCollapsed && (
+            <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+              {groupAthletes.filter(a => getAthleteStatus(a.id)).length} / {groupAthletes.length} Pagados
+            </div>
+          )}
         </div>
-        <table className="data-table" style={{ margin: 0 }}>
-          <thead>
-            <tr>
-              <th>Atleta</th>
-              <th>Identificación</th>
-              <th style={{ textAlign: 'center' }}>Estado {months[selectedMonth]}</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredList.map(athlete => {
-              const hasPaid = getAthleteStatus(athlete.id);
-              return (
-                <tr key={athlete.id}>
-                  <td>
-                    <button onClick={() => openHistory(athlete)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-color)', fontWeight: 600, cursor: 'pointer', textAlign: 'left', fontSize: '0.9rem' }}>
-                      {athlete.user?.first_name} {athlete.user?.last_name}
-                    </button>
-                  </td>
-                  <td style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>{athlete.user?.identification_number}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={hasPaid ? "badge badge-success" : "badge badge-danger"}>
-                      {hasPaid ? "PAGADO" : "PENDIENTE"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {!hasPaid && (
-                      <button className="btn btn-primary btn-sm" onClick={() => openQuickPayment(athlete)}>⚡ Pago Rápido</button>
-                    )}
-                    <button className="btn btn-ghost btn-sm" style={{ marginLeft: '8px' }} onClick={() => openHistory(athlete)}>📜 Historial</button>
-                  </td>
-                </tr>
-              );
-            })}
-            {filteredList.length === 0 && (
-              <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>No hay atletas con este filtro.</td></tr>
-            )}
-          </tbody>
-        </table>
+        
+        {!isCollapsed && (
+          <table className="data-table" style={{ margin: 0 }}>
+            <thead>
+              <tr>
+                <th>Atleta</th>
+                <th>ID</th>
+                <th style={{ textAlign: 'center' }}>Estado</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredList.map(athlete => {
+                const hasPaid = getAthleteStatus(athlete.id);
+                return (
+                  <tr key={athlete.id}>
+                    <td>
+                      <button onClick={() => openHistory(athlete)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary-color)', fontWeight: 600, cursor: 'pointer', textAlign: 'left', fontSize: '0.88rem' }}>
+                        {athlete.user?.first_name} {athlete.user?.last_name}
+                      </button>
+                    </td>
+                    <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{athlete.user?.identification_number}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className={hasPaid ? "badge badge-success" : "badge badge-danger"} style={{ fontSize: '0.65rem' }}>
+                        {hasPaid ? "PAGADO" : "PENDIENTE"}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      {!hasPaid && <button className="btn btn-primary btn-sm" onClick={() => openQuickPayment(athlete)}>⚡ Pagar</button>}
+                      <button className="btn btn-ghost btn-sm" style={{ marginLeft: '6px' }} onClick={() => openHistory(athlete)}>📜 Historial</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     );
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <div className="page-header">
         <div>
-          <h1>Control de Pagos</h1>
-          <p className="text-muted">Estado de mensualidades y recaudos.</p>
+          <h1>Control Financiero</h1>
+          <p className="text-muted">Seguimiento mensual de recaudación por grupo.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <select className="form-input" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} style={{ width: '130px' }}>
+          <select className="form-input" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} style={{ width: '130px', borderRadius: '10px' }}>
             {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
           </select>
-          <select className="form-input" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} style={{ width: '100px' }}>
+          <select className="form-input" value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} style={{ width: '100px', borderRadius: '10px' }}>
             <option value={2026}>2026</option>
             <option value={2025}>2025</option>
           </select>
         </div>
       </div>
 
-      {/* Métricas Mensuales */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>RECAUDADO ({months[selectedMonth].toUpperCase()})</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${monthlyMetrics.received.toLocaleString()}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+        <div className="card" style={{ padding: '20px', borderTop: '4px solid #10b981', background: '#f0fdf4' }}>
+          <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>RECAUDADO EN {months[selectedMonth].toUpperCase()}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#065f46' }}>${monthlyMetrics.received.toLocaleString()}</div>
+          <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '4px' }}>{monthlyMetrics.count} pagos registrados</div>
         </div>
-        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #f59e0b' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>PENDIENTE ({months[selectedMonth].toUpperCase()})</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${monthlyMetrics.pending.toLocaleString()}</div>
-        </div>
-        <div className="card" style={{ padding: '16px', borderLeft: '4px solid #3b82f6' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>TRANSACCIONES</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{monthlyMetrics.count}</div>
+        <div className="card" style={{ padding: '20px', borderTop: '4px solid #f59e0b', background: '#fffbeb' }}>
+          <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 700 }}>PENDIENTE POR COBRAR</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#92400e' }}>${monthlyMetrics.pending.toLocaleString()}</div>
+          <div style={{ fontSize: '0.7rem', color: '#d97706', marginTop: '4px' }}>Basado en mensualidades de atletas activos</div>
         </div>
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="🔍 Buscar por nombre o identificación..."
+          placeholder="🔍 Buscar atleta..."
           className="form-input"
-          style={{ borderRadius: '12px' }}
+          style={{ borderRadius: '14px', padding: '12px 20px' }}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
+      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}
 
-      {/* Renderizado de Grupos */}
       {groups.map(group => {
         const groupAthletes = athletes.filter(a => 
           a.current_groups?.some(g => g.id === group.id) &&
-          (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           a.user?.identification_number.includes(searchTerm))
+          (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         if (groupAthletes.length === 0 && searchTerm) return null;
         return renderAthleteTable(groupAthletes, group.id);
       })}
 
-      {/* Atletas sin grupo */}
       {(() => {
         const unassigned = athletes.filter(a => 
           (!a.current_groups || a.current_groups.length === 0) &&
-          (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           a.user?.identification_number.includes(searchTerm))
+          (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         if (unassigned.length > 0) return renderAthleteTable(unassigned, 'none');
-        return null;
       })()}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={`Registrar Pago: ${selectedAthlete?.user?.first_name}`}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={`Registrar Pago - ${selectedAthlete?.user?.first_name}`}>
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
           <div className="form-group">
             <label className="form-label">Concepto</label>
@@ -273,7 +284,6 @@ const PaymentList = () => {
               <select value={formData.payment_method} onChange={e => setFormData({...formData, payment_method: e.target.value})} className="form-input">
                 <option value="Efectivo">Efectivo</option>
                 <option value="Transferencia">Transferencia</option>
-                <option value="Tarjeta">Tarjeta</option>
               </select>
             </div>
           </div>
@@ -284,16 +294,11 @@ const PaymentList = () => {
         </form>
       </Modal>
 
-      <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Historial: ${selectedAthlete?.user?.first_name} ${selectedAthlete?.user?.last_name}`}>
+      <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Historial de ${selectedAthlete?.user?.first_name}`}>
         <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
           <table className="data-table">
             <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Descripción</th>
-                <th>Monto</th>
-                <th>Estado</th>
-              </tr>
+              <tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Estado</th></tr>
             </thead>
             <tbody>
               {athleteHistory.map(h => (

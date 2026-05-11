@@ -2,7 +2,7 @@ import { api } from './api';
 
 export const groupService = {
   getGroups: async () => {
-    return await api('/groups'); // We might need to implement a GET /groups endpoint in backend
+    return await api('/groups');
   },
   
   createGroup: async (groupData) => {
@@ -10,6 +10,10 @@ export const groupService = {
       method: 'POST',
       body: JSON.stringify(groupData)
     });
+  },
+
+  getGroupAthletes: async (groupId) => {
+    return await api(`/groups/${groupId}/athletes`);
   },
   
   assignAthlete: async (groupId, athleteId) => {
