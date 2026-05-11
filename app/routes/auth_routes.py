@@ -20,9 +20,9 @@ def login():
         schema:
           type: object
           properties:
-            email:
+            identification_number:
               type: string
-              example: admin@example.com
+              example: "1234567890"
             password:
               type: string
               example: admin123
@@ -39,7 +39,7 @@ def login():
     if errors:
         return jsonify(errors), 400
     
-    result, status = AuthService.login(data['email'], data['password'])
+    result, status = AuthService.login(data['identification_number'], data['password'])
     return jsonify(result), status
 
 @auth_bp.route('/register', methods=['POST'])
@@ -56,9 +56,9 @@ def register():
         schema:
           type: object
           properties:
-            email:
+            identification_number:
               type: string
-              example: trainer@example.com
+              example: "1234567890"
             password:
               type: string
               example: trainer123
@@ -78,7 +78,7 @@ def register():
       201:
         description: User created successfully
       400:
-        description: Email already exists
+        description: Identification number already exists
     """
     data = request.get_json()
     # Simple registration logic (usually done by ADMIN in this system)
@@ -102,6 +102,15 @@ def get_users():
     users = User.query.all()
     return jsonify(UserSchema(many=True).dump(users)), 200
 
+@auth_bp.route('/users/<int:id>', methods=['GET'])
+def get_user(id):
+    """
+    Get Single User with full profile
+    """
+    from app.models.user import User
+    user = User.query.get_or_404(id)
+    return jsonify(UserSchema().dump(user)), 200
+
 @auth_bp.route('/users/<int:id>', methods=['PUT'])
 def update_user(id):
     """
@@ -122,3 +131,17 @@ def delete_user(id):
         return jsonify({"message": "User deleted"}), 200
     return jsonify({"error": "User not found"}), 404
 
+@auth_bp.route('/trainers', methods=['GET'])
+def get_trainers():
+    """
+    Get All Trainers - useful for dropdown selects when creating groups
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: List of trainers
+    """
+    from app.models.user import User
+    trainers = User.query.filter_by(role='TRAINER').all()
+    return jsonify(UserSchema(many=True).dump(trainers)), 200

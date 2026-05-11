@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [identificationNumber, setIdentificationNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,13 +14,13 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const data = await authService.login(email, password);
+      const data = await authService.login(identificationNumber, password);
       if (data.user.role === 'SUPER_ADMIN') navigate('/super-admin');
       else if (data.user.role === 'ADMIN') navigate('/admin');
       else if (data.user.role === 'TRAINER') navigate('/trainer');
       else navigate('/athlete');
     } catch (err) {
-      setError(err.message || 'Invalid credentials. Please try again.');
+      setError(err.message || 'Credenciales inválidas. Intente nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,7 @@ const Login = () => {
 
           {/* Feature bullets */}
           <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
-            {[['👥', 'Gestión de Atletas y Grupos'],['💳', 'Control de Pagos y Cuotas'],['📋', 'Registro de Asistencia']].map(([icon, text]) => (
+            {[['👥', 'Gestión de Atletas y Grupos'],['💳', 'Control de Pagos y Cuotas'],['📋', 'Registro de Asistencia'],['🏅', 'Perfiles de Entrenadores']].map(([icon, text]) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>{icon}</div>
                 <span style={{ color: 'rgba(248,250,252,0.75)', fontSize: '0.9rem', fontWeight: 500 }}>{text}</span>
@@ -81,8 +81,8 @@ const Login = () => {
         padding: '60px 80px',
       }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>Welcome back 👋</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 36, fontSize: '0.95rem' }}>Sign in to your admin account</p>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>Bienvenido 👋</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 36, fontSize: '0.95rem' }}>Ingresa con tu número de identificación</p>
 
           {error && (
             <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: '0.875rem', fontWeight: 500, border: '1px solid #fecaca' }}>
@@ -92,15 +92,34 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="form-input" placeholder="admin@sportclub.com" required />
+              <label className="form-label">Número de Identificación</label>
+              <input 
+                type="text" 
+                value={identificationNumber} 
+                onChange={e => setIdentificationNumber(e.target.value)} 
+                className="form-input" 
+                placeholder="Ej: 1234567890" 
+                required 
+                autoComplete="username"
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>
+                Ingrese su cédula, DNI o documento de identidad
+              </span>
             </div>
             <div className="form-group">
-              <label className="form-label">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="form-input" placeholder="••••••••" required />
+              <label className="form-label">Contraseña</label>
+              <input 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="form-input" 
+                placeholder="••••••••" 
+                required
+                autoComplete="current-password" 
+              />
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '13px', fontSize: '0.95rem', marginTop: 4 }}>
-              {loading ? 'Signing in...' : 'Sign In →'}
+              {loading ? 'Ingresando...' : 'Ingresar →'}
             </button>
           </form>
         </div>

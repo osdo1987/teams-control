@@ -1,6 +1,13 @@
 from app.extensions import ma
 from app.models.user import User
+from app.models.trainer import TrainerProfile
 from marshmallow import fields
+
+class TrainerProfileSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = TrainerProfile
+        load_instance = True
+        include_fk = True
 
 class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -11,7 +18,8 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
 
     # Custom fields if needed
     password = fields.String(load_only=True)
+    trainer_profile = fields.Nested(TrainerProfileSchema, dump_only=True)
 
 class LoginSchema(ma.Schema):
-    email = fields.Email(required=True)
+    identification_number = fields.String(required=True)
     password = fields.String(required=True)

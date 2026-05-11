@@ -45,8 +45,13 @@ const AdminSidebar = () => {
         <span className="sidebar-section-label">Management</span>
 
         <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <span className="nav-icon">👤</span>
-          Users &amp; Trainers
+          <span className="nav-icon">🔑</span>
+          Cuentas (Usuarios)
+        </NavLink>
+
+        <NavLink to="/admin/trainers" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+          <span className="nav-icon">🏅</span>
+          Entrenadores
         </NavLink>
 
         <NavLink to="/admin/payments" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>

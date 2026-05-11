@@ -30,7 +30,7 @@ def get_groups():
 @role_required(['ADMIN'])
 def create_group():
     """
-    Create a New Group (Admin Only)
+    Create a New Group (Admin Only) — requires trainer assignment
     ---
     tags:
       - Groups
@@ -43,15 +43,59 @@ def create_group():
           properties:
             name: {type: string, example: "Soccer U-15"}
             club_id: {type: integer, example: 1}
-            schedule: {type: string, example: "MWF 5PM"}
+            category: {type: string, example: "Sub-15"}
+            sport: {type: string, example: "Fútbol"}
+            schedule: {type: string, example: "Lun-Mie-Vie 5PM"}
+            schedule_days: {type: string, example: "Lunes,Miércoles,Viernes"}
+            schedule_start_time: {type: string, example: "17:00"}
+            schedule_end_time: {type: string, example: "19:00"}
+            training_location: {type: string, example: "Cancha Principal"}
+            max_capacity: {type: integer, example: 25}
+            level: {type: string, example: "Intermedio"}
+            monthly_fee: {type: number, example: 120000}
+            trainer_ids: {type: array, items: {type: integer}, example: [2]}
     responses:
       201:
         description: Group created
+      400:
+        description: Trainer assignment required
     """
     from app import db
     from app.models.group import Group
+    from app.models.user import User
     data = request.get_json()
-    group = Group(name=data['name'], club_id=data['club_id'], schedule=data.get('schedule'))
+
+    # Validar que se asigne al menos un entrenador
+    trainer_ids = data.get('trainer_ids', [])
+    if not trainer_ids:
+        return jsonify({"error": "Debe asignar al menos un entrenador al grupo"}), 400
+
+    # Verificar que los trainers existan y sean TRAINER
+    trainers = User.query.filter(User.id.in_(trainer_ids), User.role == 'TRAINER').all()
+    if len(trainers) != len(trainer_ids):
+        return jsonify({"error": "Uno o más entrenadores no fueron encontrados o no tienen rol TRAINER"}), 400
+
+    group = Group(
+        name=data['name'],
+        club_id=data['club_id'],
+        category=data.get('category'),
+        sport=data.get('sport'),
+        description=data.get('description'),
+        max_capacity=data.get('max_capacity'),
+        schedule=data.get('schedule'),
+        schedule_days=data.get('schedule_days'),
+        schedule_start_time=data.get('schedule_start_time'),
+        schedule_end_time=data.get('schedule_end_time'),
+        training_location=data.get('training_location'),
+        level=data.get('level'),
+        season=data.get('season'),
+        monthly_fee=data.get('monthly_fee')
+    )
+    
+    # Asignar entrenadores
+    for trainer in trainers:
+        group.trainers.append(trainer)
+
     db.session.add(group)
     db.session.commit()
     return jsonify(group_schema.dump(group)), 201
@@ -161,12 +205,28 @@ def update_group(id):
     """
     from app import db
     from app.models.group import Group
+    from app.models.user import User
     group = Group.query.get_or_404(id)
     data = request.get_json()
     
-    if 'name' in data: group.name = data['name']
-    if 'schedule' in data: group.schedule = data['schedule']
-    if 'club_id' in data: group.club_id = data['club_id']
+    simple_fields = [
+        'name', 'schedule', 'club_id', 'category', 'sport', 'description',
+        'max_capacity', 'schedule_days', 'schedule_start_time', 'schedule_end_time',
+        'training_location', 'status', 'level', 'season', 'monthly_fee'
+    ]
+    for field in simple_fields:
+        if field in data:
+            setattr(group, field, data[field])
+
+    # Actualizar entrenadores si se envían
+    if 'trainer_ids' in data:
+        trainer_ids = data['trainer_ids']
+        if not trainer_ids:
+            return jsonify({"error": "Debe asignar al menos un entrenador al grupo"}), 400
+        trainers = User.query.filter(User.id.in_(trainer_ids), User.role == 'TRAINER').all()
+        if len(trainers) != len(trainer_ids):
+            return jsonify({"error": "Uno o más entrenadores no fueron encontrados"}), 400
+        group.trainers = trainers
     
     db.session.commit()
     return jsonify(group_schema.dump(group)), 200

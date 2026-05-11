@@ -1,10 +1,10 @@
 import { api } from './api';
 
 export const authService = {
-  login: async (email, password) => {
+  login: async (identificationNumber, password) => {
     const data = await api('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ identification_number: identificationNumber, password })
     });
     
     if (data && data.access_token) {
@@ -28,5 +28,9 @@ export const authService = {
     } catch {
       return null;
     }
+  },
+
+  getTrainers: async () => {
+    return await api('/auth/trainers');
   }
 };

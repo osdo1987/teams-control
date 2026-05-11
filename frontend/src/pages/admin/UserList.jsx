@@ -11,7 +11,18 @@ const ROLE_BADGE = {
   ADMIN:   'badge badge-danger',
   TRAINER: 'badge badge-primary',
   ATHLETE: 'badge badge-success',
-  SUPER_ADMIN: 'badge badge-primary', // Fallback
+  SUPER_ADMIN: 'badge badge-primary',
+};
+
+const INITIAL_FORM = {
+  identification_number: '', 
+  email: '', 
+  password: '', 
+  first_name: '', 
+  last_name: '',
+  role: 'ATHLETE', 
+  club_id: 1, 
+  phone: ''
 };
 
 const UserList = () => {
@@ -22,13 +33,13 @@ const UserList = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const [formData, setFormData] = useState({ email: '', password: '', first_name: '', last_name: '', role: 'ATHLETE', club_id: 1 });
+  const [formData, setFormData] = useState({ ...INITIAL_FORM });
 
   useEffect(() => { fetchUsers(); }, []);
 
   const fetchUsers = async () => {
     try { const data = await userService.getUsers(); setUsers(data); }
-    catch { setError('Failed to load users'); }
+    catch { setError('Error al cargar usuarios'); }
     finally { setLoading(false); }
   };
 
@@ -36,19 +47,21 @@ const UserList = () => {
 
   const openCreateModal = () => {
     setEditingUser(null);
-    setFormData({ email: '', password: '', first_name: '', last_name: '', role: 'ATHLETE', club_id: 1 });
+    setFormData({ ...INITIAL_FORM });
     setIsModalOpen(true);
   };
 
   const openEditModal = (user) => {
     setEditingUser(user);
     setFormData({
-      email: user.email,
-      password: '', // Leave empty if not changing
+      identification_number: user.identification_number || '',
+      email: user.email || '',
+      password: '',
       first_name: user.first_name,
       last_name: user.last_name,
       role: user.role,
-      club_id: user.club_id || 1
+      club_id: user.club_id || 1,
+      phone: user.phone || ''
     });
     setIsModalOpen(true);
   };
@@ -66,7 +79,7 @@ const UserList = () => {
       }
       setIsModalOpen(false);
       fetchUsers();
-    } catch (err) { setError(err.message || 'Error saving user'); }
+    } catch (err) { setError(err.message || 'Error al guardar usuario'); }
   };
 
   const confirmDelete = async () => {
@@ -75,23 +88,23 @@ const UserList = () => {
       await userService.deleteUser(userToDelete.id);
       fetchUsers();
     } catch (err) {
-      setError('Error deleting user');
+      setError('Error al eliminar usuario');
     } finally {
       setIsConfirmOpen(false);
       setUserToDelete(null);
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading users...</div>;
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando usuarios...</div>;
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1>Users &amp; Trainers</h1>
-          <p className="text-muted">Manage system accounts, roles and access.</p>
+          <h1>Gestión de Usuarios</h1>
+          <p className="text-muted">Administra las cuentas de acceso al sistema y sus roles.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>+ New User</button>
+        <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
@@ -100,37 +113,37 @@ const UserList = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>User</th>
-              <th>Email</th>
-              <th>Role</th>
+              <th>Usuario</th>
+              <th>Identificación</th>
+              <th>Rol</th>
               <th>Club</th>
-              <th>Actions</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No users found</td></tr>
+              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron usuarios</td></tr>
             ) : users.map(user => (
               <tr key={user.id}>
                 <td>
                   <div className="table-cell-name">
-                    <div className="table-avatar" style={{ background: avatarColor(user.first_name || user.email) }}>
+                    <div className="table-avatar" style={{ background: avatarColor(user.first_name || 'U') }}>
                       {initials(user.first_name, user.last_name)}
                     </div>
                     <div>
                       <strong>{user.first_name} {user.last_name}</strong>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>#{user.id}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>#{user.id} {user.email}</div>
                     </div>
                   </div>
                 </td>
-                <td style={{ color: 'var(--text-secondary)' }}>{user.email}</td>
+                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{user.identification_number}</td>
                 <td><span className={ROLE_BADGE[user.role] || 'badge badge-inactive'}>{user.role}</span></td>
-                <td><span className="badge badge-primary">{user.club_id ? `Club ${user.club_id}` : 'Global'}</span></td>
+                <td><span className="badge badge-primary">Club {user.club_id}</span></td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>Edit</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>Editar</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                      onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>Delete</button>
+                      onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -141,37 +154,41 @@ const UserList = () => {
 
       <ConfirmModal
         isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete ${userToDelete?.first_name}? This will remove their access to the system.`}
+        title="Eliminar Usuario"
+        message={`¿Está seguro de que desea eliminar a ${userToDelete?.first_name}? Esta acción eliminará su acceso al sistema.`}
       />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUser ? "Edit User" : "Create New User"}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}>
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
-              <label className="form-label">First Name</label>
-              <input type="text" name="first_name" value={formData.first_name} onChange={handleInputChange} className="form-input" required placeholder="John" />
+              <label className="form-label">Nombres</label>
+              <input type="text" name="first_name" value={formData.first_name} onChange={handleInputChange} className="form-input" required placeholder="Juan" />
             </div>
             <div className="form-group">
-              <label className="form-label">Last Name</label>
-              <input type="text" name="last_name" value={formData.last_name} onChange={handleInputChange} className="form-input" required placeholder="Doe" />
+              <label className="form-label">Apellidos</label>
+              <input type="text" name="last_name" value={formData.last_name} onChange={handleInputChange} className="form-input" required placeholder="Pérez" />
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="form-input" required placeholder="john@example.com" />
+            <label className="form-label">Número de Identificación</label>
+            <input type="text" name="identification_number" value={formData.identification_number} onChange={handleInputChange} className="form-input" required placeholder="1234567890" />
           </div>
           <div className="form-group">
-            <label className="form-label">Password {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Leave empty to keep current)</span>}</label>
+            <label className="form-label">Email (Opcional)</label>
+            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="form-input" placeholder="email@ejemplo.com" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Contraseña {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Dejar vacío para mantener)</span>}</label>
             <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="form-input" required={!editingUser} placeholder="••••••••" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
-              <label className="form-label">Role</label>
+              <label className="form-label">Rol</label>
               <select name="role" value={formData.role} onChange={handleInputChange} className="form-input">
-                <option value="ADMIN">Admin</option>
-                <option value="TRAINER">Trainer</option>
-                <option value="ATHLETE">Athlete</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="TRAINER">Entrenador</option>
+                <option value="ATHLETE">Atleta</option>
                 <option value="SUPER_ADMIN">Super Admin</option>
               </select>
             </div>
@@ -181,8 +198,8 @@ const UserList = () => {
             </div>
           </div>
           <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">{editingUser ? "Save Changes" : "Create User"}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn btn-primary">{editingUser ? "Guardar Cambios" : "Crear Usuario"}</button>
           </div>
         </form>
       </Modal>
