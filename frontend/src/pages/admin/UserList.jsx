@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { userService } from '../../services/userService';
+import { groupService } from '../../services/groupService';
+import clubService from '../../services/clubService';
+import { authService } from '../../services/authService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 
@@ -21,12 +24,15 @@ const INITIAL_FORM = {
   first_name: '', 
   last_name: '',
   role: 'ATHLETE', 
-  club_id: 1, 
+  club_id: '', 
+  group_id: '',
   phone: ''
 };
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
+  const [clubs, setClubs] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,20 +40,48 @@ const UserList = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => { fetchUsers(); }, []);
+  const filteredUsers = users.filter(u => {
+    const name = `${u.first_name} ${u.last_name}`.toLowerCase();
+    const id = (u.identification_number || '').toString();
+    return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+  });
 
-  const fetchUsers = async () => {
-    try { const data = await userService.getUsers(); setUsers(data); }
-    catch { setError('Error al cargar usuarios'); }
-    finally { setLoading(false); }
+  useEffect(() => { 
+    fetchInitialData(); 
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      const [usersData, clubsData, groupsData] = await Promise.all([
+        userService.getUsers(),
+        clubService.getAllClubs(),
+        groupService.getGroups()
+      ]);
+      setUsers(usersData);
+      setClubs(clubsData);
+      setGroups(groupsData);
+    } catch { 
+      setError('Error al cargar datos iniciales'); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const openCreateModal = () => {
+    const currentUser = authService.getCurrentUser();
     setEditingUser(null);
-    setFormData({ ...INITIAL_FORM });
+    
+    // Si es ADMIN, bloquear a su club. Si es SUPER_ADMIN, permitir elegir.
+    const defaultClubId = currentUser.role === 'ADMIN' ? currentUser.club_id : (clubs[0]?.id || '');
+    
+    setFormData({ 
+      ...INITIAL_FORM, 
+      club_id: defaultClubId 
+    });
     setIsModalOpen(true);
   };
 
@@ -60,7 +94,8 @@ const UserList = () => {
       first_name: user.first_name,
       last_name: user.last_name,
       role: user.role,
-      club_id: user.club_id || 1,
+      club_id: user.club_id || '',
+      group_id: user.athlete_profile?.current_groups?.[0]?.id || '',
       phone: user.phone || ''
     });
     setIsModalOpen(true);
@@ -69,7 +104,11 @@ const UserList = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const payload = { ...formData, club_id: parseInt(formData.club_id) };
+      const payload = { 
+        ...formData, 
+        club_id: parseInt(formData.club_id),
+        group_id: formData.group_id ? parseInt(formData.group_id) : null
+      };
       if (!payload.password && editingUser) delete payload.password;
 
       if (editingUser) {
@@ -78,7 +117,7 @@ const UserList = () => {
         await userService.createUser(payload);
       }
       setIsModalOpen(false);
-      fetchUsers();
+      fetchInitialData();
     } catch (err) { setError(err.message || 'Error al guardar usuario'); }
   };
 
@@ -86,7 +125,7 @@ const UserList = () => {
     if (!userToDelete) return;
     try {
       await userService.deleteUser(userToDelete.id);
-      fetchUsers();
+      fetchInitialData();
     } catch (err) {
       setError('Error al eliminar usuario');
     } finally {
@@ -107,6 +146,17 @@ const UserList = () => {
         <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
       </div>
 
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="🔍 Buscar usuario por nombre o ID..."
+          className="form-input"
+          style={{ borderRadius: '12px' }}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
 
       <div className="table-container">
@@ -121,9 +171,9 @@ const UserList = () => {
             </tr>
           </thead>
           <tbody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron usuarios</td></tr>
-            ) : users.map(user => (
+            ) : filteredUsers.map(user => (
               <tr key={user.id}>
                 <td>
                   <div className="table-cell-name">
@@ -138,7 +188,7 @@ const UserList = () => {
                 </td>
                 <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{user.identification_number}</td>
                 <td><span className={ROLE_BADGE[user.role] || 'badge badge-inactive'}>{user.role}</span></td>
-                <td><span className="badge badge-primary">Club {user.club_id}</span></td>
+                <td><span className="badge badge-primary">{user.club?.name || `Club ${user.club_id}`}</span></td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>Editar</button>
@@ -182,6 +232,7 @@ const UserList = () => {
             <label className="form-label">Contraseña {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Dejar vacío para mantener)</span>}</label>
             <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="form-input" required={!editingUser} placeholder="••••••••" />
           </div>
+          
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
               <label className="form-label">Rol</label>
@@ -193,10 +244,39 @@ const UserList = () => {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Club ID</label>
-              <input type="number" name="club_id" value={formData.club_id} onChange={handleInputChange} className="form-input" required />
+              <label className="form-label">Club</label>
+              <select 
+                name="club_id" 
+                value={formData.club_id} 
+                onChange={handleInputChange} 
+                className="form-input" 
+                required
+                disabled={authService.getCurrentUser()?.role !== 'SUPER_ADMIN'}
+              >
+                <option value="">Seleccionar Club</option>
+                {clubs.map(club => (
+                  <option key={club.id} value={club.id}>{club.name}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {/* Selector de Grupo - Solo para Atletas */}
+          {formData.role === 'ATHLETE' && (
+            <div className="form-group">
+              <label className="form-label">Asignar a Grupo</label>
+              <select name="group_id" value={formData.group_id} onChange={handleInputChange} className="form-input" required={!editingUser}>
+                <option value="">Seleccionar Grupo</option>
+                {groups.filter(g => parseInt(g.club_id) === parseInt(formData.club_id)).map(group => (
+                  <option key={group.id} value={group.id}>{group.name} ({group.category})</option>
+                ))}
+              </select>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>
+                * Los atletas deben pertenecer a un grupo.
+              </span>
+            </div>
+          )}
+
           <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
             <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn btn-primary">{editingUser ? "Guardar Cambios" : "Crear Usuario"}</button>

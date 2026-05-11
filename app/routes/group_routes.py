@@ -12,17 +12,18 @@ groups_schema = GroupSchema(many=True)
 @group_bp.route('', methods=['GET'])
 @jwt_required()
 def get_groups():
-    """
-    Get All Groups
-    ---
-    tags:
-      - Groups
-    responses:
-      200:
-        description: List of groups
-    """
     from app.models.group import Group
-    groups = Group.query.all()
+    from app.models.user import User
+    from flask_jwt_extended import get_jwt_identity
+
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if user.role == 'SUPER_ADMIN':
+        groups = Group.query.all()
+    else:
+        groups = Group.query.filter_by(club_id=user.club_id).all()
+        
     return jsonify(groups_schema.dump(groups)), 200
 
 @group_bp.route('', methods=['POST'])
@@ -78,8 +79,7 @@ def create_group():
     group = Group(
         name=data['name'],
         club_id=data['club_id'],
-        category=data.get('category'),
-        sport=data.get('sport'),
+        category_id=data.get('category_id'),
         description=data.get('description'),
         max_capacity=data.get('max_capacity'),
         schedule=data.get('schedule'),
@@ -210,7 +210,7 @@ def update_group(id):
     data = request.get_json()
     
     simple_fields = [
-        'name', 'schedule', 'club_id', 'category', 'sport', 'description',
+        'name', 'schedule', 'club_id', 'category_id', 'description',
         'max_capacity', 'schedule_days', 'schedule_start_time', 'schedule_end_time',
         'training_location', 'status', 'level', 'season', 'monthly_fee'
     ]

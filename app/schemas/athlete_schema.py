@@ -29,3 +29,4 @@ class AthleteSchema(ma.SQLAlchemyAutoSchema):
     
     # We might want to include basic user info
     user = fields.Nested("UserSchema")
+    current_groups = fields.List(fields.Nested("GroupSchema", only=("id", "name", "monthly_fee")))

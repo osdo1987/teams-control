@@ -10,12 +10,20 @@ athletes_schema = AthleteSchema(many=True)
 
 @athlete_bp.route('', methods=['GET'])
 @jwt_required()
-@role_required(['ADMIN', 'TRAINER'])
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
 def get_all_athletes():
-    """
-    Get All Athletes
-    """
-    athletes = AthleteService.get_all_athletes()
+    from app.models.athlete import Athlete
+    from app.models.user import User
+    
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if user.role == 'SUPER_ADMIN':
+        athletes = Athlete.query.all()
+    else:
+        # Unir con User para filtrar por club_id del usuario asociado al atleta
+        athletes = Athlete.query.join(User).filter(User.club_id == user.club_id).all()
+        
     return jsonify(athletes_schema.dump(athletes)), 200
 
 @athlete_bp.route('', methods=['POST'])

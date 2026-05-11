@@ -9,6 +9,7 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
 
     trainers = fields.List(fields.Nested("UserSchema", only=("id", "identification_number", "first_name", "last_name", "phone")))
+    category_obj = fields.Nested("CategorySchema", only=("id", "name"))
     athletes_count = fields.Method("get_athletes_count")
 
     def get_athletes_count(self, obj):

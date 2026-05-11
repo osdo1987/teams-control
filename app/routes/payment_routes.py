@@ -75,12 +75,21 @@ def get_athlete_payments(athlete_id):
 
 @payment_bp.route('', methods=['GET'])
 @jwt_required()
-@role_required(['ADMIN'])
+@role_required(['SUPER_ADMIN', 'ADMIN'])
 def get_all_payments():
-    """
-    Get All Payments (Admin Only)
-    """
-    payments = PaymentService.get_all_payments()
+    from app.models.payment import Payment
+    from app.models.user import User
+    from app.models.athlete import Athlete
+    
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if user.role == 'SUPER_ADMIN':
+        payments = Payment.query.all()
+    else:
+        # Filtrar pagos a través de los atletas que pertenecen al mismo club
+        payments = Payment.query.join(Athlete).join(User).filter(User.club_id == user.club_id).all()
+        
     return jsonify(payments_schema.dump(payments)), 200
 
 @payment_bp.route('/<int:id>', methods=['PUT'])

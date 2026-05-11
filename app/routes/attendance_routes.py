@@ -68,8 +68,17 @@ def get_athlete_attendance(athlete_id):
 @attendance_bp.route('/group/<int:group_id>', methods=['GET'])
 @jwt_required()
 def get_group_attendance(group_id):
-    """
-    Get Group Attendance History
-    """
+    from app.models.user import User
+    from app.models.group import Group
+    from flask_jwt_extended import get_jwt_identity
+    
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    group = Group.query.get_or_404(group_id)
+    
+    # Verificar propiedad del club si no es Super Admin
+    if user.role != 'SUPER_ADMIN' and group.club_id != user.club_id:
+        return jsonify({"error": "No tiene permiso para ver la asistencia de este grupo"}), 403
+        
     records = AttendanceService.get_group_attendance(group_id)
     return jsonify(attendance_schema.dump(records)), 200

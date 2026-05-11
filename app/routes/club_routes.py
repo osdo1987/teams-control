@@ -11,7 +11,7 @@ club_schema = ClubSchema()
 clubs_schema = ClubSchema(many=True)
 
 @club_bp.route('', methods=['GET'])
-@role_required(['SUPER_ADMIN'])
+@role_required(['SUPER_ADMIN', 'ADMIN'])
 def get_all_clubs():
     """
     Get All Clubs (Super Admin Only)

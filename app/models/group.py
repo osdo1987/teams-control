@@ -9,8 +9,8 @@ class Group(db.Model):
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
     
     # --- Información ampliada ---
-    category = db.Column(db.String(50), nullable=True)  # Sub-8, Sub-10, Sub-12, Sub-15, Sub-18, Adultos, etc.
-    sport = db.Column(db.String(50), nullable=True)  # Fútbol, Baloncesto, Voleibol, etc.
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
+    description = db.Column(db.Text, nullable=True)
     description = db.Column(db.Text, nullable=True)
     max_capacity = db.Column(db.Integer, nullable=True)
     

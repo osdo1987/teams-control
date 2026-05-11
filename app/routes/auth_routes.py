@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.services.auth_service import AuthService
 from app.schemas.user_schema import LoginSchema, UserSchema
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 auth_bp = Blueprint('auth', __name__)
 login_schema = LoginSchema()
@@ -88,18 +89,17 @@ def register():
     return jsonify(user), status
 
 @auth_bp.route('/users', methods=['GET'])
+@jwt_required()
 def get_users():
-    """
-    Get All Users (Admin Only)
-    ---
-    tags:
-      - Auth
-    responses:
-      200:
-        description: List of users
-    """
     from app.models.user import User
-    users = User.query.all()
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if user.role == 'SUPER_ADMIN':
+        users = User.query.all()
+    else:
+        users = User.query.filter_by(club_id=user.club_id).all()
+        
     return jsonify(UserSchema(many=True).dump(users)), 200
 
 @auth_bp.route('/users/<int:id>', methods=['GET'])
@@ -132,16 +132,15 @@ def delete_user(id):
     return jsonify({"error": "User not found"}), 404
 
 @auth_bp.route('/trainers', methods=['GET'])
+@jwt_required()
 def get_trainers():
-    """
-    Get All Trainers - useful for dropdown selects when creating groups
-    ---
-    tags:
-      - Auth
-    responses:
-      200:
-        description: List of trainers
-    """
     from app.models.user import User
-    trainers = User.query.filter_by(role='TRAINER').all()
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    if user.role == 'SUPER_ADMIN':
+        trainers = User.query.filter_by(role='TRAINER').all()
+    else:
+        trainers = User.query.filter_by(role='TRAINER', club_id=user.club_id).all()
+        
     return jsonify(UserSchema(many=True).dump(trainers)), 200

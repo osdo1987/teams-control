@@ -5,10 +5,12 @@ import Modal from '../../components/UI/Modal';
 
 const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
-const initials = (first = '?', last = '?') => `${first[0] || '?'}${last[0] || '?'}`.toUpperCase();
+const initials = (first = '?', last = '?') => `${first?.[0] || '?'}${last?.[0] || '?'}`.toUpperCase();
 
 const AthleteList = () => {
   const [athletes, setAthletes] = useState([]);
+  const [filteredAthletes, setFilteredAthletes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -16,36 +18,37 @@ const AthleteList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState(null);
   const [formData, setFormData] = useState({
-    email: '', first_name: '', last_name: '', club_id: 1, birth_date: '', phone: ''
+    birth_date: '', phone: '', address: ''
   });
 
   useEffect(() => { fetchAthletes(); }, []);
+
+  useEffect(() => {
+    const results = athletes.filter(a => {
+      const name = `${a.user?.first_name} ${a.user?.last_name}`.toLowerCase();
+      const id = (a.user?.identification_number || '').toString();
+      return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    });
+    setFilteredAthletes(results);
+  }, [searchTerm, athletes]);
 
   const fetchAthletes = async () => {
     try {
       const data = await athleteService.getAthletes();
       setAthletes(data);
-    } catch { setError('Failed to load athletes'); }
+      setFilteredAthletes(data);
+    } catch { setError('Error al cargar atletas'); }
     finally { setLoading(false); }
   };
 
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const openCreateModal = () => {
-    setEditingAthlete(null);
-    setFormData({ email: '', first_name: '', last_name: '', club_id: 1, birth_date: '', phone: '' });
-    setIsModalOpen(true);
-  };
-
   const openEditModal = (athlete) => {
     setEditingAthlete(athlete);
     setFormData({
-      email: athlete.user?.email || '',
-      first_name: athlete.user?.first_name || '',
-      last_name: athlete.user?.last_name || '',
-      club_id: athlete.user?.club_id || 1,
       birth_date: athlete.birth_date ? athlete.birth_date.split('T')[0] : '',
-      phone: athlete.phone || ''
+      phone: athlete.phone || '',
+      address: athlete.address || ''
     });
     setIsModalOpen(true);
   };
@@ -54,19 +57,12 @@ const AthleteList = () => {
     e.preventDefault();
     try {
       const payload = {
-        user: { email: formData.email, first_name: formData.first_name, last_name: formData.last_name, club_id: parseInt(formData.club_id) },
-        athlete: { birth_date: formData.birth_date, phone: formData.phone }
+        athlete: { ...formData }
       };
-
-      if (editingAthlete) {
-        await athleteService.updateAthlete(editingAthlete.id, payload);
-      } else {
-        await athleteService.createAthlete(payload);
-      }
-      
+      await athleteService.updateAthlete(editingAthlete.id, payload);
       setIsModalOpen(false);
       fetchAthletes();
-    } catch (err) { setError(err.message || 'Error saving athlete'); }
+    } catch (err) { setError(err.message || 'Error al guardar cambios'); }
   };
 
   const confirmDelete = async () => {
@@ -75,44 +71,54 @@ const AthleteList = () => {
       await athleteService.deleteAthlete(athleteToDelete.id);
       fetchAthletes();
     } catch (err) {
-      setError('Error deleting athlete');
+      setError('Error al eliminar atleta');
     } finally {
       setIsConfirmOpen(false);
       setAthleteToDelete(null);
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading athletes...</div>;
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando atletas...</div>;
 
   return (
     <div>
-      {/* Header */}
       <div className="page-header">
         <div>
-          <h1>Athletes</h1>
-          <p className="text-muted">Manage all registered athletes and their profiles.</p>
+          <h1>Atletas</h1>
+          <p className="text-muted">Gestiona los perfiles y datos de los atletas registrados.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>+ New Athlete</button>
+      </div>
+
+      <div style={{ marginBottom: '20px', position: 'relative' }}>
+        <input
+          type="text"
+          placeholder="🔍 Buscar por nombre o identificación..."
+          className="form-input"
+          style={{ paddingLeft: '40px', borderRadius: '12px' }}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <span style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}></span>
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
 
-      {/* Table */}
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th>Athlete</th>
-              <th>Email</th>
-              <th>Phone</th>
+              <th>Atleta</th>
+              <th>Identificación</th>
+              <th>Teléfono</th>
               <th>Club</th>
-              <th>Actions</th>
+              <th>Grupo</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {athletes.length === 0 ? (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No athletes found</td></tr>
-            ) : athletes.map(athlete => (
+            {filteredAthletes.length === 0 ? (
+              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron atletas</td></tr>
+            ) : filteredAthletes.map(athlete => (
               <tr key={athlete.id}>
                 <td>
                   <div className="table-cell-name">
@@ -121,18 +127,27 @@ const AthleteList = () => {
                     </div>
                     <div>
                       <strong>{athlete.user?.first_name} {athlete.user?.last_name}</strong>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>#{athlete.id}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{athlete.user?.email}</div>
                     </div>
                   </div>
                 </td>
-                <td style={{ color: 'var(--text-secondary)' }}>{athlete.user?.email}</td>
+                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{athlete.user?.identification_number}</td>
                 <td>{athlete.phone || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
-                <td><span className="badge badge-primary">Club {athlete.user?.club_id}</span></td>
+                <td><span className="badge badge-primary">{athlete.user?.club?.name || `Club ${athlete.user?.club_id}`}</span></td>
+                <td>
+                  {athlete.current_groups && athlete.current_groups.length > 0 ? (
+                    athlete.current_groups.map(g => (
+                      <span key={g.id} className="badge badge-success" style={{ marginRight: 4 }}>{g.name}</span>
+                    ))
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sin grupo</span>
+                  )}
+                </td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>Edit</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>Perfil</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                      onClick={() => { setAthleteToDelete(athlete); setIsConfirmOpen(true); }}>Delete</button>
+                      onClick={() => { setAthleteToDelete(athlete); setIsConfirmOpen(true); }}>Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -141,47 +156,29 @@ const AthleteList = () => {
         </table>
       </div>
 
-      {/* Confirm Delete */}
       <ConfirmModal
         isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Delete Athlete"
-        message={`Are you sure you want to delete ${athleteToDelete?.user?.first_name}? This action cannot be undone.`}
+        title="Eliminar Atleta"
+        message={`¿Está seguro de que desea eliminar a ${athleteToDelete?.user?.first_name}?`}
       />
 
-      {/* Create/Edit Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingAthlete ? "Edit Athlete" : "Create New Athlete"}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Editar Perfil de Atleta">
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <div className="form-group">
-              <label className="form-label">First Name</label>
-              <input type="text" name="first_name" value={formData.first_name} onChange={handleInputChange} className="form-input" required placeholder="John" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Last Name</label>
-              <input type="text" name="last_name" value={formData.last_name} onChange={handleInputChange} className="form-input" required placeholder="Doe" />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Fecha de Nacimiento</label>
+            <input type="date" name="birth_date" value={formData.birth_date} onChange={handleInputChange} className="form-input" required />
           </div>
           <div className="form-group">
-            <label className="form-label">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="form-input" required placeholder="john@example.com" />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <div className="form-group">
-              <label className="form-label">Birth Date</label>
-              <input type="date" name="birth_date" value={formData.birth_date} onChange={handleInputChange} className="form-input" required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Phone</label>
-              <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="form-input" placeholder="555-1234" />
-            </div>
+            <label className="form-label">Teléfono</label>
+            <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="form-input" placeholder="555-1234" />
           </div>
           <div className="form-group">
-            <label className="form-label">Club ID</label>
-            <input type="number" name="club_id" value={formData.club_id} onChange={handleInputChange} className="form-input" required />
+            <label className="form-label">Dirección</label>
+            <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="form-input" placeholder="Calle 123..." />
           </div>
           <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">{editingAthlete ? "Save Changes" : "Create Athlete"}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
       </Modal>
