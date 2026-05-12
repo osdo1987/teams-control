@@ -41,7 +41,9 @@ def create_app(config_class=Config):
     app.register_blueprint(payment_bp, url_prefix='/api/payments')
     app.register_blueprint(club_bp, url_prefix='/api/clubs')
     from app.routes.category_routes import category_bp
+    from app.routes.stats_routes import stats_bp
     app.register_blueprint(category_bp, url_prefix='/api/categories')
+    app.register_blueprint(stats_bp, url_prefix='/api/stats')
 
 
     # Global Error Handler

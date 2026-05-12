@@ -41,11 +41,14 @@ const UserList = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClubId, setSelectedClubId] = useState('');
 
   const filteredUsers = users.filter(u => {
     const name = `${u.first_name} ${u.last_name}`.toLowerCase();
     const id = (u.identification_number || '').toString();
-    return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    const matchesClub = selectedClubId === '' || parseInt(u.club_id) === parseInt(selectedClubId);
+    return matchesSearch && matchesClub;
   });
 
   useEffect(() => { 
@@ -146,15 +149,32 @@ const UserList = () => {
         <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="🔍 Buscar usuario por nombre o ID..."
-          className="form-input"
-          style={{ borderRadius: '12px' }}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <input
+            type="text"
+            placeholder="🔍 Buscar usuario por nombre o ID..."
+            className="form-input"
+            style={{ borderRadius: '12px' }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        {authService.getCurrentUser()?.role === 'SUPER_ADMIN' && (
+          <div style={{ width: '250px' }}>
+            <select 
+              className="form-input" 
+              style={{ borderRadius: '12px' }}
+              value={selectedClubId}
+              onChange={(e) => setSelectedClubId(e.target.value)}
+            >
+              <option value="">🏢 Todos los Clubes</option>
+              {clubs.map(club => (
+                <option key={club.id} value={club.id}>{club.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}

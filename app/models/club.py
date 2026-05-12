@@ -10,6 +10,11 @@ class Club(db.Model):
     sport = db.Column(db.String(100), default='Fútbol') # El deporte se define a nivel club
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Monetization fields
+    subscription_status = db.Column(db.String(20), default='TRIAL') # ACTIVE, INACTIVE, TRIAL, EXPIRED
+    plan_type = db.Column(db.String(20), default='BASIC') # BASIC, PRO, UNLIMITED
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
+    
     users = db.relationship('User', backref='club', lazy=True)
     groups = db.relationship('Group', backref='club', lazy=True)
     categories = db.relationship('Category', backref='club', lazy=True)

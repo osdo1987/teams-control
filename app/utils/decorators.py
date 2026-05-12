@@ -18,3 +18,27 @@ def role_required(roles):
             return fn(*args, **kwargs)
         return wrapper
     return decorator
+
+def subscription_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        # Super Admin doesn't need a club subscription
+        if user and user.role == 'SUPER_ADMIN':
+            return fn(*args, **kwargs)
+            
+        if not user or not user.club:
+            return jsonify({"error": "Club association required"}), 403
+            
+        if user.club.subscription_status not in ['ACTIVE', 'TRIAL']:
+            return jsonify({
+                "error": "Subscription required", 
+                "status": user.club.subscription_status,
+                "message": "Su suscripción ha vencido. Contacte al administrador del sistema."
+            }), 402
+            
+        return fn(*args, **kwargs)
+    return wrapper

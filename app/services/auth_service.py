@@ -27,7 +27,8 @@ class AuthService:
                     "last_name": user.last_name,
                     "role": user.role,
                     "club_id": user.club_id,
-                    "club_name": club_name
+                    "club_name": club_name,
+                    "subscription_status": user.club.subscription_status if user.club else 'ACTIVE'
                 }
             }, 200
         return {"error": "Credenciales inválidas"}, 401

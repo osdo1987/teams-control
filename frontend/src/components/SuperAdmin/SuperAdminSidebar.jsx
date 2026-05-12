@@ -17,6 +17,11 @@ const SuperAdminSidebar = () => {
         <span className="sidebar-section-label">Main</span>
 
         <NavLink to="/super-admin" end className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+          <span className="nav-icon">📊</span>
+          Dashboard
+        </NavLink>
+
+        <NavLink to="/super-admin/clubs" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
           <span className="nav-icon">🏢</span>
           Clubes
         </NavLink>

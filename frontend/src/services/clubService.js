@@ -12,6 +12,17 @@ const clubService = {
       method: 'POST',
       body: JSON.stringify(clubData)
     });
+  },
+  updateClub: async (id, clubData) => {
+    return await api(`/clubs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(clubData)
+    });
+  },
+  deleteClub: async (id) => {
+    return await api(`/clubs/${id}`, {
+      method: 'DELETE'
+    });
   }
 };
 

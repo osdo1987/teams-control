@@ -52,8 +52,55 @@ def create_club():
         
     new_club = Club(
         name=data['name'],
-        description=data.get('description', '')
+        description=data.get('description', ''),
+        sport=data.get('sport', 'Fútbol')
     )
     db.session.add(new_club)
     db.session.commit()
     return jsonify(club_schema.dump(new_club)), 201
+
+@club_bp.route('/<int:club_id>', methods=['PUT'])
+@role_required(['SUPER_ADMIN'])
+def update_club(club_id):
+    """
+    Update Club (Super Admin Only)
+    """
+    club = Club.query.get_or_404(club_id)
+    data = request.get_json()
+    
+    if 'name' in data:
+        club.name = data['name']
+    if 'description' in data:
+        club.description = data['description']
+    if 'sport' in data:
+        club.sport = data['sport']
+    if 'subscription_status' in data:
+        club.subscription_status = data['subscription_status']
+    if 'plan_type' in data:
+        club.plan_type = data['plan_type']
+    if 'subscription_end_date' in data:
+        from datetime import datetime
+        try:
+            club.subscription_end_date = datetime.fromisoformat(data['subscription_end_date'])
+        except:
+            pass
+        
+    db.session.commit()
+    return jsonify(club_schema.dump(club)), 200
+
+@club_bp.route('/<int:club_id>', methods=['DELETE'])
+@role_required(['SUPER_ADMIN'])
+def delete_club(club_id):
+    """
+    Delete Club (Super Admin Only)
+    """
+    club = Club.query.get_or_404(club_id)
+    
+    # Check if there are users associated
+    user_count = User.query.filter_by(club_id=club_id).count()
+    if user_count > 0:
+        return jsonify({"error": f"Cannot delete club. It has {user_count} associated users."}), 400
+        
+    db.session.delete(club)
+    db.session.commit()
+    return jsonify({"message": "Club deleted successfully"}), 200

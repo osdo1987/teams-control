@@ -6,13 +6,14 @@ import AdminLayout from './components/Admin/AdminLayout';
 import DashboardHome from './pages/admin/DashboardHome';
 import AthleteList from './pages/admin/AthleteList';
 import GroupList from './pages/admin/GroupList';
-
 import UserList from './pages/admin/UserList';
 import TrainerList from './pages/admin/TrainerList';
 import PaymentList from './pages/admin/PaymentList';
 import AttendanceList from './pages/admin/AttendanceList';
 import SuperAdminLayout from './components/SuperAdmin/SuperAdminLayout';
 import ClubList from './pages/superadmin/ClubList';
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import SubscriptionGate from './components/UI/SubscriptionGate';
 
 // Placeholder for missing Dashboards
 const TrainerDashboard = () => <div className="card"><h2>Trainer Dashboard</h2><p>Welcome, Trainer!</p></div>;
@@ -34,7 +35,9 @@ function App() {
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <AdminLayout />
+            <SubscriptionGate status={authService.getCurrentUser()?.subscription_status}>
+              <AdminLayout />
+            </SubscriptionGate>
           </ProtectedRoute>
         }>
           <Route index element={<DashboardHome />} />
@@ -51,21 +54,24 @@ function App() {
             <SuperAdminLayout />
           </ProtectedRoute>
         }>
-          <Route index element={<ClubList />} />
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="clubs" element={<ClubList />} />
           <Route path="users" element={<UserList />} />
         </Route>
         
         <Route path="/trainer/*" element={
           <ProtectedRoute allowedRoles={['TRAINER']}>
-            <div className="app-container">
-              <div className="sidebar glass-panel">
-                <h3>Teams Control</h3>
-                <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
+            <SubscriptionGate status={authService.getCurrentUser()?.subscription_status}>
+              <div className="app-container">
+                <div className="sidebar glass-panel">
+                  <h3>Teams Control</h3>
+                  <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
+                </div>
+                <div className="main-content">
+                  <TrainerDashboard />
+                </div>
               </div>
-              <div className="main-content">
-                <TrainerDashboard />
-              </div>
-            </div>
+            </SubscriptionGate>
           </ProtectedRoute>
         } />
         
