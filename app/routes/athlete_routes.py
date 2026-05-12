@@ -156,7 +156,36 @@ def update_athlete(id):
         for k, v in data['athlete'].items():
             if hasattr(athlete, k):
                 setattr(athlete, k, v)
+    
+    # Lógica de transferencia automática de grupo
+    if 'group_id' in data:
+        new_group_id = data['group_id']
+        from app.models.group import Group, GroupHistory
+        from app.extensions import db
+        
+        new_group = Group.query.get(new_group_id)
+        if new_group:
+            # 1. Registrar salida de grupos actuales
+            for old_group in list(athlete.current_groups):
+                if old_group.id != new_group_id:
+                    # Registrar historial de salida
+                    db.session.add(GroupHistory(
+                        athlete_id=athlete.id,
+                        group_id=old_group.id,
+                        action="LEFT"
+                    ))
+                    athlete.current_groups.remove(old_group)
+            
+            # 2. Registrar entrada al nuevo grupo si no está ya
+            if new_group not in athlete.current_groups:
+                athlete.current_groups.append(new_group)
+                db.session.add(GroupHistory(
+                    athlete_id=athlete.id,
+                    group_id=new_group_id,
+                    action="JOINED"
+                ))
                 
+    from app.extensions import db
     db.session.commit()
     return jsonify(athlete_schema.dump(athlete)), 200
 

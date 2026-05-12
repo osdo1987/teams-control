@@ -140,24 +140,16 @@ def assign_athlete(group_id):
 @group_bp.route('/<int:group_id>/athletes', methods=['GET'])
 @jwt_required()
 def get_group_members(group_id):
-    """
-    Get All Athletes in a Group
-    ---
-    tags:
-      - Groups
-    security:
-      - JWT: []
-    parameters:
-      - name: group_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: List of athletes in the group
-    """
     athletes = GroupService.get_group_athletes(group_id)
     return jsonify(AthleteSchema(many=True).dump(athletes)), 200
+
+@group_bp.route('/history/athlete/<int:athlete_id>', methods=['GET'])
+@jwt_required()
+def get_athlete_history(athlete_id):
+    from app.models.group import GroupHistory
+    from app.schemas.group_schema import GroupHistorySchema
+    history = GroupHistory.query.filter_by(athlete_id=athlete_id).order_by(GroupHistory.date.desc()).all()
+    return jsonify(GroupHistorySchema(many=True).dump(history)), 200
 
 @group_bp.route('/change-athlete', methods=['POST'])
 @jwt_required()

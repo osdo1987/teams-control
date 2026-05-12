@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://localhost:5000/api';
+export const BASE_URL = '/api';
 
 // Simple api wrapper around fetch to handle token injection and auto-logout
 export const api = async (endpoint, options = {}) => {

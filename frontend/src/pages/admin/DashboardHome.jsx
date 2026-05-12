@@ -21,11 +21,11 @@ const DashboardHome = () => {
 
   const fetchStats = async () => {
     try {
-      const [athletes, groups, payments, trainers] = await Promise.all([
-        athleteService.getAthletes(),
-        groupService.getGroups(),
-        paymentService.getPayments(),
-        authService.getTrainers()
+      const [athletes = [], groups = [], payments = [], trainers = []] = await Promise.all([
+        athleteService.getAthletes().catch(() => []),
+        groupService.getGroups().catch(() => []),
+        paymentService.getPayments().catch(() => []),
+        authService.getTrainers().catch(() => [])
       ]);
 
       const now = new Date();
