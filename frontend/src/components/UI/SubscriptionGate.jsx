@@ -28,7 +28,7 @@ const SubscriptionGate = ({ children, status }) => {
           </p>
           <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '30px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-              Estado Actual: <span style={{ color: 'var(--danger-color)' }}>{status === 'EXPIRED' ? 'Vencido' : 'Inactivo'}</span>
+              Estado Actual: <span style={{ color: 'var(--danger-color)' }}>{status === 'EXPIRED' ? 'Vencido' : (status || 'Indefinido')}</span>
             </p>
           </div>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>

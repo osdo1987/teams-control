@@ -53,9 +53,9 @@ def get_global_stats():
             "plan_type": club.plan_type
         })
 
-    # Financial Projection based on active plans
-    # BASIC: 30, PRO: 70, UNLIMITED: 150
-    plan_prices = {"BASIC": 30, "PRO": 70, "UNLIMITED": 150}
+    # Financial Projection in COP
+    # BASIC: 120.000, PRO: 280.000, UNLIMITED: 600.000, FLEXIBLE: 500 per athlete
+    plan_prices = {"BASIC": 120000, "PRO": 280000, "UNLIMITED": 600000}
     projected_revenue = 0
     active_subscriptions = 0
     expired_subscriptions = 0
@@ -64,7 +64,11 @@ def get_global_stats():
         if club.subscription_status in ['ACTIVE', 'TRIAL']:
             active_subscriptions += 1
             if club.subscription_status == 'ACTIVE':
-                projected_revenue += plan_prices.get(club.plan_type, 0)
+                if club.plan_type == 'FLEXIBLE':
+                    athlete_count = User.query.filter_by(club_id=club.id, role='ATHLETE').count()
+                    projected_revenue += (athlete_count * 1000)
+                else:
+                    projected_revenue += plan_prices.get(club.plan_type, 0)
         else:
             expired_subscriptions += 1
 

@@ -30,6 +30,11 @@ const SuperAdminSidebar = () => {
           <span className="nav-icon">👤</span>
           Usuarios Globales
         </NavLink>
+
+        <NavLink to="/super-admin/pricing" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+          <span className="nav-icon">💳</span>
+          Planes y Cobros
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">

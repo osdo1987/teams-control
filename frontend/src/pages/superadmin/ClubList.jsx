@@ -99,9 +99,10 @@ const ClubList = () => {
 
   const getPlanBadge = (plan) => {
     switch (plan) {
-      case 'BASIC': return <span className="badge badge-info">Basic ($30)</span>;
-      case 'PRO': return <span className="badge badge-purple">Pro ($70)</span>;
-      case 'UNLIMITED': return <span className="badge badge-warning">Unlimited ($150)</span>;
+      case 'BASIC': return <span className="badge badge-info">Basic ($120.000)</span>;
+      case 'PRO': return <span className="badge badge-purple">Pro ($280.000)</span>;
+      case 'FLEXIBLE': return <span className="badge badge-pink">Flexible ($1.000 p/a)</span>;
+      case 'UNLIMITED': return <span className="badge badge-warning">Unlimited ($600.000)</span>;
       default: return <span className="badge">{plan}</span>;
     }
   };
@@ -228,9 +229,10 @@ const ClubList = () => {
                     value={formData.plan_type}
                     onChange={(e) => setFormData({ ...formData, plan_type: e.target.value })}
                 >
-                    <option value="BASIC">Básico ($30)</option>
-                    <option value="PRO">Profesional ($70)</option>
-                    <option value="UNLIMITED">Ilimitado ($150)</option>
+                    <option value="BASIC">Básico ($120.000)</option>
+                    <option value="PRO">Profesional ($280.000)</option>
+                    <option value="FLEXIBLE">Flexible ($1.000 x Atleta)</option>
+                    <option value="UNLIMITED">Ilimitado ($600.000)</option>
                 </select>
                 </div>
             </div>
@@ -270,6 +272,7 @@ const ClubList = () => {
 
       <style>{`
         .badge-purple { background: #f3e8ff; color: #7e22ce; }
+        .badge-pink { background: #fce7f3; color: #db2777; }
         .section-divider { width: 100%; height: 1px; background: var(--border-color); }
       `}</style>
     </div>

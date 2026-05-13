@@ -13,6 +13,7 @@ import AttendanceList from './pages/admin/AttendanceList';
 import SuperAdminLayout from './components/SuperAdmin/SuperAdminLayout';
 import ClubList from './pages/superadmin/ClubList';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
+import PricingPlans from './pages/superadmin/PricingPlans';
 import SubscriptionGate from './components/UI/SubscriptionGate';
 
 // Placeholder for missing Dashboards
@@ -28,6 +29,23 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 function App() {
+  const [user, setUser] = React.useState(authService.getCurrentUser());
+
+  // Listen for storage changes (for multiple tabs) or manual updates
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      setUser(authService.getCurrentUser());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    // Also update when the route changes to catch logins in the same tab
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Update user when navigating back from login
+  React.useEffect(() => {
+    setUser(authService.getCurrentUser());
+  }, [window.location.pathname]);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -35,7 +53,7 @@ function App() {
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <SubscriptionGate status={authService.getCurrentUser()?.subscription_status}>
+            <SubscriptionGate status={user?.subscription_status}>
               <AdminLayout />
             </SubscriptionGate>
           </ProtectedRoute>
@@ -57,11 +75,12 @@ function App() {
           <Route index element={<SuperAdminDashboard />} />
           <Route path="clubs" element={<ClubList />} />
           <Route path="users" element={<UserList />} />
+          <Route path="pricing" element={<PricingPlans />} />
         </Route>
         
         <Route path="/trainer/*" element={
           <ProtectedRoute allowedRoles={['TRAINER']}>
-            <SubscriptionGate status={authService.getCurrentUser()?.subscription_status}>
+            <SubscriptionGate status={user?.subscription_status}>
               <div className="app-container">
                 <div className="sidebar glass-panel">
                   <h3>Teams Control</h3>

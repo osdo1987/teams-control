@@ -19,18 +19,19 @@ export const api = async (endpoint, options = {}) => {
       headers
     });
 
-    // Auto logout on 401 or 422 if it relates to JWT expiration
-    if (response.status === 401) {
+    const data = await response.json();
+
+    // Auto-logout ONLY when a previously authenticated request fails with 401
+    // (token expired / invalid). Do NOT auto-logout on the login endpoint itself.
+    if (response.status === 401 && token && !endpoint.includes('/auth/login')) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      window.location.href = '/login'; // Force redirect to login
+      window.location.href = '/login';
       return null;
     }
 
-    const data = await response.json();
-    
     if (!response.ok) {
-      throw new Error(data.error || 'API Error');
+      throw new Error(data.error || data.message || 'Error en la solicitud');
     }
 
     return data;
