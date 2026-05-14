@@ -19,7 +19,7 @@ def get_all_clubs():
     clubs = Club.query.all()
     result = []
     for club in clubs:
-        club_data = clubs_schema.dump([club])[0]
+        club_data = club_schema.dump(club)
         # Add some stats
         club_data['user_count'] = User.query.filter_by(club_id=club.id).count()
         club_data['group_count'] = len(club.groups)
