@@ -12,10 +12,19 @@ class AuthService:
         if user and user.check_password(password):
             access_token = create_access_token(identity=str(user.id))
             
-            # Obtener nombre del club
+            # Obtener datos del club
             club_name = "Global"
-            if user.club:
-                club_name = user.club.name
+            subscription_status = "ACTIVE"
+            
+            if user.club_id:
+                from app.models.club import Club
+                club = Club.query.get(user.club_id)
+                if club:
+                    club_name = club.name
+                    subscription_status = club.subscription_status or "TRIAL"
+                
+            # Log para depuración en producción
+            print(f"DEBUG LOGIN: User {user.identification_number} - Club: {club_name} - Status: {subscription_status}")
 
             return {
                 "access_token": access_token,
@@ -28,7 +37,7 @@ class AuthService:
                     "role": user.role,
                     "club_id": user.club_id,
                     "club_name": club_name,
-                    "subscription_status": user.club.subscription_status if user.club else 'ACTIVE'
+                    "subscription_status": subscription_status
                 }
             }, 200
         return {"error": "Credenciales inválidas"}, 401

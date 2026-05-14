@@ -170,13 +170,13 @@ def seed_database():
         print("   ✓ Super Admin")
 
         # ══════════════════════════════════════════════════════════════════════
-        # CLUB 1 — TROYA VOLEY  (PRO / ACTIVE)
-        # ══════════════════════════════════════════════════════════════════════
-        print("\n📌 Club 1: Troya Voley")
+        today_dt = datetime.combine(date.today(), datetime.min.time())
+        end_dt = datetime(2026, 12, 31, 23, 59, 59)
+
         c1 = Club(name="Troya Voley", sport="Voleibol",
                   description="Club de voleibol femenino formativo y competitivo de Medellín.",
                   subscription_status="ACTIVE", plan_type="PRO",
-                  subscription_end_date=date(2026,12,31))
+                  subscription_end_date=end_dt)
         db.session.add(c1); db.session.flush()
 
         cat_jv  = Category(name="Juvenil",    club_id=c1.id)
@@ -250,7 +250,7 @@ def seed_database():
         c2 = Club(name="Águilas FC Bogotá", sport="Fútbol",
                   description="Academia de fútbol masculino en la ciudad de Bogotá.",
                   subscription_status="ACTIVE", plan_type="PRO",
-                  subscription_end_date=date(2026,11,30))
+                  subscription_end_date=datetime(2026,11,30,23,59,59))
         db.session.add(c2); db.session.flush()
 
         cat2_sub  = Category(name="Sub-17",  club_id=c2.id)
@@ -320,7 +320,7 @@ def seed_database():
         c3 = Club(name="Academia Náutica Caribe", sport="Natación",
                   description="Escuela de natación y deportes acuáticos en Barranquilla.",
                   subscription_status="TRIAL", plan_type="BASIC",
-                  subscription_end_date=today + timedelta(days=20))
+                  subscription_end_date=datetime.now() + timedelta(days=20))
         db.session.add(c3); db.session.flush()
 
         cat3_n = Category(name="Novatos",     club_id=c3.id)
@@ -376,7 +376,7 @@ def seed_database():
         c4 = Club(name="Tigres de Ibagué FC", sport="Fútbol",
                   description="Club de fútbol con larga trayectoria en Ibagué, Tolima.",
                   subscription_status="EXPIRED", plan_type="BASIC",
-                  subscription_end_date=today - timedelta(days=10))
+                  subscription_end_date=datetime.now() - timedelta(days=10))
         db.session.add(c4); db.session.flush()
 
         cat4_j = Category(name="Juvenil", club_id=c4.id)
