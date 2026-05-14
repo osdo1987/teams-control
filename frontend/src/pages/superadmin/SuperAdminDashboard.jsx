@@ -39,7 +39,7 @@ const SuperAdminDashboard = () => {
             <header className="dashboard-top-bar">
                 <div className="welcome-text">
                     <h1>Panel Maestro</h1>
-                    <p>SportClub Global Management System • {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                    <p>Club Manager Global Management System • {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                 </div>
                 <div className="top-actions">
                     <button className="btn-icon" title="Notificaciones">🔔</button>

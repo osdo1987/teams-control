@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/authService';
 import Login from './pages/Login';
+import LandingPage from './pages/LandingPage';
 import AdminLayout from './components/Admin/AdminLayout';
 import DashboardHome from './pages/admin/DashboardHome';
 import AthleteList from './pages/admin/AthleteList';
@@ -40,6 +41,8 @@ function App() {
     // Also update when the route changes to catch logins in the same tab
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  const isAppSubdomain = window.location.hostname.startsWith('club-manager');
 
   // Update user when navigating back from login
   React.useEffect(() => {
@@ -83,7 +86,7 @@ function App() {
             <SubscriptionGate status={user?.subscription_status}>
               <div className="app-container">
                 <div className="sidebar glass-panel">
-                  <h3>Teams Control</h3>
+                  <h3>Club Manager</h3>
                   <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
                 </div>
                 <div className="main-content">
@@ -98,7 +101,7 @@ function App() {
           <ProtectedRoute allowedRoles={['ATHLETE']}>
              <div className="app-container">
               <div className="sidebar glass-panel">
-                <h3>Teams Control</h3>
+                <h3>Club Manager</h3>
                 <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
               </div>
               <div className="main-content">
@@ -109,9 +112,9 @@ function App() {
         } />
 
 
-        {/* Root redirect based on role */}
+        {/* Root logic: Landing Page for osdosoft.com, Login for subdomain */}
         <Route path="/" element={
-          <Navigate to="/login" replace />
+          isAppSubdomain ? <Navigate to="/login" replace /> : <LandingPage />
         } />
       </Routes>
     </BrowserRouter>

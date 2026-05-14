@@ -9,7 +9,7 @@ const SuperAdminSidebar = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <h2>SportClub</h2>
+        <h2>Club Manager</h2>
         <p>Super Admin</p>
       </div>
 

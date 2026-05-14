@@ -5,7 +5,7 @@ import { authService } from '../../services/authService';
 const AdminSidebar = () => {
   const user = authService.getCurrentUser();
   const initials = user?.first_name?.[0]?.toUpperCase() || 'A';
-  const clubName = user?.club_name || 'SportClub';
+  const clubName = user?.club_name || 'Club Manager';
 
   return (
     <aside className="sidebar">

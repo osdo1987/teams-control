@@ -53,7 +53,7 @@ const Login = () => {
             ⚽
           </div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', marginBottom: 12, letterSpacing: '-0.03em' }}>
-            SportClub
+            Club Manager
           </h1>
           <p style={{ color: 'rgba(160,174,192,0.9)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 320 }}>
             Sistema de gestión integral para clubes deportivos. Administra atletas, grupos, pagos y asistencia desde un solo lugar.
