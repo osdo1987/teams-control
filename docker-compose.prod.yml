@@ -21,15 +21,19 @@ services:
       dockerfile: Dockerfile
     container_name: teams_frontend_prod
     restart: always
-    ports:
-      - "8081:80"
+    # No es necesario exponer puertos al host ya que el Nginx Proxy se conecta por la red interna
+    # ports:
+    #   - "8081:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - api
     networks:
       - teams_network
+      - osdosoft_public
 
 networks:
   teams_network:
     driver: bridge
+  osdosoft_public:
+    external: true
