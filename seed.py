@@ -209,6 +209,25 @@ def seed_database():
         ))
         db.session.flush()
 
+        # Entrenador adicional para Troya Voley
+        trainer1_u = User(email="coach@troyavoley.com", identification_number="1134567890",
+                          first_name="Carlos", last_name="Mendoza", role="TRAINER",
+                          club_id=c1.id, phone="3105678901")
+        trainer1_u.set_password("trainer123"); db.session.add(trainer1_u); db.session.flush()
+        db.session.add(TrainerProfile(
+            user_id=trainer1_u.id, birth_date=date(1988,11,3), gender="Masculino",
+            city="Medellín", state="Antioquia", specialization="Voleibol",
+            education_level="Profesional", institution="Universidad de Antioquia",
+            degree_title="Licenciatura en Educación Física", graduation_year=2012,
+            years_of_experience=12,
+            certifications="Certificación FIVB Nivel 1, Primeros Auxilios",
+            bio="Entrenador de voleibol con experiencia en categorías formativas.",
+            hire_date=date(2024,2,15), contract_type="Tiempo completo",
+            salary=3200000, payment_frequency="Mensual", bank_name="Bancolombia",
+            status="ACTIVE"
+        ))
+        db.session.flush()
+
         ga = Group(name="Grupo A – Juvenil", club_id=c1.id, category_id=cat_jv.id,
                    description="Competencia juvenil.", max_capacity=12,
                    schedule="Lun-Mie-Vie 5PM", schedule_days="Lunes,Miércoles,Viernes",
@@ -225,6 +244,7 @@ def seed_database():
                    monthly_fee=90000, status="ACTIVE")
         db.session.add_all([ga, gb]); db.session.flush()
         ga.trainers.append(daniela); gb.trainers.append(daniela)
+        ga.trainers.append(trainer1_u)
 
         c1_athletes = [
             ("Laura",     "Ospina",    "A"),("Valentina","Restrepo",  "A"),
@@ -387,6 +407,21 @@ def seed_database():
                    club_id=c4.id, phone="3123456789")
         her.set_password("admin123"); db.session.add(her); db.session.flush()
 
+        # Entrenador para Tigres de Ibagué
+        trainer4_u = User(email="coach@tigresibage.com", identification_number="1122334455",
+                          first_name="Jorge", last_name="Ramírez", role="TRAINER",
+                          club_id=c4.id, phone="3135678901")
+        trainer4_u.set_password("trainer123"); db.session.add(trainer4_u); db.session.flush()
+        db.session.add(TrainerProfile(
+            user_id=trainer4_u.id, birth_date=date(1987,9,12), gender="Masculino",
+            city="Ibagué", state="Tolima", specialization="Fútbol",
+            education_level="Técnico", institution="SENA",
+            years_of_experience=10, hire_date=date(2023,8,1),
+            contract_type="Tiempo completo", salary=2500000,
+            payment_frequency="Mensual", bank_name="Bancolombia", status="ACTIVE"
+        ))
+        db.session.flush()
+
         ge1 = Group(name="Categoría Juvenil", club_id=c4.id, category_id=cat4_j.id,
                     description="Equipo principal juvenil.", max_capacity=18,
                     schedule="Mar-Jue 5PM", schedule_days="Martes,Jueves",
@@ -395,6 +430,7 @@ def seed_database():
                     level="Intermedio", season="2026 - Primer Semestre",
                     monthly_fee=80000, status="ACTIVE")
         db.session.add(ge1); db.session.flush()
+        ge1.trainers.append(trainer4_u)
 
         c4_athletes = [
             ("Yeison",    "Mosquera",  "J"),("Brayan",    "Ríos",     "J"),

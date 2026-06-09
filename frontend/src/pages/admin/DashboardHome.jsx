@@ -80,38 +80,38 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #3b82f6' }}>
-          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>ATLETAS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.athletes}</div>
-          <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginTop: '4px' }}>Registrados activamente</div>
+      <div className="stat-grid">
+        <div className="stat-card" style={{ borderBottom: '4px solid var(--primary-color)' }}>
+          <div className="stat-label">ATLETAS</div>
+          <div className="stat-value">{stats.athletes}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--primary-color)', marginTop: '4px' }}>Registrados activamente</div>
         </div>
-        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #10b981' }}>
-          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>GRUPOS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.groups}</div>
-          <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '4px' }}>Equipos en entrenamiento</div>
+        <div className="stat-card" style={{ borderBottom: '4px solid var(--success-color)' }}>
+          <div className="stat-label">GRUPOS</div>
+          <div className="stat-value">{stats.groups}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '4px' }}>Equipos en entrenamiento</div>
         </div>
-        <div className="card" style={{ padding: '24px', borderBottom: '4px solid #8b5cf6' }}>
-          <div className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600 }}>ENTRENADORES</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800 }}>{stats.trainers}</div>
+        <div className="stat-card" style={{ borderBottom: '4px solid #8b5cf6' }}>
+          <div className="stat-label">ENTRENADORES</div>
+          <div className="stat-value">{stats.trainers}</div>
           <div style={{ fontSize: '0.75rem', color: '#8b5cf6', marginTop: '4px' }}>Personal técnico</div>
         </div>
       </div>
 
-      <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', fontWeight: 700 }}>Resumen Financiero del Mes</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        <div className="card" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '24px', background: '#f0fdf4' }}>
+      <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', fontWeight: 700 }}>Resumen Financiero del Mes</h2>
+      <div className="stat-grid">
+        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#f0fdf4' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>💰</div>
           <div>
-            <div style={{ color: '#166534', fontWeight: 600, fontSize: '0.9rem' }}>RECAUDACIÓN ACTUAL</div>
-            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#14532d' }}>${stats.recap.toLocaleString()}</div>
+            <div style={{ color: '#166534', fontWeight: 600, fontSize: '0.875rem' }}>RECAUDACIÓN ACTUAL</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#14532d', lineHeight: 1 }}>${stats.recap.toLocaleString()}</div>
           </div>
         </div>
-        <div className="card" style={{ padding: '30px', display: 'flex', alignItems: 'center', gap: '24px', background: '#fffbeb' }}>
+        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#fffbeb' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>⏳</div>
           <div>
-            <div style={{ color: '#92400e', fontWeight: 600, fontSize: '0.9rem' }}>PENDIENTE POR COBRAR</div>
-            <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#78350f' }}>${stats.pending.toLocaleString()}</div>
+            <div style={{ color: '#92400e', fontWeight: 600, fontSize: '0.875rem' }}>PENDIENTE POR COBRAR</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#78350f', lineHeight: 1 }}>${stats.pending.toLocaleString()}</div>
           </div>
         </div>
       </div>

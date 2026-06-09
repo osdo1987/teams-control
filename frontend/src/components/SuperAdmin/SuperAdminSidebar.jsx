@@ -1,6 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import { IconHome, IconUsers, IconCreditCard, IconLogOut, IconZap, IconBuilding } from '../Icons';
+
+const links = [
+  { to: '/super-admin', end: true, icon: IconHome, label: 'Dashboard' },
+  { to: '/super-admin/clubs', icon: IconBuilding, label: 'Clubes' },
+  { to: '/super-admin/users', icon: IconUsers, label: 'Usuarios Globales' },
+  { to: '/super-admin/pricing', icon: IconCreditCard, label: 'Planes y Cobros' },
+];
 
 const SuperAdminSidebar = () => {
   const user = authService.getCurrentUser();
@@ -8,41 +16,32 @@ const SuperAdminSidebar = () => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
-        <h2>Club Manager</h2>
-        <p>Super Admin</p>
-      </div>
-
-      <nav className="sidebar-nav">
-        <span className="sidebar-section-label">Main</span>
-
-        <NavLink to="/super-admin" end className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <span className="nav-icon">📊</span>
-          Dashboard
-        </NavLink>
-
-        <NavLink to="/super-admin/clubs" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <span className="nav-icon">🏢</span>
-          Clubes
-        </NavLink>
-
-        <NavLink to="/super-admin/users" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <span className="nav-icon">👤</span>
-          Usuarios Globales
-        </NavLink>
-
-        <NavLink to="/super-admin/pricing" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-          <span className="nav-icon">💳</span>
-          Planes y Cobros
-        </NavLink>
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="sidebar-avatar" style={{ background: 'var(--accent-color)' }}>{initials}</div>
-        <div className="sidebar-footer-info">
-          <p>{user?.email?.split('@')[0] || 'SuperAdmin'}</p>
-          <button className="logout-btn" onClick={() => authService.logout()}>Cerrar Sesión</button>
+      <div className="sidebar-brand">
+        <div className="brand-mark"><IconZap size={22} /></div>
+        <div className="brand-text">
+          <span className="name">Club Manager</span>
+          <span className="tag">Super Admin</span>
         </div>
+      </div>
+      <nav className="sidebar-nav">
+        <span className="sidebar-section">Main</span>
+        {links.map((l) => (
+          <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
+            <l.icon size={19} />{l.label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div className="avatar avatar-sm" style={{ background: 'var(--brand-600)' }}>{initials}</div>
+          <div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{user?.email?.split('@')[0] || 'SuperAdmin'}</div>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>SUPER_ADMIN</div>
+          </div>
+        </div>
+        <button className="logout-btn" onClick={() => authService.logout()}>
+          <IconLogOut size={18} /> Cerrar Sesion
+        </button>
       </div>
     </aside>
   );

@@ -4,10 +4,12 @@ import SuperAdminSidebar from './SuperAdminSidebar';
 
 const SuperAdminLayout = () => {
   return (
-    <div className="app-container">
+    <div className="app-shell">
       <SuperAdminSidebar />
-      <div className="main-content">
-        <Outlet />
+      <div className="app-main">
+        <div className="app-content">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

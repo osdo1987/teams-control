@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { IconLock, IconIdCard, IconAlertCircle, IconZap, IconUsers, IconCreditCard, IconClipboard, IconArrowRight, IconSun, IconMoon } from '../components/Icons';
+
+const DEMO_USERS = [
+  { id: '0000000001', pass: 'super123', label: 'Super Admin', role: 'SUPER_ADMIN' },
+  { id: '1140892301', pass: 'admin123', label: 'Admin — Troya Voley', role: 'ADMIN' },
+  { id: '79854321', pass: 'admin123', label: 'Admin — Águilas FC', role: 'ADMIN' },
+  { id: '32876543', pass: 'admin123', label: 'Admin — Náutica Caribe', role: 'ADMIN' },
+];
 
 const Login = () => {
   const [identificationNumber, setIdentificationNumber] = useState('');
@@ -26,103 +34,102 @@ const Login = () => {
     }
   };
 
+  const fillDemo = (u) => {
+    setIdentificationNumber(u.id);
+    setPassword(u.pass);
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      background: 'var(--bg-main)',
-    }}>
-      {/* Left panel */}
-      <div style={{
-        width: '50%',
-        background: 'var(--sidebar-bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '60px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Decorative blobs */}
-        <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: 320, height: 320, borderRadius: '50%', background: 'rgba(37,99,235,0.15)', filter: 'blur(60px)' }} />
-        <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: 240, height: 240, borderRadius: '50%', background: 'rgba(139,92,246,0.15)', filter: 'blur(50px)' }} />
-
-        <div style={{ position: 'relative', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', margin: '0 auto 24px', boxShadow: '0 8px 24px rgba(37,99,235,0.4)' }}>
-            ⚽
+    <div className="auth-screen animate-fade-in">
+      <div className="auth-side">
+        <div className="auth-brand">
+          <div className="brand-mark">
+            <IconZap size={22} />
           </div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', marginBottom: 12, letterSpacing: '-0.03em' }}>
-            Club Manager
-          </h1>
-          <p style={{ color: 'rgba(160,174,192,0.9)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 320 }}>
-            Sistema de gestión integral para clubes deportivos. Administra atletas, grupos, pagos y asistencia desde un solo lugar.
-          </p>
-
-          {/* Feature bullets */}
-          <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
-            {[['👥', 'Gestión de Atletas y Grupos'],['💳', 'Control de Pagos y Cuotas'],['📋', 'Registro de Asistencia'],['🏅', 'Perfiles de Entrenadores']].map(([icon, text]) => (
-              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>{icon}</div>
-                <span style={{ color: 'rgba(248,250,252,0.75)', fontSize: '0.9rem', fontWeight: 500 }}>{text}</span>
-              </div>
-            ))}
+          <h1>Club Manager</h1>
+        </div>
+        <div className="auth-content">
+          <h2>Gestión deportiva sin fricción.</h2>
+          <p>Administra atletas, entrenadores, pagos y asistencia desde una plataforma diseñada para clubes modernos.</p>
+          <div className="auth-features">
+            <div className="auth-feature">
+              <div className="icon"><IconUsers size={18} /></div>
+              <span>Gestión integral de atletas y grupos</span>
+            </div>
+            <div className="auth-feature">
+              <div className="icon"><IconCreditCard size={18} /></div>
+              <span>Control de pagos y mensualidades</span>
+            </div>
+            <div className="auth-feature">
+              <div className="icon"><IconClipboard size={18} /></div>
+              <span>Registro de asistencia en segundos</span>
+            </div>
           </div>
         </div>
+        <div className="auth-footer">© 2026 Osdosoft · Todos los derechos reservados</div>
       </div>
 
-      {/* Right panel – form */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '60px 80px',
-      }}>
-        <div style={{ width: '100%', maxWidth: 400 }}>
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>Bienvenido 👋</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 36, fontSize: '0.95rem' }}>Ingresa con tu número de identificación</p>
+      <div className="auth-form-side">
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="welcome">
+            <h2>Bienvenido de vuelta</h2>
+            <p>Ingresa con tu número de identificación para continuar</p>
+          </div>
 
           {error && (
-            <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: '0.875rem', fontWeight: 500, border: '1px solid #fecaca' }}>
-              {error}
+            <div className="auth-error">
+              <IconAlertCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <div className="form-group">
-              <label className="form-label">Número de Identificación</label>
-              <input 
-                type="text" 
-                value={identificationNumber} 
-                onChange={e => setIdentificationNumber(e.target.value)} 
-                className="form-input" 
-                placeholder="Ej: 1234567890" 
-                required 
+          <div className="form-group">
+            <label className="form-label">Número de identificación</label>
+            <div className="input-with-icon">
+              <IconIdCard size={18} />
+              <input
+                type="text"
+                className="form-input"
+                value={identificationNumber}
+                onChange={(e) => setIdentificationNumber(e.target.value)}
+                placeholder="Ej: 1140892301"
+                required
                 autoComplete="username"
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>
-                Ingrese su cédula, DNI o documento de identidad
-              </span>
             </div>
-            <div className="form-group">
-              <label className="form-label">Contraseña</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                className="form-input" 
-                placeholder="••••••••" 
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Contraseña</label>
+            <div className="input-with-icon">
+              <IconLock size={18} />
+              <input
+                type="password"
+                className="form-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 required
-                autoComplete="current-password" 
+                autoComplete="current-password"
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', padding: '13px', fontSize: '0.95rem', marginTop: 4 }}>
-              {loading ? 'Ingresando...' : 'Ingresar →'}
-            </button>
-          </form>
-        </div>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
+            {loading ? <><span className="spinner" style={{ borderTopColor: 'white' }} /> Ingresando...</> : <>Ingresar <IconArrowRight size={16} /></>}
+          </button>
+
+          <div className="demo-creds">
+            <div className="label">⚡ Acceso rápido (demo)</div>
+            {DEMO_USERS.map((u) => (
+              <div className="row" key={u.id} style={{ marginTop: 6 }}>
+                <code onClick={() => fillDemo(u)} title="Clic para autocompletar">{u.id}</code>
+                <code onClick={() => fillDemo(u)} title="Clic para autocompletar">{u.pass}</code>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{u.label}</span>
+              </div>
+            ))}
+          </div>
+        </form>
       </div>
     </div>
   );

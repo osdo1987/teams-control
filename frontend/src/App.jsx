@@ -25,38 +25,21 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = authService.getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/login" replace />;
-  
+
   return children;
 };
 
 function App() {
-  const [user, setUser] = React.useState(authService.getCurrentUser());
-
-  // Listen for storage changes (for multiple tabs) or manual updates
-  React.useEffect(() => {
-    const handleStorageChange = () => {
-      setUser(authService.getCurrentUser());
-    };
-    window.addEventListener('storage', handleStorageChange);
-    // Also update when the route changes to catch logins in the same tab
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
   const isAppSubdomain = window.location.hostname.startsWith('club-manager');
-
-  // Update user when navigating back from login
-  React.useEffect(() => {
-    setUser(authService.getCurrentUser());
-  }, [window.location.pathname]);
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        
+
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <SubscriptionGate status={user?.subscription_status}>
+            <SubscriptionGate>
               <AdminLayout />
             </SubscriptionGate>
           </ProtectedRoute>
@@ -69,7 +52,7 @@ function App() {
           <Route path="payments" element={<PaymentList />} />
           <Route path="attendance" element={<AttendanceList />} />
         </Route>
-        
+
         <Route path="/super-admin" element={
           <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
             <SuperAdminLayout />
@@ -80,37 +63,58 @@ function App() {
           <Route path="users" element={<UserList />} />
           <Route path="pricing" element={<PricingPlans />} />
         </Route>
-        
+
         <Route path="/trainer/*" element={
           <ProtectedRoute allowedRoles={['TRAINER']}>
-            <SubscriptionGate status={user?.subscription_status}>
-              <div className="app-container">
-                <div className="sidebar glass-panel">
-                  <h3>Club Manager</h3>
-                  <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
-                </div>
-                <div className="main-content">
-                  <TrainerDashboard />
+            <SubscriptionGate>
+              <div className="app-shell">
+                <aside className="sidebar">
+                  <div className="sidebar-brand">
+                    <div className="brand-mark">⚡</div>
+                    <div className="brand-text">
+                      <span className="name">Club Manager</span>
+                      <span className="tag">Trainer</span>
+                    </div>
+                  </div>
+                  <nav className="sidebar-nav">
+                    <div style={{ flex: 1 }}></div>
+                    <button className="logout-btn" onClick={() => authService.logout()}>🚪 Cerrar Sesión</button>
+                  </nav>
+                </aside>
+                <div className="app-main">
+                  <div className="app-content">
+                    <TrainerDashboard />
+                  </div>
                 </div>
               </div>
             </SubscriptionGate>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/athlete/*" element={
           <ProtectedRoute allowedRoles={['ATHLETE']}>
-             <div className="app-container">
-              <div className="sidebar glass-panel">
-                <h3>Club Manager</h3>
-                <button className="btn" style={{marginTop: '2rem'}} onClick={() => authService.logout()}>Logout</button>
-              </div>
-              <div className="main-content">
-                <AthleteDashboard />
+            <div className="app-shell">
+              <aside className="sidebar">
+                <div className="sidebar-brand">
+                  <div className="brand-mark">⚡</div>
+                  <div className="brand-text">
+                    <span className="name">Club Manager</span>
+                    <span className="tag">Atleta</span>
+                  </div>
+                </div>
+                <nav className="sidebar-nav">
+                  <div style={{ flex: 1 }}></div>
+                  <button className="logout-btn" onClick={() => authService.logout()}>🚪 Cerrar Sesión</button>
+                </nav>
+              </aside>
+              <div className="app-main">
+                <div className="app-content">
+                  <AthleteDashboard />
+                </div>
               </div>
             </div>
           </ProtectedRoute>
         } />
-
 
         {/* Root logic: Landing Page for osdosoft.com, Login for subdomain */}
         <Route path="/" element={

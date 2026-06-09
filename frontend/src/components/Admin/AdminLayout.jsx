@@ -4,10 +4,12 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminLayout = () => {
   return (
-    <div className="app-container">
+    <div className="app-shell">
       <AdminSidebar />
-      <div className="main-content">
-        <Outlet />
+      <div className="app-main">
+        <div className="app-content">
+          <Outlet />
+        </div>
       </div>
     </div>
   );
