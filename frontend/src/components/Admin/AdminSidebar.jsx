@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
-import { IconHome, IconTrophy, IconUsers, IconUserCheck, IconLogOut, IconZap, IconUser, IconDollarSign, IconCalendar } from '../Icons';
+import { IconHome, IconTrophy, IconUsers, IconUserCheck, IconLogOut, IconZap, IconUser, IconDollarSign, IconCalendar, IconActivity } from '../Icons';
 
 const links = [
   { t: 'link', to: '/admin', end: true, icon: IconHome, label: 'Dashboard' },
@@ -11,14 +11,24 @@ const links = [
   { t: 'link', to: '/admin/trainers', icon: IconUserCheck, label: 'Entrenadores' },
   { t: 'link', to: '/admin/payments', icon: IconDollarSign, label: 'Pagos' },
   { t: 'link', to: '/admin/attendance', icon: IconCalendar, label: 'Asistencia' },
+  { t: 'link', to: '/admin/tests', icon: IconActivity, label: 'Tests' },
 ];
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ open, onClose }) => {
   const user = authService.getCurrentUser();
   const initials = ((user?.first_name || 'A')[0] + (user?.last_name || '')[0]).toUpperCase();
   const cn = user?.club_name || 'Club Manager';
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? ' open' : ''}`}>
+      {/* Close button — only visible on mobile via CSS */}
+      <button
+        className="sidebar-close-mobile"
+        onClick={onClose}
+        aria-label="Cerrar menú"
+      >
+        ✕
+      </button>
+
       <div className="sidebar-brand">
         <div className="brand-mark"><IconZap size={22} /></div>
         <div className="brand-text">

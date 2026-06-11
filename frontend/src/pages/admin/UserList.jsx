@@ -6,25 +6,25 @@ import { authService } from '../../services/authService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 
-const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9'];
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
 const initials = (f = '?', l = '?') => `${f?.[0] || '?'}${l?.[0] || '?'}`.toUpperCase();
 
 const ROLE_BADGE = {
-  ADMIN:   'badge badge-danger',
+  ADMIN: 'badge badge-danger',
   TRAINER: 'badge badge-primary',
   ATHLETE: 'badge badge-success',
   SUPER_ADMIN: 'badge badge-primary',
 };
 
 const INITIAL_FORM = {
-  identification_number: '', 
-  email: '', 
-  password: '', 
-  first_name: '', 
+  identification_number: '',
+  email: '',
+  password: '',
+  first_name: '',
   last_name: '',
-  role: 'ATHLETE', 
-  club_id: '', 
+  role: 'ATHLETE',
+  club_id: '',
   group_id: '',
   phone: ''
 };
@@ -51,8 +51,8 @@ const UserList = () => {
     return matchesSearch && matchesClub;
   });
 
-  useEffect(() => { 
-    fetchInitialData(); 
+  useEffect(() => {
+    fetchInitialData();
   }, []);
 
   const fetchInitialData = async () => {
@@ -65,10 +65,10 @@ const UserList = () => {
       setUsers(usersData);
       setClubs(clubsData);
       setGroups(groupsData);
-    } catch { 
-      setError('Error al cargar datos iniciales'); 
-    } finally { 
-      setLoading(false); 
+    } catch {
+      setError('Error al cargar datos iniciales');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,13 +77,13 @@ const UserList = () => {
   const openCreateModal = () => {
     const currentUser = authService.getCurrentUser();
     setEditingUser(null);
-    
+
     // Si es ADMIN, bloquear a su club. Si es SUPER_ADMIN, permitir elegir.
     const defaultClubId = currentUser.role === 'ADMIN' ? currentUser.club_id : (clubs[0]?.id || '');
-    
-    setFormData({ 
-      ...INITIAL_FORM, 
-      club_id: defaultClubId 
+
+    setFormData({
+      ...INITIAL_FORM,
+      club_id: defaultClubId
     });
     setIsModalOpen(true);
   };
@@ -107,8 +107,8 @@ const UserList = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const payload = { 
-        ...formData, 
+      const payload = {
+        ...formData,
         club_id: parseInt(formData.club_id),
         group_id: formData.group_id ? parseInt(formData.group_id) : null
       };
@@ -162,8 +162,8 @@ const UserList = () => {
         </div>
         {authService.getCurrentUser()?.role === 'SUPER_ADMIN' && (
           <div style={{ width: '250px' }}>
-            <select 
-              className="form-input" 
+            <select
+              className="form-input"
               style={{ borderRadius: '12px' }}
               value={selectedClubId}
               onChange={(e) => setSelectedClubId(e.target.value)}
@@ -197,7 +197,19 @@ const UserList = () => {
               <tr key={user.id}>
                 <td>
                   <div className="table-cell-name">
-                    <div className="table-avatar" style={{ background: avatarColor(user.first_name || 'U') }}>
+                    <div className="table-avatar" style={{
+                      background: avatarColor(user.first_name || 'U'),
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: '600',
+                      flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    }}>
                       {initials(user.first_name, user.last_name)}
                     </div>
                     <div>
@@ -252,7 +264,7 @@ const UserList = () => {
             <label className="form-label">Contraseña {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Dejar vacío para mantener)</span>}</label>
             <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="form-input" required={!editingUser} placeholder="••••••••" />
           </div>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
               <label className="form-label">Rol</label>
@@ -265,11 +277,11 @@ const UserList = () => {
             </div>
             <div className="form-group">
               <label className="form-label">Club</label>
-              <select 
-                name="club_id" 
-                value={formData.club_id} 
-                onChange={handleInputChange} 
-                className="form-input" 
+              <select
+                name="club_id"
+                value={formData.club_id}
+                onChange={handleInputChange}
+                className="form-input"
                 required
                 disabled={authService.getCurrentUser()?.role !== 'SUPER_ADMIN'}
               >

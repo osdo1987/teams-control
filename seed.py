@@ -23,6 +23,7 @@ from app.models.group import Group, GroupHistory
 from app.models.payment import Payment
 from app.models.attendance import Attendance
 from app.models.trainer import TrainerProfile
+from app.services.test_service import TestService
 
 # ─── Constantes ──────────────────────────────────────────────────────────────
 BLOOD_TYPES     = ["A+", "A-", "B+", "O+", "O-", "AB+"]
@@ -452,6 +453,10 @@ def seed_database():
         print("\n" + "="*60)
         print("✅  BASE DE DATOS RECREADA EXITOSAMENTE")
         print("="*60)
+        # Sembrar tests predefinidos
+        TestService.seed_predefined_tests()
+        print("   ✓ 18 tests predefinidos")
+
         print(f"  Clubes      : {totals['clubs']}")
         print(f"  Atletas     : {totals['athletes']}")
         print(f"  Pagos       : {totals['payments']}")

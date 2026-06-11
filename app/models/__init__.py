@@ -7,3 +7,4 @@ from app.models.relations import group_trainers, group_athletes
 from app.models.attendance import Attendance
 from app.models.payment import Payment
 from app.models.category import Category
+from app.models.test import TestTemplate, TestResult

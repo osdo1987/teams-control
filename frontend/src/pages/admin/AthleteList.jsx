@@ -174,6 +174,7 @@ const AthleteList = () => {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>Editar</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openHistoryModal(athlete)}>📂 Movimientos</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => window.location.href = `/admin/tests`}>📊 Tests</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
                       onClick={() => { setAthleteToDelete(athlete); setIsConfirmOpen(true); }}>✕</button>
                   </div>

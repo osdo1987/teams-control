@@ -7,17 +7,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Enable CORS for all domains on all routes
     CORS(app)
 
-    # Configure Swagger UI
     app.config['SWAGGER'] = {
         'title': 'Sports Club Management API',
         'uiversion': 3
     }
 
-
-    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -25,8 +21,6 @@ def create_app(config_class=Config):
     bcrypt.init_app(app)
     swagger.init_app(app)
 
-
-    # Register Blueprints
     from app.routes.auth_routes import auth_bp
     from app.routes.athlete_routes import athlete_bp
     from app.routes.group_routes import group_bp
@@ -44,9 +38,9 @@ def create_app(config_class=Config):
     from app.routes.stats_routes import stats_bp
     app.register_blueprint(category_bp, url_prefix='/api/categories')
     app.register_blueprint(stats_bp, url_prefix='/api/stats')
+    from app.routes.test_routes import test_bp
+    app.register_blueprint(test_bp, url_prefix='/api/tests')
 
-
-    # Global Error Handler
     @app.errorhandler(Exception)
     def handle_exception(e):
         response = {
