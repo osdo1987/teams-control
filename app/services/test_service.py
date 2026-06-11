@@ -215,7 +215,8 @@ class TestService:
 
         # Group filter: filter results by athlete group
         if group_id:
-            from app.models.group import Group, group_athletes
+            from app.models.group import Group
+            from app.models.relations import group_athletes
             query = query.join(
                 group_athletes,
                 TestResult.athlete_id == group_athletes.c.athlete_id
@@ -352,7 +353,7 @@ class TestService:
         if athlete_obj and athlete_obj.current_groups:
             athlete = athlete_obj
             group_ids = [g.id for g in athlete.current_groups]
-            from app.models.group import group_athletes
+            from app.models.relations import group_athletes
             group_athlete_ids = db.session.query(group_athletes.c.athlete_id).filter(
                 group_athletes.c.group_id.in_(group_ids)
             ).all()

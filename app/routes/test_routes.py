@@ -144,5 +144,11 @@ def get_tests_progress():
 def get_athlete_test_stats(athlete_id):
     stats = TestService.get_athlete_stats(athlete_id)
     if not stats:
-        return jsonify({"error": "No test results found"}), 404
+        return jsonify({
+            "athlete_id": athlete_id,
+            "total_tests": 0,
+            "categories": [],
+            "overall_trend": "→",
+            "group_comparison": None
+        }), 200
     return jsonify(stats), 200
