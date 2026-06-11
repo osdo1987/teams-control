@@ -61,5 +61,21 @@ export const testService = {
   getAthleteHistory: async (athleteId, templateId = null) => {
     const query = templateId ? `?template_id=${templateId}` : '';
     return api(`/tests/athletes/${athleteId}/history${query}`);
+  },
+
+  // Stats
+  getStats: async () => {
+    return api('/tests/stats');
+  },
+
+  // Progress
+  getProgress: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api(`/tests/progress?${query}`);
+  },
+
+  // Athlete Stats
+  getAthleteStats: async (athleteId) => {
+    return api(`/tests/athletes/${athleteId}/stats`);
   }
 };

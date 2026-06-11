@@ -43,3 +43,5 @@ class GroupHistory(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
     action = db.Column(db.String(20)) # JOINED, LEFT, CHANGED
     date = db.Column(db.DateTime, default=db.func.now())
+
+    group = db.relationship('Group', backref='history_entries')

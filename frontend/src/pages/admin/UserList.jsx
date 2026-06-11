@@ -44,6 +44,7 @@ const UserList = () => {
   const [selectedClubId, setSelectedClubId] = useState('');
 
   const filteredUsers = users.filter(u => {
+    if (u.role === 'ATHLETE') return false;
     const name = `${u.first_name} ${u.last_name}`.toLowerCase();
     const id = (u.identification_number || '').toString();
     const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);

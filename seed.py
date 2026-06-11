@@ -457,6 +457,86 @@ def seed_database():
         TestService.seed_predefined_tests()
         print("   ✓ 18 tests predefinidos")
 
+        # ── Sembrar resultados de tests de prueba ──────────────────────────────
+        from app.models.test import TestTemplate, TestResult, TestSession
+
+        # Obtener templates y atletas para crear resultados
+        templates = TestTemplate.query.filter_by(is_predefined=True).all()
+        all_athletes = Athlete.query.all()
+        trainer_users = User.query.filter_by(role='TRAINER').all()
+        admin_users = User.query.filter_by(role='ADMIN').all()
+        all_trainers = trainer_users + admin_users
+
+        if templates and all_athletes and all_trainers:
+            test_results_count = 0
+            sessions_count = 0
+            today = date.today()
+
+            # Crear 3 sesiones de tests
+            session_names = [
+                "Evaluación Física Inicial - Semestre 1",
+                "Control de Resistencia - Mes 2",
+                "Evaluación de Fuerza - Mes 3"
+            ]
+
+            for s_idx, session_name in enumerate(session_names):
+                session_date = today - timedelta(days=30 * (2 - s_idx))
+                trainer = random.choice(all_trainers)
+                
+                session = TestSession(
+                    name=session_name,
+                    club_id=1,  # Troya Voley
+                    trainer_id=trainer.id,
+                    session_date=session_date,
+                    notes=f"Sesión de evaluación {session_name.lower()}"
+                )
+                db.session.add(session)
+                db.session.flush()
+
+                # Seleccionar 5-8 atletas aleatorios para esta sesión
+                session_athletes = random.sample(all_athletes, min(random.randint(5, 8), len(all_athletes)))
+                
+                # Seleccionar 3-5 tests para esta sesión
+                session_templates = random.sample(templates, min(random.randint(3, 5), len(templates)))
+
+                for athlete in session_athletes:
+                    for template in session_templates:
+                        # Generar valor realista según el test
+                        if template.unit == "metros":
+                            value = round(random.uniform(1800, 3200), 0)
+                        elif template.unit == "segundos":
+                            value = round(random.uniform(5.5, 18.0), 2)
+                        elif template.unit == "repeticiones":
+                            value = round(random.uniform(10, 60), 0)
+                        elif template.unit == "kg":
+                            value = round(random.uniform(40, 120), 1)
+                        elif template.unit == "centimetros":
+                            value = round(random.uniform(150, 280), 0)
+                        elif template.unit == "nivel":
+                            value = round(random.uniform(5, 14), 1)
+                        else:
+                            value = round(random.uniform(10, 100), 1)
+
+                        result = TestResult(
+                            template_id=template.id,
+                            athlete_id=athlete.id,
+                            trainer_id=trainer.id,
+                            session_id=session.id,
+                            value=value,
+                            notes=random.choice([None, "Buen rendimiento", "Mejorar technique", "Condiciones normales"]),
+                            test_date=session_date
+                        )
+                        db.session.add(result)
+                        test_results_count += 1
+
+                sessions_count += 1
+
+            db.session.commit()
+            print(f"   ✓ {sessions_count} sesiones de tests")
+            print(f"   ✓ {test_results_count} resultados de tests")
+        else:
+            print("   ⚠ No hay templates o atletas para sembrar resultados de tests")
+
         print(f"  Clubes      : {totals['clubs']}")
         print(f"  Atletas     : {totals['athletes']}")
         print(f"  Pagos       : {totals['payments']}")

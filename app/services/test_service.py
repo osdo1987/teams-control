@@ -1,5 +1,7 @@
 from app.extensions import db
 from app.models.test import TestTemplate, TestResult, TestSession
+from app.models.user import User
+from app.models.athlete import Athlete
 from datetime import date
 
 PREDEFINED_TESTS = [
@@ -149,3 +151,233 @@ class TestService:
         if club_id:
             query = query.filter_by(club_id=club_id)
         return query.order_by(TestSession.session_date.desc()).limit(limit).all()
+
+    @staticmethod
+    def get_stats(club_id=None):
+        """Returns aggregate stats for the tests section."""
+        query = TestResult.query
+        if club_id:
+            query = query.join(TestResult.athlete).filter(
+                Athlete.user.has(club_id=club_id)
+            )
+        total_results = query.count()
+        total_athletes = db.session.query(TestResult.athlete_id).filter(
+            TestResult.athlete_id.isnot(None)
+        ).distinct().count()
+        if club_id:
+            total_athletes = query.with_entities(TestResult.athlete_id).distinct().count()
+
+        last_session = None
+        session_query = TestSession.query
+        if club_id:
+            session_query = session_query.filter_by(club_id=club_id)
+        last_session_obj = session_query.order_by(TestSession.session_date.desc()).first()
+        if last_session_obj:
+            last_session = {
+                "id": last_session_obj.id,
+                "name": last_session_obj.name,
+                "session_date": last_session_obj.session_date.isoformat(),
+                "results_count": len(last_session_obj.results or [])
+            }
+
+        # Results per template
+        template_query = TestTemplate.query
+        if club_id:
+            template_query = template_query.filter(
+                db.or_(TestTemplate.club_id == club_id, TestTemplate.is_predefined == True)
+            )
+        templates_count = template_query.count()
+
+        return {
+            "total_results": total_results,
+            "total_athletes": total_athletes,
+            "total_templates": templates_count,
+            "last_session": last_session
+        }
+
+    @staticmethod
+    def get_progress(club_id=None, group_id=None, template_id=None, from_date=None, to_date=None):
+        """Returns progress data with deltas for chart comparisons."""
+        query = TestResult.query
+
+        if club_id:
+            query = query.join(TestResult.athlete).filter(
+                Athlete.user.has(club_id=club_id)
+            )
+        if template_id:
+            query = query.filter_by(template_id=template_id)
+
+        # Date range filter
+        if from_date:
+            query = query.filter(TestResult.test_date >= from_date)
+        if to_date:
+            query = query.filter(TestResult.test_date <= to_date)
+
+        # Group filter: filter results by athlete group
+        if group_id:
+            from app.models.group import Group, group_athletes
+            query = query.join(
+                group_athletes,
+                TestResult.athlete_id == group_athletes.c.athlete_id
+            ).filter(group_athletes.c.group_id == group_id)
+
+        results = query.order_by(TestResult.test_date.asc()).all()
+
+        # Build athlete progress data
+        athlete_progress = {}
+        for r in results:
+            key = r.athlete_id
+            if key not in athlete_progress:
+                athlete_progress[key] = {
+                    "athlete_id": r.athlete_id,
+                    "athlete_name": f"{r.athlete.user.first_name} {r.athlete.user.last_name}" if r.athlete and r.athlete.user else f"Atleta {r.athlete_id}",
+                    "template_name": r.template.name if r.template else "",
+                    "template_id": r.template_id,
+                    "category": r.template.category if r.template else "",
+                    "unit": r.template.unit if r.template else "",
+                    "higher_is_better": r.template.higher_is_better if r.template else True,
+                    "values": [],
+                    "first_value": None,
+                    "last_value": None,
+                    "previous_value": None,
+                    "delta": 0,
+                    "delta_pct": 0,
+                    "trend": "→"
+                }
+            athlete_progress[key]["values"].append({
+                "date": r.test_date.isoformat(),
+                "value": float(r.value)
+            })
+
+        # Calculate deltas for each athlete
+        for key, data in athlete_progress.items():
+            vals = data["values"]
+            if len(vals) >= 1:
+                data["first_value"] = vals[0]["value"]
+                data["last_value"] = vals[-1]["value"]
+            if len(vals) >= 2:
+                data["previous_value"] = vals[-2]["value"]
+                diff = data["last_value"] - data["previous_value"]
+                data["delta"] = round(diff, 2)
+                if data["previous_value"] != 0:
+                    data["delta_pct"] = round((diff / data["previous_value"]) * 100, 1)
+                # Determine trend
+                if data["higher_is_better"]:
+                    data["trend"] = "↑" if diff > 0 else ("↓" if diff < 0 else "→")
+                else:
+                    data["trend"] = "↓" if diff > 0 else ("↑" if diff < 0 else "→")
+
+        return list(athlete_progress.values())
+
+    @staticmethod
+    def get_athlete_stats(athlete_id):
+        """Returns athlete test stats including averages by category, trends, and group comparison."""
+        results = TestResult.query.filter_by(athlete_id=athlete_id).order_by(TestResult.test_date.desc()).all()
+        if not results:
+            return None
+
+        # Results by category
+        categories = {}
+        for r in results:
+            cat = r.template.category if r.template else "OTRO"
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append({
+                "id": r.id,
+                "template_id": r.template_id,
+                "template_name": r.template.name if r.template else "",
+                "value": float(r.value),
+                "test_date": r.test_date.isoformat(),
+                "higher_is_better": r.template.higher_is_better if r.template else True,
+                "unit": r.template.unit if r.template else ""
+            })
+
+        # Build category averages and latest values
+        category_stats = []
+        for cat, vals in categories.items():
+            latest_by_template = {}
+            for v in vals:
+                tid = v["template_id"]
+                if tid not in latest_by_template or v["test_date"] > latest_by_template[tid]["test_date"]:
+                    latest_by_template[tid] = v
+
+            # Get previous values for delta
+            previous_by_template = {}
+            sorted_vals = sorted(categories[cat], key=lambda x: x["test_date"], reverse=True)
+            for v in sorted_vals:
+                tid = v["template_id"]
+                if tid not in previous_by_template:
+                    previous_by_template[tid] = v
+
+            template_stats = []
+            for tid, latest in latest_by_template.items():
+                prev = previous_by_template.get(tid)
+                delta = 0
+                delta_pct = 0
+                if prev and latest["id"] != prev["id"]:
+                    diff = latest["value"] - prev["value"]
+                    delta = round(diff, 2)
+                    if prev["value"] != 0:
+                        delta_pct = round((diff / prev["value"]) * 100, 1)
+
+                template_stats.append({
+                    "template_name": latest["template_name"],
+                    "latest_value": latest["value"],
+                    "previous_value": prev["value"] if prev and latest["id"] != prev["id"] else None,
+                    "delta": delta,
+                    "delta_pct": delta_pct,
+                    "unit": latest["unit"],
+                    "higher_is_better": latest["higher_is_better"],
+                    "test_date": latest["test_date"]
+                })
+
+            avg_value = round(sum(v["value"] for v in vals) / len(vals), 2)
+            category_stats.append({
+                "category": cat,
+                "avg_value": avg_value,
+                "count": len(vals),
+                "templates": template_stats
+            })
+
+        # Overall trend indicator
+        total_improving = sum(1 for cs in category_stats for t in cs["templates"] if (t["higher_is_better"] and t["delta"] > 0) or (not t["higher_is_better"] and t["delta"] < 0))
+        total_declining = sum(1 for cs in category_stats for t in cs["templates"] if (t["higher_is_better"] and t["delta"] < 0) or (not t["higher_is_better"] and t["delta"] > 0))
+        overall_trend = "↑" if total_improving > total_declining else ("↓" if total_declining > total_improving else "→")
+
+        # Get group averages for comparison
+        athlete = None
+        from app.models.athlete import Athlete
+        athlete_obj = Athlete.query.get(athlete_id)
+        group_comparison = None
+        if athlete_obj and athlete_obj.current_groups:
+            athlete = athlete_obj
+            group_ids = [g.id for g in athlete.current_groups]
+            from app.models.group import group_athletes
+            group_athlete_ids = db.session.query(group_athletes.c.athlete_id).filter(
+                group_athletes.c.group_id.in_(group_ids)
+            ).all()
+            group_athlete_ids = [a[0] for a in group_athlete_ids]
+
+            if group_athlete_ids:
+                group_results = TestResult.query.filter(
+                    TestResult.athlete_id.in_(group_athlete_ids)
+                ).all()
+                group_categories = {}
+                for r in group_results:
+                    cat = r.template.category if r.template else "OTRO"
+                    if cat not in group_categories:
+                        group_categories[cat] = []
+                    group_categories[cat].append(float(r.value))
+
+                group_comparison = {}
+                for cat, vals in group_categories.items():
+                    if vals:
+                        group_comparison[cat] = round(sum(vals) / len(vals), 2)
+
+        return {
+            "athlete_id": athlete_id,
+            "total_tests": len(results),
+            "categories": category_stats,
+            "overall_trend": overall_trend,
+            "group_comparison": group_comparison
+        }

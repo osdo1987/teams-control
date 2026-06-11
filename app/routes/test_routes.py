@@ -110,3 +110,39 @@ def create_session():
     data['club_id'] = user.club_id
     session = TestService.create_session(data, trainer_id=user_id)
     return jsonify(session_schema.dump(session)), 201
+
+
+@test_bp.route('/stats', methods=['GET'])
+@jwt_required()
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
+def get_tests_stats():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    club_id = user.club_id if user.role != 'SUPER_ADMIN' else request.args.get('club_id', type=int)
+    stats = TestService.get_stats(club_id=club_id)
+    return jsonify(stats), 200
+
+
+@test_bp.route('/progress', methods=['GET'])
+@jwt_required()
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
+def get_tests_progress():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    club_id = user.club_id if user.role != 'SUPER_ADMIN' else request.args.get('club_id', type=int)
+    group_id = request.args.get('group_id', type=int)
+    template_id = request.args.get('template_id', type=int)
+    from_date = request.args.get('from')
+    to_date = request.args.get('to')
+    progress = TestService.get_progress(club_id=club_id, group_id=group_id, template_id=template_id, from_date=from_date, to_date=to_date)
+    return jsonify(progress), 200
+
+
+@test_bp.route('/athletes/<int:athlete_id>/stats', methods=['GET'])
+@jwt_required()
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
+def get_athlete_test_stats(athlete_id):
+    stats = TestService.get_athlete_stats(athlete_id)
+    if not stats:
+        return jsonify({"error": "No test results found"}), 404
+    return jsonify(stats), 200

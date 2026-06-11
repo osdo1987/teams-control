@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { athleteService } from '../../services/athleteService';
 import { groupService } from '../../services/groupService';
-import { api } from '../../services/api';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import Modal from '../../components/UI/Modal';
 
@@ -10,6 +10,7 @@ const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
 const initials = (first = '?', last = '?') => `${first?.[0] || '?'}${last?.[0] || '?'}`.toUpperCase();
 
 const AthleteList = () => {
+  const navigate = useNavigate();
   const [athletes, setAthletes] = useState([]);
   const [groups, setGroups] = useState([]);
   const [filteredAthletes, setFilteredAthletes] = useState([]);
@@ -17,14 +18,10 @@ const AthleteList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Modales
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState(null);
   const [editingAthlete, setEditingAthlete] = useState(null);
-  const [movementHistory, setMovementHistory] = useState([]);
 
   const [formData, setFormData] = useState({
     birth_date: '', phone: '', address: '', group_id: ''
@@ -70,21 +67,7 @@ const AthleteList = () => {
       address: athlete.address || '',
       group_id: athlete.current_groups?.[0]?.id || ''
     });
-    setIsModalOpen(true);
-  };
-
-  const openHistoryModal = async (athlete) => {
-    setEditingAthlete(athlete);
-    setLoading(true);
-    try {
-      const history = await api(`/groups/history/athlete/${athlete.id}`);
-      setMovementHistory(history);
-      setIsHistoryModalOpen(true);
-    } catch {
-      setError('Error al cargar el historial de movimientos');
-    } finally {
-      setLoading(false);
-    }
+    setIsEditModalOpen(true);
   };
 
   const handleSubmit = async e => {
@@ -99,7 +82,7 @@ const AthleteList = () => {
         group_id: formData.group_id ? parseInt(formData.group_id) : null
       };
       await athleteService.updateAthlete(editingAthlete.id, payload);
-      setIsModalOpen(false);
+      setIsEditModalOpen(false);
       fetchAthletes();
     } catch (err) { setError(err.message || 'Error al guardar cambios'); }
   };
@@ -155,7 +138,10 @@ const AthleteList = () => {
               <tr key={athlete.id}>
                 <td>
                   <div className="table-cell-name">
-                    <div className="table-avatar" style={{ background: avatarColor(athlete.user?.first_name || '') }}>
+                    <div className="table-avatar" style={{ background: avatarColor(athlete.user?.first_name || ''),
+                        width: '40px', height: '40px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontWeight: '600', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                       {initials(athlete.user?.first_name, athlete.user?.last_name)}
                     </div>
                     <div>
@@ -172,9 +158,8 @@ const AthleteList = () => {
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>Editar</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openHistoryModal(athlete)}>📂 Movimientos</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => window.location.href = `/admin/tests`}>📊 Tests</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/admin/athletes/${athlete.id}`)}>👁 Ver Perfil</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>✏️ Editar</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
                       onClick={() => { setAthleteToDelete(athlete); setIsConfirmOpen(true); }}>✕</button>
                   </div>
@@ -185,9 +170,21 @@ const AthleteList = () => {
         </table>
       </div>
 
-      {/* Modal de Edición / Transferencia */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Editar y Transferir Atleta">
+      {/* Modal de Edición */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Editar Atleta">
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
+          <div className="form-group">
+            <label className="form-label">Fecha de Nacimiento</label>
+            <input type="date" name="birth_date" value={formData.birth_date} onChange={handleInputChange} className="form-input" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Teléfono</label>
+            <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="form-input" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Dirección</label>
+            <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="form-input" />
+          </div>
           <div className="form-group">
             <label className="form-label">Transferir a Grupo</label>
             <select name="group_id" value={formData.group_id} onChange={handleInputChange} className="form-input">
@@ -195,49 +192,11 @@ const AthleteList = () => {
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </div>
-          <div className="form-group">
-            <label className="form-label">Teléfono</label>
-            <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="form-input" />
-          </div>
           <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</button>
             <button type="submit" className="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
-      </Modal>
-
-      {/* Modal de Historial de Movimientos */}
-      <Modal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} title={`Historial de Movimientos: ${editingAthlete?.user?.first_name}`}>
-        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Acción</th>
-                <th>Grupo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {movementHistory.map(h => (
-                <tr key={h.id}>
-                  <td style={{ fontSize: '0.85rem' }}>{new Date(h.date).toLocaleDateString()}</td>
-                  <td>
-                    <span className={h.action === 'JOINED' ? 'badge badge-success' : 'badge badge-danger'}>
-                      {h.action === 'JOINED' ? 'ENTRADA' : 'SALIDA'}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{h.group_name}</td>
-                </tr>
-              ))}
-              {movementHistory.length === 0 && (
-                <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>No hay registros de movimientos previos.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-          <button type="button" className="btn btn-primary" onClick={() => setIsHistoryModalOpen(false)}>Cerrar</button>
-        </div>
       </Modal>
 
       <ConfirmModal

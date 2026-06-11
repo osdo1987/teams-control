@@ -12,6 +12,7 @@ import TrainerList from './pages/admin/TrainerList';
 import PaymentList from './pages/admin/PaymentList';
 import AttendanceList from './pages/admin/AttendanceList';
 import TestList from './pages/admin/TestList';
+import AthleteProfile from './pages/admin/AthleteProfile';
 import SuperAdminLayout from './components/SuperAdmin/SuperAdminLayout';
 import ClubList from './pages/superadmin/ClubList';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
@@ -53,6 +54,7 @@ function App() {
           <Route path="payments" element={<PaymentList />} />
           <Route path="attendance" element={<AttendanceList />} />
           <Route path="tests" element={<TestList />} />
+          <Route path="athletes/:id" element={<AthleteProfile />} />
         </Route>
 
         <Route path="/super-admin" element={
