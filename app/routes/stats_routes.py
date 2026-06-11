@@ -173,7 +173,8 @@ def get_dashboard_stats():
         })
 
     # Athletes per group
-    from app.models.group import Group as GroupModel, group_athletes as ga_table
+    from app.models.group import Group as GroupModel
+    from app.models.relations import group_athletes as ga_table
     groups_query = GroupModel.query
     if club_id:
         groups_query = groups_query.filter_by(club_id=club_id)
