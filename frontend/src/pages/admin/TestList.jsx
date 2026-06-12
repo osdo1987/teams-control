@@ -168,7 +168,7 @@ const TestList = () => {
     } catch (err) { setError('Error al crear sesion'); }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando...</div>;
+  if (loading) return <div className="loading-state"><p>Cargando...</p></div>;
 
   const templateResultCounts = {};
   results.forEach(r => { templateResultCounts[r.template_id] = (templateResultCounts[r.template_id] || 0) + 1; });
@@ -185,11 +185,11 @@ const TestList = () => {
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}
 
-      <div className="tabs" style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)' }}>
-        <button onClick={() => setActiveTab('progress')} className={`btn ${activeTab === 'progress' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1 }}>📊 Progreso</button>
-        <button onClick={() => setActiveTab('sessions')} className={`btn ${activeTab === 'sessions' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1 }}>📋 Sesiones</button>
-        <button onClick={() => setActiveTab('templates')} className={`btn ${activeTab === 'templates' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1 }}>📝 Plantillas</button>
-        <button onClick={() => setActiveTab('byathlete')} className={`btn ${activeTab === 'byathlete' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1 }}>👤 Por Atleta</button>
+      <div className="tabs" style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <button onClick={() => setActiveTab('progress')} className={`btn ${activeTab === 'progress' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📊 Progreso</button>
+        <button onClick={() => setActiveTab('sessions')} className={`btn ${activeTab === 'sessions' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📋 Sesiones</button>
+        <button onClick={() => setActiveTab('templates')} className={`btn ${activeTab === 'templates' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📝 Plantillas</button>
+        <button onClick={() => setActiveTab('byathlete')} className={`btn ${activeTab === 'byathlete' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>👤 Por Atleta</button>
       </div>
 
       {/* ============= TAB: PROGRESO ============= */}
@@ -215,28 +215,36 @@ const TestList = () => {
 
           {/* Filters */}
           <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'end' }}>
-              <div className="form-group" style={{ margin: 0, minWidth: '150px', flex: 1 }}>
-                <label className="form-label">Grupo</label>
-                <select value={filterGroup} onChange={e => setFilterGroup(e.target.value)} className="form-input">
-                  <option value="">Todos los grupos</option>
-                  {groupNames.map(name => <option key={name} value={name}>{name}</option>)}
-                </select>
+            <div className="filter-row" style={{ marginBottom: 0 }}>
+              <div className="filter-field" style={{ minWidth: '150px', flex: '1 1 180px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Grupo</label>
+                  <select value={filterGroup} onChange={e => setFilterGroup(e.target.value)} className="form-input">
+                    <option value="">Todos los grupos</option>
+                    {groupNames.map(name => <option key={name} value={name}>{name}</option>)}
+                  </select>
+                </div>
               </div>
-              <div className="form-group" style={{ margin: 0, minWidth: '150px', flex: 1 }}>
-                <label className="form-label">Test</label>
-                <select value={filterTemplate} onChange={e => { setFilterTemplate(e.target.value); setSelectedCompareTest(e.target.value); }} className="form-input">
-                  <option value="">Todos los tests</option>
-                  {testNames.map(name => <option key={name} value={name}>{name}</option>)}
-                </select>
+              <div className="filter-field" style={{ minWidth: '150px', flex: '1 1 180px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Test</label>
+                  <select value={filterTemplate} onChange={e => { setFilterTemplate(e.target.value); setSelectedCompareTest(e.target.value); }} className="form-input">
+                    <option value="">Todos los tests</option>
+                    {testNames.map(name => <option key={name} value={name}>{name}</option>)}
+                  </select>
+                </div>
               </div>
-              <div className="form-group" style={{ margin: 0, minWidth: '130px' }}>
-                <label className="form-label">Desde</label>
-                <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="form-input" />
+              <div className="filter-field" style={{ minWidth: '130px', flex: '0 1 auto' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Desde</label>
+                  <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="form-input" />
+                </div>
               </div>
-              <div className="form-group" style={{ margin: 0, minWidth: '130px' }}>
-                <label className="form-label">Hasta</label>
-                <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="form-input" />
+              <div className="filter-field" style={{ minWidth: '130px', flex: '0 1 auto' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Hasta</label>
+                  <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="form-input" />
+                </div>
               </div>
             </div>
           </div>
@@ -358,18 +366,18 @@ const TestList = () => {
       {activeTab === 'sessions' && (
         <div>
           {sessions.map(s => (
-            <div key={s.id} style={{ marginBottom: '8px', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+            <div key={s.id} className="session-item">
               <div onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer', background: expandedSession === s.id ? '#f3f4f6' : 'white' }}>
+                className={`session-header${expandedSession === s.id ? ' expanded' : ''}`}>
                 <span style={{ fontSize: '1.2rem' }}>📋</span>
-                <strong style={{ flex: 1 }}>{s.name || 'Sesion sin nombre'}</strong>
-                <span className="badge badge-info">{new Date(s.session_date).toLocaleDateString()}</span>
-                <span className="badge badge-success">{new Set(s.results?.map(r => r.athlete_id)).size || 0} atletas</span>
-                <span className="badge badge-primary">{s.results?.length || 0} resultados</span>
-                <span style={{ transform: expandedSession === s.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                <strong style={{ flex: 1, minWidth: 0 }}>{s.name || 'Sesion sin nombre'}</strong>
+                <span className="badge badge-info" style={{ flexShrink: 0 }}>{new Date(s.session_date).toLocaleDateString()}</span>
+                <span className="badge badge-success" style={{ flexShrink: 0 }}>{new Set(s.results?.map(r => r.athlete_id)).size || 0} atletas</span>
+                <span className="badge badge-primary" style={{ flexShrink: 0 }}>{s.results?.length || 0} resultados</span>
+                <span style={{ transform: expandedSession === s.id ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
               </div>
               {expandedSession === s.id && (
-                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: '#fafafa' }}>
+                <div className="session-body">
                   {s.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{s.notes}</p>}
                   <table className="data-table" style={{ margin: 0, fontSize: '0.85rem' }}>
                     <thead><tr><th>Atleta</th><th>Test</th><th>Resultado</th><th>Entrenador</th></tr></thead>
@@ -445,18 +453,18 @@ const TestList = () => {
               grouped[name].results.push(r);
             });
             return Object.entries(grouped).map(([name, data]) => (
-              <div key={name} style={{ marginBottom: '8px', border: '1px solid var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+              <div key={name} className="athlete-accordion">
                 <div onClick={() => setExpandedAthlete(expandedAthlete === name ? null : name)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer', background: expandedAthlete === name ? '#f3f4f6' : 'white', transition: 'background 0.2s' }}>
+                  className={`athlete-accordion-header${expandedAthlete === name ? ' expanded' : ''}`}>
                   <div className="table-avatar" style={{ background: avatarColor(name), width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '600', fontSize: '0.8rem', flexShrink: 0 }}>
                     {initials(name.split(' ')[0], name.split(' ')[1])}
                   </div>
-                  <strong style={{ flex: 1 }}>{name}</strong>
-                  <span className="badge badge-info">{data.results.length} resultados</span>
-                  <span style={{ transform: expandedAthlete === name ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                  <strong style={{ flex: 1, minWidth: 0 }}>{name}</strong>
+                  <span className="badge badge-info" style={{ flexShrink: 0 }}>{data.results.length} resultados</span>
+                  <span style={{ transform: expandedAthlete === name ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
                 </div>
                 {expandedAthlete === name && (
-                  <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: '#fafafa' }}>
+                  <div className="athlete-accordion-body">
                     {(() => {
                       // Group by template and compute trend
                       const byTemplate = {};

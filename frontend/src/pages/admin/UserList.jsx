@@ -138,7 +138,7 @@ const UserList = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando usuarios...</div>;
+  if (loading) return <div className="loading-state"><p>Cargando usuarios...</p></div>;
 
   return (
     <div>
@@ -150,8 +150,8 @@ const UserList = () => {
         <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
       </div>
 
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
-        <div style={{ flex: 1 }}>
+      <div className="filter-row">
+        <div className="search-field">
           <input
             type="text"
             placeholder="🔍 Buscar usuario por nombre o ID..."
@@ -162,7 +162,7 @@ const UserList = () => {
           />
         </div>
         {authService.getCurrentUser()?.role === 'SUPER_ADMIN' && (
-          <div style={{ width: '250px' }}>
+          <div className="filter-field">
             <select
               className="form-input"
               style={{ borderRadius: '12px' }}
@@ -243,7 +243,7 @@ const UserList = () => {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}>
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Nombres</label>
               <input type="text" name="first_name" value={formData.first_name} onChange={handleInputChange} className="form-input" required placeholder="Juan" />
@@ -266,7 +266,7 @@ const UserList = () => {
             <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="form-input" required={!editingUser} placeholder="••••••••" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Rol</label>
               <select name="role" value={formData.role} onChange={handleInputChange} className="form-input">

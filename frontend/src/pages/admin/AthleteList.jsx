@@ -99,7 +99,7 @@ const AthleteList = () => {
     }
   };
 
-  if (loading && athletes.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando atletas...</div>;
+  if (loading && athletes.length === 0) return <div className="loading-state"><p>Cargando atletas...</p></div>;
 
   return (
     <div>
@@ -110,15 +110,17 @@ const AthleteList = () => {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="🔍 Buscar por nombre o identificación..."
-          className="form-input"
-          style={{ borderRadius: '12px' }}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="filter-row" style={{ marginBottom: '20px' }}>
+        <div className="search-field">
+          <input
+            type="text"
+            placeholder="🔍 Buscar por nombre o identificación..."
+            className="form-input"
+            style={{ borderRadius: '12px' }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}
@@ -157,7 +159,7 @@ const AthleteList = () => {
                   ) : <span style={{ opacity: 0.5 }}>Sin grupo</span>}
                 </td>
                 <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="actions-group">
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/admin/athletes/${athlete.id}`)}>👁 Ver Perfil</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(athlete)}>✏️ Editar</button>
                     <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}

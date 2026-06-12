@@ -73,7 +73,7 @@ const DashboardHome = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando resumen...</div>;
+  if (loading) return <div className="loading-state"><p>Cargando resumen...</p></div>;
 
   const paymentPieData = dashboardData?.payments ? [
     { name: 'Pagados', value: dashboardData.payments.paid },
@@ -93,7 +93,7 @@ const DashboardHome = () => {
           <h1>Panel de Control</h1>
           <p className="text-muted">Bienvenido al resumen de {user.club_name || 'tu club'}.</p>
         </div>
-        <div style={{ padding: '10px 20px', background: 'var(--primary-color)', color: '#fff', borderRadius: '12px', fontWeight: 600 }}>
+        <div className="date-badge">
           {new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).toUpperCase()}
         </div>
       </div>
@@ -119,24 +119,24 @@ const DashboardHome = () => {
       {/* Financial Summary */}
       <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', fontWeight: 700 }}>Resumen Financiero del Mes</h2>
       <div className="stat-grid">
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#f0fdf4' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>💰</div>
+        <div className="card financial-card" style={{ background: '#f0fdf4' }}>
+          <div className="financial-icon" style={{ background: '#dcfce7' }}>💰</div>
           <div>
             <div style={{ color: '#166534', fontWeight: 600, fontSize: '0.875rem' }}>RECAUDACIÓN ACTUAL</div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#14532d', lineHeight: 1 }}>${stats.recap.toLocaleString()}</div>
+            <div className="financial-amount" style={{ color: '#14532d' }}>${stats.recap.toLocaleString()}</div>
           </div>
         </div>
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#fffbeb' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>⏳</div>
+        <div className="card financial-card" style={{ background: '#fffbeb' }}>
+          <div className="financial-icon" style={{ background: '#fef3c7' }}>⏳</div>
           <div>
             <div style={{ color: '#92400e', fontWeight: 600, fontSize: '0.875rem' }}>PENDIENTE POR COBRAR</div>
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#78350f', lineHeight: 1 }}>${stats.pending.toLocaleString()}</div>
+            <div className="financial-amount" style={{ color: '#78350f' }}>${stats.pending.toLocaleString()}</div>
           </div>
         </div>
       </div>
 
       {/* Charts Row 1: Attendance Weekly + Payment Distribution */}
-      <div className="stat-grid" style={{ marginTop: '24px', gridTemplateColumns: '1fr 1fr' }}>
+      <div className="grid-2">
         <div className="card" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Asistencia Semanal</h3>
           {attendanceData.length > 0 ? (
@@ -185,7 +185,7 @@ const DashboardHome = () => {
       </div>
 
       {/* Charts Row 2: Revenue Trend + Attendance Trend */}
-      <div className="stat-grid" style={{ marginTop: '16px', gridTemplateColumns: '1fr 1fr' }}>
+      <div className="grid-2">
         <div className="card" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Tendencia de Ingresos (6 meses)</h3>
           {revenueTrend.length > 0 && revenueTrend.some(r => r.revenue > 0) ? (
@@ -222,7 +222,7 @@ const DashboardHome = () => {
       </div>
 
       {/* Charts Row 3: Athletes per Group + Tests Summary */}
-      <div className="stat-grid" style={{ marginTop: '16px', gridTemplateColumns: '1fr 1fr' }}>
+      <div className="grid-2">
         <div className="card" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Atletas por Grupo</h3>
           {groupsData.length > 0 ? (
@@ -266,7 +266,7 @@ const DashboardHome = () => {
       {/* Quick Actions */}
       <div style={{ marginTop: '40px' }}>
         <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Acciones Rápidas</h3>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="quick-actions">
           <a href="/admin/attendance" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Tomar Asistencia Hoy</a>
           <a href="/admin/payments" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Registrar Pagos</a>
           <a href="/admin/tests" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Evaluar Atletas</a>

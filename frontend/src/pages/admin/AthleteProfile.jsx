@@ -106,7 +106,7 @@ const AthleteProfile = () => {
     return Object.values(monthly).sort((a, b) => a.month.localeCompare(b.month));
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando perfil...</div>;
+  if (loading) return <div className="loading-state"><p>Cargando perfil...</p></div>;
   if (error) return <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>{error}</div>;
   if (!athlete) return <div style={{ padding: '40px', textAlign: 'center' }}>Atleta no encontrado.</div>;
 
@@ -122,18 +122,14 @@ const AthleteProfile = () => {
     <div>
       {/* Header */}
       <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn btn-ghost" onClick={() => navigate('/admin/athletes')}>← Volver</button>
-          <div className="table-avatar" style={{
+        <div className="profile-header">
+          <button className="btn btn-ghost flex-shrink-0" onClick={() => navigate('/admin/athletes')}>← Volver</button>
+          <div className="profile-avatar" style={{
             background: avatarColor(athlete.user?.first_name || ''),
-            width: '56px', height: '56px', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontWeight: '700', fontSize: '1.2rem', flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
           }}>
             {initials(athlete.user?.first_name, athlete.user?.last_name)}
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="profile-info">
             <h1 style={{ margin: 0 }}>{athlete.user?.first_name} {athlete.user?.last_name}</h1>
             <p className="text-muted" style={{ margin: 0 }}>
               {athlete.user?.email} · {athlete.user?.identification_number}
@@ -141,15 +137,12 @@ const AthleteProfile = () => {
           </div>
           {/* Trend indicator */}
           {testStats && (
-            <div style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
+            <div className="trend-indicator" style={{
               background: trendColor === '#10b981' ? '#f0fdf4' : trendColor === '#ef4444' ? '#fef2f2' : '#f9fafb',
               border: `2px solid ${trendColor}`,
-              textAlign: 'center'
             }}>
-              <div style={{ fontSize: '1.5rem', lineHeight: 1 }}>{overallTrend}</div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: trendColor }}>
+              <div className="trend-arrow">{overallTrend}</div>
+              <div className="trend-label" style={{ color: trendColor }}>
                 {overallTrend === '↑' ? 'MEJORANDO' : overallTrend === '↓' ? 'BAJANDO' : 'ESTABLE'}
               </div>
             </div>
@@ -158,7 +151,7 @@ const AthleteProfile = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {[
           { key: 'info', label: '📋 Información' },
           { key: 'payments', label: '💰 Pagos' },
@@ -169,7 +162,7 @@ const AthleteProfile = () => {
           <button key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`btn ${activeTab === tab.key ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ borderRadius: 0, flex: 1, padding: '12px 8px' }}>
+            style={{ borderRadius: 0, flex: 1, padding: '12px 8px', whiteSpace: 'nowrap' }}>
             {tab.label}
           </button>
         ))}
@@ -179,33 +172,33 @@ const AthleteProfile = () => {
       {activeTab === 'info' && (
         <div className="card" style={{ padding: '24px' }}>
           <h3 style={{ marginBottom: '16px' }}>Información Personal</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label className="form-label">Nombre Completo</label>
-              <div style={{ fontSize: '1rem', fontWeight: 600 }}>{athlete.user?.first_name} {athlete.user?.last_name}</div>
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="info-label">Nombre Completo</span>
+              <div className="info-value" style={{ fontWeight: 600 }}>{athlete.user?.first_name} {athlete.user?.last_name}</div>
             </div>
-            <div>
-              <label className="form-label">Email</label>
-              <div style={{ fontSize: '1rem' }}>{athlete.user?.email}</div>
+            <div className="info-item">
+              <span className="info-label">Email</span>
+              <div className="info-value">{athlete.user?.email}</div>
             </div>
-            <div>
-              <label className="form-label">Identificación</label>
-              <div style={{ fontSize: '1rem', fontWeight: 600 }}>{athlete.user?.identification_number}</div>
+            <div className="info-item">
+              <span className="info-label">Identificación</span>
+              <div className="info-value" style={{ fontWeight: 600 }}>{athlete.user?.identification_number}</div>
             </div>
-            <div>
-              <label className="form-label">Teléfono</label>
-              <div style={{ fontSize: '1rem' }}>{athlete.phone || '-'}</div>
+            <div className="info-item">
+              <span className="info-label">Teléfono</span>
+              <div className="info-value">{athlete.phone || '-'}</div>
             </div>
-            <div>
-              <label className="form-label">Fecha de Nacimiento</label>
-              <div style={{ fontSize: '1rem' }}>{athlete.birth_date ? new Date(athlete.birth_date).toLocaleDateString() : '-'}</div>
+            <div className="info-item">
+              <span className="info-label">Fecha de Nacimiento</span>
+              <div className="info-value">{athlete.birth_date ? new Date(athlete.birth_date).toLocaleDateString() : '-'}</div>
             </div>
-            <div>
-              <label className="form-label">Dirección</label>
-              <div style={{ fontSize: '1rem' }}>{athlete.address || '-'}</div>
+            <div className="info-item">
+              <span className="info-label">Dirección</span>
+              <div className="info-value">{athlete.address || '-'}</div>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Grupo Actual</label>
+            <div className="info-item full-width">
+              <span className="info-label">Grupo Actual</span>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {profileData.groups?.length > 0 ? (
                   profileData.groups.map(g => <span key={g.id} className="badge badge-success">{g.name}</span>)

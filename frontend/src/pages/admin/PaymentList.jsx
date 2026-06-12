@@ -136,9 +136,9 @@ const PaymentList = () => {
 
     return (
       <div className="card" style={{ marginBottom: '16px', padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 24px', background: 'var(--bg-main)', borderBottom: isCollapsed ? 'none' : '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => toggleCollapse(groupId)}>
-            <span style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '0.8rem' }}>▼</span>
+        <div className="payment-group-header" style={{ background: 'var(--bg-main)', borderBottom: isCollapsed ? 'none' : '1px solid var(--border-color)' }}>
+          <div className="payment-group-toggle" onClick={() => toggleCollapse(groupId)}>
+            <span className={`collapse-arrow${isCollapsed ? ' collapsed' : ''}`}>▼</span>
             <div>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>
                 {groupId === 'none' ? 'Atletas sin Grupo' : groups.find(g => g.id === groupId)?.name}
@@ -147,7 +147,7 @@ const PaymentList = () => {
             </div>
           </div>
           {!isCollapsed && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="payment-group-actions">
               <select 
                 className="form-input" 
                 style={{ padding: '4px 8px', fontSize: '0.75rem', width: 'auto', height: 'auto', borderRadius: '8px' }}
@@ -225,28 +225,30 @@ const PaymentList = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-        <div className="card" style={{ padding: '20px', borderTop: '4px solid #10b981', background: '#f0fdf4' }}>
+      <div className="stat-grid" style={{ marginBottom: '24px' }}>
+        <div className="card card-top-border" style={{ borderTopColor: '#10b981', background: '#f0fdf4' }}>
           <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>RECAUDADO EN {months[selectedMonth].toUpperCase()}</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#065f46' }}>${monthlyMetrics.received.toLocaleString()}</div>
+          <div className="financial-amount" style={{ color: '#065f46' }}>${monthlyMetrics.received.toLocaleString()}</div>
           <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '4px' }}>{monthlyMetrics.count} pagos registrados</div>
         </div>
-        <div className="card" style={{ padding: '20px', borderTop: '4px solid #f59e0b', background: '#fffbeb' }}>
+        <div className="card card-top-border" style={{ borderTopColor: '#f59e0b', background: '#fffbeb' }}>
           <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 700 }}>PENDIENTE POR COBRAR</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#92400e' }}>${monthlyMetrics.pending.toLocaleString()}</div>
+          <div className="financial-amount" style={{ color: '#92400e' }}>${monthlyMetrics.pending.toLocaleString()}</div>
           <div style={{ fontSize: '0.7rem', color: '#d97706', marginTop: '4px' }}>Basado en mensualidades de atletas activos</div>
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="🔍 Buscar atleta..."
-          className="form-input"
-          style={{ borderRadius: '14px', padding: '12px 20px' }}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="filter-row">
+        <div className="search-field">
+          <input
+            type="text"
+            placeholder="🔍 Buscar atleta..."
+            className="form-input"
+            style={{ borderRadius: '14px', padding: '12px 20px' }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}

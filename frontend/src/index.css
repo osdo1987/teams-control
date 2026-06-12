@@ -1103,6 +1103,11 @@ select.form-input {
   box-shadow: var(--shadow-xs);
 }
 
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1874,7 +1879,343 @@ select.form-input {
   margin-bottom: 24px;
 }
 
-/* ─── Responsive: Tablet (≤1024px) ───────────────────────────────── */
+/* ─── Responsive Utility Classes ────────────────────────────────── */
+
+/* Flex helpers */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.gap-xs { gap: 6px; }
+.gap-sm { gap: 10px; }
+.gap-md { gap: 16px; }
+.gap-lg { gap: 24px; }
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Grid helpers */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+/* Chart containers - handle overflow */
+.chart-container {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Action buttons group */
+.actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Search + filters row */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-row .search-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-row .filter-field {
+  min-width: 180px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .filter-row .filter-field {
+    min-width: 100%;
+    flex: 1;
+  }
+  
+  .filter-row .search-field {
+    min-width: 100%;
+  }
+}
+
+/* Card with colored top border */
+.card-top-border {
+  padding: 20px;
+  border-top: 4px solid var(--brand-500);
+}
+
+/* Financial summary cards */
+.financial-card {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.financial-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.financial-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Date badge */
+.date-badge {
+  padding: 10px 20px;
+  background: var(--brand-600);
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Trend indicator */
+.trend-indicator {
+  padding: 8px 16px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.trend-indicator .trend-arrow {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.trend-indicator .trend-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Quick actions bar */
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Info grid (profile) */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-value {
+  font-size: 1rem;
+}
+
+.info-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Profile header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Group header in payment list */
+.payment-group-header {
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.payment-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.payment-group-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Collapsible arrow */
+.collapse-arrow {
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+}
+
+.collapse-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Session list item */
+.session-item {
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.session-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.session-header:hover {
+  background: var(--bg-hover);
+}
+
+.session-header.expanded {
+  background: #f3f4f6;
+}
+
+.session-body {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+
+/* Athlete accordion item */
+.athlete-accordion {
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.athlete-accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.athlete-accordion-header:hover {
+  background: var(--bg-hover);
+}
+
+.athlete-accordion-header.expanded {
+  background: #f3f4f6;
+}
+
+.athlete-accordion-body {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+
+/* Responsive: Tablet (≤1024px) ───────────────────────────────── */
 @media (max-width: 1024px) {
   :root {
     --sidebar-w: 240px;
@@ -1903,9 +2244,13 @@ select.form-input {
   .hero-banner .hero-metric+.hero-metric {
     padding-left: 20px;
   }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* ─── Responsive: Mobile (≤768px) ────────────────────────────────── */
+/* Responsive: Mobile (≤768px) ────────────────────────────────── */
 @media (max-width: 768px) {
   :root {
     --sidebar-w: 280px;
@@ -2094,9 +2439,115 @@ select.form-input {
   .search-input {
     padding: 7px 12px;
   }
+
+  /* Responsive overrides for chart grids */
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Financial cards stack */
+  .financial-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+  }
+
+  /* Profile header */
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 1rem;
+  }
+
+  /* Info grid single column */
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Payment group header */
+  .payment-group-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .payment-group-toggle {
+    width: 100%;
+  }
+
+  .payment-group-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Session header */
+  .session-header {
+    flex-wrap: wrap;
+  }
+
+  /* Athlete accordion */
+  .athlete-accordion-header {
+    flex-wrap: wrap;
+  }
+
+  /* Quick actions */
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .quick-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Date badge */
+  .date-badge {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Profile trend indicator */
+  .trend-indicator {
+    align-self: flex-start;
+  }
+
+  /* Actions group */
+  .actions-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .actions-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Filter row */
+  .filter-row {
+    flex-direction: column;
+  }
+
+  .filter-row .search-field,
+  .filter-row .filter-field {
+    min-width: 100%;
+  }
+
+  /* Info item full width on mobile */
+  .info-item.full-width {
+    grid-column: 1;
+  }
 }
 
-/* ─── Responsive: Small Mobile (≤480px) ─────────────────────────── */
+/* Responsive: Small Mobile (≤480px) ─────────────────────────── */
 @media (max-width: 480px) {
   .app-content {
     padding: 16px 12px 24px;
@@ -2137,5 +2588,31 @@ select.form-input {
 
   .page-header h1 {
     font-size: 1.1rem;
+  }
+
+  /* Even tighter spacing */
+  .financial-amount {
+    font-size: 1.5rem;
+  }
+
+  .financial-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+
+  /* Session badges collapse */
+  .session-header .badge {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .trend-indicator {
+    width: 100%;
   }
 }
