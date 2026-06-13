@@ -45,6 +45,7 @@ const TestList = () => {
   const [compareAthletes, setCompareAthletes] = useState([]);
   const [expandedAthlete, setExpandedAthlete] = useState(null);
   const [expandedSession, setExpandedSession] = useState(null);
+  const [expandedSessionAthlete, setExpandedSessionAthlete] = useState({}); // { sessionId-athleteId: true/false }
   const [athleteTestData, setAthleteTestData] = useState({});
   const [selectedCompareTest, setSelectedCompareTest] = useState('');
 
@@ -379,22 +380,64 @@ const TestList = () => {
               {expandedSession === s.id && (
                 <div className="session-body">
                   {s.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{s.notes}</p>}
-                  <table className="data-table" style={{ margin: 0, fontSize: '0.85rem' }}>
-                    <thead><tr><th>Atleta</th><th>Test</th><th>Resultado</th><th>Entrenador</th></tr></thead>
-                    <tbody>
-                      {s.results?.map(r => (
-                        <tr key={r.id}>
-                          <td><strong>{r.athlete_name || `Atleta ${r.athlete_id}`}</strong></td>
-                          <td>{r.template_name}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{r.value}</td>
-                          <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{r.trainer_name || '-'}</td>
-                        </tr>
-                      ))}
-                      {(!s.results || s.results.length === 0) && (
-                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Sin resultados en esta sesion.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
+                  {/* Group results by athlete with accordion */}
+                  {(() => {
+                    const athleteMap = {};
+                    (s.results || []).forEach(r => {
+                      const key = r.athlete_id;
+                      if (!athleteMap[key]) {
+                        athleteMap[key] = {
+                          athlete_id: r.athlete_id,
+                          athlete_name: r.athlete_name || `Atleta ${r.athlete_id}`,
+                          results: []
+                        };
+                      }
+                      athleteMap[key].results.push(r);
+                    });
+                    const athleteEntries = Object.values(athleteMap).sort((a, b) => a.athlete_name.localeCompare(b.athlete_name));
+                    return athleteEntries.map(entry => {
+                      const accordionKey = `${s.id}-${entry.athlete_id}`;
+                      const isExpanded = expandedSessionAthlete[accordionKey];
+                      return (
+                        <div key={entry.athlete_id} className="athlete-accordion" style={{ marginBottom: 8 }}>
+                          <div
+                            onClick={() => setExpandedSessionAthlete(prev => ({ ...prev, [accordionKey]: !prev[accordionKey] }))}
+                            className={`athlete-accordion-header${isExpanded ? ' expanded' : ''}`}
+                          >
+                            <div className="table-avatar" style={{
+                              background: avatarColor(entry.athlete_name), width: '32px', height: '32px',
+                              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontWeight: '600', fontSize: '0.75rem', flexShrink: 0
+                            }}>
+                              {initials(entry.athlete_name.split(' ')[0], entry.athlete_name.split(' ')[1])}
+                            </div>
+                            <strong style={{ flex: 1, fontSize: '0.9rem' }}>{entry.athlete_name}</strong>
+                            <span className="badge badge-primary" style={{ flexShrink: 0 }}>{entry.results.length} resultados</span>
+                            <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
+                          </div>
+                          {isExpanded && (
+                            <div className="athlete-accordion-body">
+                              <table className="data-table" style={{ margin: 0, fontSize: '0.85rem' }}>
+                                <thead><tr><th>Test</th><th>Resultado</th><th>Entrenador</th></tr></thead>
+                                <tbody>
+                                  {entry.results.map(r => (
+                                    <tr key={r.id}>
+                                      <td>{r.template_name}</td>
+                                      <td style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{r.value}</td>
+                                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{r.trainer_name || '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                  {(!s.results || s.results.length === 0) && (
+                    <p style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>Sin resultados en esta sesion.</p>
+                  )}
                 </div>
               )}
             </div>
@@ -441,7 +484,7 @@ const TestList = () => {
         <div className="card" style={{ padding: '24px' }}>
           <h3 style={{ marginBottom: '12px' }}>Resultados por Atleta</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
-            Haz clic en un atleta para ver sus resultados con tendencia.
+            Haz clic en un atleta para ver sus resultados.
           </p>
 
           {/* Group results by athlete */}
@@ -465,61 +508,20 @@ const TestList = () => {
                 </div>
                 {expandedAthlete === name && (
                   <div className="athlete-accordion-body">
-                    {(() => {
-                      // Group by template and compute trend
-                      const byTemplate = {};
-                      data.results.forEach(r => {
-                        const tname = r.template_name;
-                        if (!byTemplate[tname]) byTemplate[tname] = [];
-                        byTemplate[tname].push(r);
-                      });
-                      return Object.entries(byTemplate).map(([tname, tresults]) => {
-                        const sorted = tresults.sort((a, b) => new Date(a.test_date) - new Date(b.test_date));
-                        const first = sorted[0];
-                        const last = sorted[sorted.length - 1];
-                        const firstVal = parseFloat(first.value);
-                        const lastVal = parseFloat(last.value);
-                        const diff = lastVal - firstVal;
-                        const templateObj = templates.find(t => t.id === last.template_id);
-                        const higherIsBetter = templateObj?.higher_is_better ?? true;
-                        const trend = higherIsBetter ? (diff > 0 ? '↑' : diff < 0 ? '↓' : '→') : (diff > 0 ? '↓' : diff < 0 ? '↑' : '→');
-                        const trendColor = trend === '↑' ? '#10b981' : trend === '↓' ? '#ef4444' : 'var(--text-muted)';
-                        return (
-                          <div key={tname} style={{ marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                              <strong style={{ fontSize: '0.9rem' }}>{tname}</strong>
-                              <span style={{ fontSize: '1.2rem', color: trendColor }}>{trend}</span>
-                              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                {sorted.length} registros | {firstVal} → {lastVal}
-                                <span style={{ color: trendColor, marginLeft: '4px', fontWeight: 600 }}>
-                                  ({diff > 0 ? '+' : ''}{diff.toFixed(2)})
-                                </span>
-                              </span>
-                            </div>
-                            {/* Sparkline mini line chart */}
-                            {sorted.length > 1 && (
-                              <ResponsiveContainer width="100%" height={40}>
-                                <LineChart data={sorted.map(r => ({ date: new Date(r.test_date).toLocaleDateString(), value: parseFloat(r.value) }))}>
-                                  <Line type="monotone" dataKey="value" stroke={trendColor} strokeWidth={2} dot={false} />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            )}
-                          </div>
-                        );
-                      });
-                    })()}
                     <table className="data-table" style={{ margin: 0, fontSize: '0.85rem' }}>
                       <thead><tr><th>Test</th><th>Resultado</th><th>Fecha</th><th>Entrenador</th><th>Notas</th></tr></thead>
                       <tbody>
-                        {data.results.map(r => (
-                          <tr key={r.id}>
-                            <td><strong>{r.template_name}</strong></td>
-                            <td style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{r.value}</td>
-                            <td>{new Date(r.test_date).toLocaleDateString()}</td>
-                            <td style={{ fontSize: '0.8rem' }}>{r.trainer_name || '-'}</td>
-                            <td style={{ fontSize: '0.8rem' }}>{r.notes || '-'}</td>
-                          </tr>
-                        ))}
+                        {data.results
+                          .sort((a, b) => new Date(b.test_date) - new Date(a.test_date))
+                          .map(r => (
+                            <tr key={r.id}>
+                              <td><strong>{r.template_name}</strong></td>
+                              <td style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{r.value}</td>
+                              <td>{new Date(r.test_date).toLocaleDateString()}</td>
+                              <td style={{ fontSize: '0.8rem' }}>{r.trainer_name || '-'}</td>
+                              <td style={{ fontSize: '0.8rem' }}>{r.notes || '-'}</td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
