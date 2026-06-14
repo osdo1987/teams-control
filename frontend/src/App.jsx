@@ -4,6 +4,8 @@ import { authService } from './services/authService';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import ClubLogin from './pages/ClubLogin';
+import ClubLanding from './pages/ClubLanding';
+import LandingEditor from './components/Admin/LandingEditor';
 import AdminLayout from './components/Admin/AdminLayout';
 import DashboardHome from './pages/admin/DashboardHome';
 import AthleteList from './pages/admin/AthleteList';
@@ -56,6 +58,7 @@ function App() {
           <Route path="attendance" element={<AttendanceList />} />
           <Route path="tests" element={<TestList />} />
           <Route path="athletes/:id" element={<AthleteProfile />} />
+          <Route path="landing" element={<LandingEditor />} />
         </Route>
 
         <Route path="/super-admin" element={
@@ -125,7 +128,7 @@ function App() {
         <Route path="/" element={
           isAppSubdomain ? <Navigate to="/login" replace /> : <LandingPage />
         } />
-        <Route path="/:clubSlug" element={<ClubLogin />} />
+        <Route path="/:clubSlug" element={<ClubLanding />} />
       </Routes>
     </BrowserRouter>
   );

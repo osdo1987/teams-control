@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
-import { IconHome, IconTrophy, IconUsers, IconUserCheck, IconLogOut, IconZap, IconUser, IconDollarSign, IconCalendar, IconActivity } from '../Icons';
+import { IconHome, IconTrophy, IconUsers, IconUserCheck, IconLogOut, IconZap, IconUser, IconDollarSign, IconCalendar, IconActivity, IconImage } from '../Icons';
 
 const links = [
   { t: 'link', to: '/admin', end: true, icon: IconHome, label: 'Dashboard' },
@@ -12,6 +12,7 @@ const links = [
   { t: 'link', to: '/admin/payments', icon: IconDollarSign, label: 'Pagos' },
   { t: 'link', to: '/admin/attendance', icon: IconCalendar, label: 'Asistencia' },
   { t: 'link', to: '/admin/tests', icon: IconActivity, label: 'Tests' },
+  { t: 'link', to: '/admin/landing', icon: IconImage, label: 'Landing Page' },
 ];
 
 const AdminSidebar = ({ open, onClose }) => {

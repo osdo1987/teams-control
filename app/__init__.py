@@ -40,6 +40,8 @@ def create_app(config_class=Config):
     app.register_blueprint(stats_bp, url_prefix='/api/stats')
     from app.routes.test_routes import test_bp
     app.register_blueprint(test_bp, url_prefix='/api/tests')
+    from app.routes.landing_routes import landing_bp
+    app.register_blueprint(landing_bp, url_prefix='/api')
 
     @app.errorhandler(Exception)
     def handle_exception(e):

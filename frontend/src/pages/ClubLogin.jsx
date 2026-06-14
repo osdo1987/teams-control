@@ -146,7 +146,7 @@ const ClubLogin = () => {
                         </div>
                     )}
                 </div>
-                <div className="auth-footer">© {new Date().getFullYear()} {club.name} · Powered by Club Manager</div>
+                <div className="auth-footer">© {new Date().getFullYear()} {club.name} · Powered by <a href="https://osdosoft.com">Osdosoft</a></div>
             </div>
 
             {/* Right side - form */}
