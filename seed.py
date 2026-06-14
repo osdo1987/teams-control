@@ -174,10 +174,11 @@ def seed_database():
         today_dt = datetime.combine(date.today(), datetime.min.time())
         end_dt = datetime(2026, 12, 31, 23, 59, 59)
 
-        c1 = Club(name="Troya Voley", sport="Voleibol",
+        c1 = Club(name="Troya Voley", slug="troya-voley", sport="Voleibol",
                   description="Club de voleibol femenino formativo y competitivo de Medellín.",
-                  subscription_status="ACTIVE", plan_type="PRO",
-                  subscription_end_date=end_dt)
+                  subscription_status="ACTIVE", plan_type="BASIC",
+                  subscription_end_date=end_dt,
+                  primary_color="#7c3aed", welcome_message="Gestión deportiva sin fricción.")
         db.session.add(c1); db.session.flush()
 
         cat_jv  = Category(name="Juvenil",    club_id=c1.id)
@@ -268,10 +269,11 @@ def seed_database():
         # CLUB 2 — ÁGUILAS FC BOGOTÁ  (PRO / ACTIVE)
         # ══════════════════════════════════════════════════════════════════════
         print("\n📌 Club 2: Águilas FC Bogotá")
-        c2 = Club(name="Águilas FC Bogotá", sport="Fútbol",
+        c2 = Club(name="Águilas FC Bogotá", slug="aguilas-fc", sport="Fútbol",
                   description="Academia de fútbol masculino en la ciudad de Bogotá.",
-                  subscription_status="ACTIVE", plan_type="PRO",
-                  subscription_end_date=datetime(2026,11,30,23,59,59))
+                  subscription_status="ACTIVE", plan_type="BASIC",
+                  subscription_end_date=datetime(2026,11,30,23,59,59),
+                  primary_color="#dc2626", welcome_message="Gestión deportiva sin fricción.")
         db.session.add(c2); db.session.flush()
 
         cat2_sub  = Category(name="Sub-17",  club_id=c2.id)
@@ -338,10 +340,11 @@ def seed_database():
         # CLUB 3 — ACADEMIA NÁUTICA CARIBE  (BASIC / TRIAL)
         # ══════════════════════════════════════════════════════════════════════
         print("\n📌 Club 3: Academia Náutica Caribe")
-        c3 = Club(name="Academia Náutica Caribe", sport="Natación",
+        c3 = Club(name="Academia Náutica Caribe", slug="nautica-caribe", sport="Natación",
                   description="Escuela de natación y deportes acuáticos en Barranquilla.",
                   subscription_status="TRIAL", plan_type="BASIC",
-                  subscription_end_date=datetime.now() + timedelta(days=20))
+                  subscription_end_date=datetime.now() + timedelta(days=15),
+                  primary_color="#0891b2", welcome_message="Gestión deportiva sin fricción.")
         db.session.add(c3); db.session.flush()
 
         cat3_n = Category(name="Novatos",     club_id=c3.id)
@@ -394,10 +397,11 @@ def seed_database():
         # CLUB 4 — TIGRES DE IBAGUÉ FC  (BASIC / EXPIRED)
         # ══════════════════════════════════════════════════════════════════════
         print("\n📌 Club 4: Tigres de Ibagué FC")
-        c4 = Club(name="Tigres de Ibagué FC", sport="Fútbol",
+        c4 = Club(name="Tigres de Ibagué FC", slug="tigres-ibague", sport="Fútbol",
                   description="Club de fútbol con larga trayectoria en Ibagué, Tolima.",
                   subscription_status="EXPIRED", plan_type="BASIC",
-                  subscription_end_date=datetime.now() - timedelta(days=10))
+                  subscription_end_date=datetime.now() - timedelta(days=10),
+                  primary_color="#ea580c", welcome_message="Gestión deportiva sin fricción.")
         db.session.add(c4); db.session.flush()
 
         cat4_j = Category(name="Juvenil", club_id=c4.id)

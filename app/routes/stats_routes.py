@@ -59,8 +59,8 @@ def get_global_stats():
         })
 
     # Financial Projection in COP
-    # BASIC: 120.000, PRO: 280.000, UNLIMITED: 600.000, FLEXIBLE: 500 per athlete
-    plan_prices = {"BASIC": 120000, "PRO": 280000, "UNLIMITED": 600000}
+    # BASIC: 120.000/mes, FLEXIBLE: 1.000 per athlete
+    plan_prices = {"BASIC": 120000}
     projected_revenue = 0
     active_subscriptions = 0
     expired_subscriptions = 0

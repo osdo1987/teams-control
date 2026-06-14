@@ -5,6 +5,8 @@ import clubService from '../../services/clubService';
 import { authService } from '../../services/authService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import PasswordInput from '../../components/UI/PasswordInput';
+import { IconEye, IconEyeOff } from '../../components/Icons';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
@@ -40,11 +42,18 @@ const UserList = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClubId, setSelectedClubId] = useState('');
 
+  const currentUser = authService.getCurrentUser();
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+
   const filteredUsers = users.filter(u => {
     if (u.role === 'ATHLETE') return false;
+    // Super admin solo ve ADMIN, admin normal ve todos excepto SUPER_ADMIN
+    if (isSuperAdmin && u.role !== 'ADMIN') return false;
     const name = `${u.first_name} ${u.last_name}`.toLowerCase();
     const id = (u.identification_number || '').toString();
     const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
@@ -58,22 +67,27 @@ const UserList = () => {
 
   const fetchInitialData = async () => {
     try {
+      setError('');
       const [usersData, clubsData, groupsData] = await Promise.all([
         userService.getUsers(),
         clubService.getAllClubs(),
         groupService.getGroups()
       ]);
-      setUsers(usersData);
-      setClubs(clubsData);
-      setGroups(groupsData);
-    } catch {
-      setError('Error al cargar datos iniciales');
+      setUsers(usersData || []);
+      setClubs(clubsData || []);
+      setGroups(groupsData || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Error al cargar datos. Verifique la conexión.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleInputChange = e => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setPasswordError('');
+  };
 
   const openCreateModal = () => {
     const currentUser = authService.getCurrentUser();
@@ -84,8 +98,11 @@ const UserList = () => {
 
     setFormData({
       ...INITIAL_FORM,
+      role: isSuperAdmin ? 'ADMIN' : 'ATHLETE',
       club_id: defaultClubId
     });
+    setConfirmPassword('');
+    setPasswordError('');
     setIsModalOpen(true);
   };
 
@@ -99,30 +116,68 @@ const UserList = () => {
       last_name: user.last_name,
       role: user.role,
       club_id: user.club_id || '',
-      group_id: user.athlete_profile?.current_groups?.[0]?.id || '',
+      group_id: '',
       phone: user.phone || ''
     });
+    setConfirmPassword('');
+    setPasswordError('');
     setIsModalOpen(true);
+  };
+
+  const validatePassword = (pass) => {
+    const errors = [];
+    if (pass.length < 6) errors.push('Mínimo 6 caracteres');
+    if (!/[A-Z]/.test(pass) && !/[a-z]/.test(pass)) errors.push('Debe contener letras');
+    if (!/[0-9]/.test(pass)) errors.push('Debe contener al menos un número');
+    return errors;
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
+    setPasswordError('');
+
+    // Validar password al crear usuario o al cambiarlo
+    if (!editingUser || (editingUser && formData.password)) {
+      if (formData.password !== confirmPassword) {
+        setPasswordError('Las contraseñas no coinciden');
+        return;
+      }
+      const pwdErrors = validatePassword(formData.password);
+      if (pwdErrors.length > 0) {
+        setPasswordError(pwdErrors.join('. '));
+        return;
+      }
+    }
+
     try {
       const payload = {
         ...formData,
-        club_id: parseInt(formData.club_id),
-        group_id: formData.group_id ? parseInt(formData.group_id) : null
+        club_id: parseInt(formData.club_id)
       };
+      // Solo incluir group_id para ATHLETE
+      if (formData.role === 'ATHLETE') {
+        payload.group_id = formData.group_id ? parseInt(formData.group_id) : null;
+      }
       if (!payload.password && editingUser) delete payload.password;
 
       if (editingUser) {
         await userService.updateUser(editingUser.id, payload);
+        // Recargar datos completos después de editar
+        setConfirmPassword('');
+        const usersData = await userService.getUsers();
+        setUsers(usersData || []);
+        setIsModalOpen(false);
       } else {
-        await userService.createUser(payload);
+        const newUser = await userService.createUser(payload);
+        // Agregar el nuevo usuario directamente al state sin refetch
+        setUsers(prev => [...prev, { ...newUser, club: clubs.find(c => c.id === parseInt(formData.club_id)) }]);
+        setConfirmPassword('');
+        setIsModalOpen(false);
       }
-      setIsModalOpen(false);
-      fetchInitialData();
-    } catch (err) { setError(err.message || 'Error al guardar usuario'); }
+    } catch (err) {
+      console.error('Error al guardar:', err);
+      setError(err.message || 'Error al guardar usuario');
+    }
   };
 
   const confirmDelete = async () => {
@@ -261,19 +316,40 @@ const UserList = () => {
             <label className="form-label">Email (Opcional)</label>
             <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="form-input" placeholder="email@ejemplo.com" />
           </div>
+          <PasswordInput
+            value={formData.password}
+            onChange={handleInputChange}
+            name="password"
+            required={!editingUser}
+            showStrength={false}
+            label={<>Contraseña {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Dejar vacío para mantener)</span>}</>}
+          />
           <div className="form-group">
-            <label className="form-label">Contraseña {editingUser && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Dejar vacío para mantener)</span>}</label>
-            <input type="password" name="password" value={formData.password} onChange={handleInputChange} className="form-input" required={!editingUser} placeholder="••••••••" />
+            <label className="form-label">Confirmar Contraseña</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+              className="form-input"
+              required={!editingUser}
+              placeholder="••••••••"
+              minLength={6}
+            />
           </div>
+          {passwordError && (
+            <div className="badge badge-danger" style={{ marginBottom: '8px', padding: '10px 16px', borderRadius: '10px', display: 'block', fontSize: '0.8rem' }}>
+              {passwordError}
+            </div>
+          )}
 
           <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Rol</label>
               <select name="role" value={formData.role} onChange={handleInputChange} className="form-input">
                 <option value="ADMIN">Administrador</option>
-                <option value="TRAINER">Entrenador</option>
-                <option value="ATHLETE">Atleta</option>
-                <option value="SUPER_ADMIN">Super Admin</option>
+                {!isSuperAdmin && <option value="TRAINER">Entrenador</option>}
+                {!isSuperAdmin && <option value="ATHLETE">Atleta</option>}
               </select>
             </div>
             <div className="form-group">
@@ -295,7 +371,7 @@ const UserList = () => {
           </div>
 
           {/* Selector de Grupo - Solo para Atletas */}
-          {formData.role === 'ATHLETE' && (
+          {formData.role === 'ATHLETE' && !isSuperAdmin && (
             <div className="form-group">
               <label className="form-label">Asignar a Grupo</label>
               <select name="group_id" value={formData.group_id} onChange={handleInputChange} className="form-input" required={!editingUser}>

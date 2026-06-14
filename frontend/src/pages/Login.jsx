@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { IconLock, IconIdCard, IconAlertCircle, IconZap, IconUsers, IconCreditCard, IconClipboard, IconArrowRight, IconSun, IconMoon } from '../components/Icons';
+import { IconLock, IconIdCard, IconAlertCircle, IconZap, IconUsers, IconCreditCard, IconClipboard, IconArrowRight, IconEye, IconEyeOff } from '../components/Icons';
 
 const DEMO_USERS = [
   { id: '0000000001', pass: 'super123', label: 'Super Admin', role: 'SUPER_ADMIN' },
@@ -13,6 +13,7 @@ const DEMO_USERS = [
 const Login = () => {
   const [identificationNumber, setIdentificationNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -104,14 +105,34 @@ const Login = () => {
             <div className="input-with-icon">
               <IconLock size={18} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
+                style={{ paddingRight: '44px' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: '4px',
+                  display: 'flex'
+                }}
+                tabIndex={-1}
+              >
+                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              </button>
             </div>
           </div>
 

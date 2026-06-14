@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /* ─────────────────────────── DATA ─────────────────────────── */
 const plans = [
-  { name: 'Básico', price: '120.000', period: 'mes', features: ['Hasta 50 atletas', '2 categorías', 'Reportes PDF', 'Soporte por email'] },
-  { name: 'Profesional', price: '280.000', period: 'mes', highlight: true, features: ['Hasta 200 atletas', 'Categorías ilimitadas', '5 Entrenadores', 'Soporte prioritario', 'Reportes avanzados'] },
-  { name: 'Flexible', price: '1.000', period: 'atleta/mes', features: ['Atletas ilimitados', 'Sin cargos fijos', 'Todas las funciones Pro', 'Escalabilidad automática'] },
-  { name: 'Ilimitado', price: '600.000', period: 'mes', features: ['Todo ilimitado', 'Marca blanca', 'Multi-sede', 'API de integración', 'Soporte 24/7'] },
+  { name: 'Prueba Gratis', price: '0', period: '15 días', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'], trial: true },
+  { name: 'Básico Mensual', price: '120.000', period: 'mes', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Básico Semestral', price: '600.000', period: 'semestre', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Básico Anual', price: '1.080.000', period: 'año', highlight: true, features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
 ];
 
 const portfolio = [
@@ -172,7 +172,7 @@ const LandingPage = () => {
 
       {/* Hero */}
       <header className="hero">
-        <FadeIn><h1 className="hero-title">Diseño.<br/>Código.<br/>Precisión.</h1></FadeIn>
+        <FadeIn><h1 className="hero-title">Diseño.<br />Código.<br />Precisión.</h1></FadeIn>
         <FadeIn delay={0.1}>
           <p className="hero-subtitle">
             Construimos software excepcional para empresas visionarias. Minimalismo estético y arquitectura de vanguardia.
@@ -276,6 +276,7 @@ const LandingPage = () => {
           {plans.map((plan, i) => (
             <FadeIn key={plan.name} delay={i * 0.1}>
               <div className={`price-card ${plan.highlight ? 'price-highlight' : ''}`}>
+                {plan.trial && <div style={{ position: 'absolute', top: -12, left: 24, background: 'var(--green-500)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '100px' }}>SIN COSTO</div>}
                 {plan.highlight && <div style={{ position: 'absolute', top: -12, left: 24, background: 'var(--text-main)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '100px' }}>RECOMENDADO</div>}
                 <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '8px' }}>{plan.name}</div>
                 <div style={{ marginBottom: '24px' }}>
@@ -306,7 +307,7 @@ const LandingPage = () => {
                 <a href="mailto:contacto@osdosoft.com" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>contacto@osdosoft.com</a>
               </div>
             </div>
-            
+
             <div style={{ background: 'var(--card-bg)', padding: '40px', borderRadius: '24px', border: '1px solid var(--border)' }}>
               <input type="text" placeholder="Nombre completo" className="contact-input" />
               <input type="email" placeholder="Correo electrónico" className="contact-input" />
@@ -315,7 +316,7 @@ const LandingPage = () => {
             </div>
           </div>
         </FadeIn>
-        
+
         <div style={{ textAlign: 'center', marginTop: '60px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           &copy; {new Date().getFullYear()} Osdosoft S.A.S. — Todos los derechos reservados.
         </div>

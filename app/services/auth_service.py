@@ -7,14 +7,24 @@ from flask_jwt_extended import create_access_token
 
 class AuthService:
     @staticmethod
-    def login(identification_number, password):
+    def login(identification_number, password, club_slug=None):
         user = User.query.filter_by(identification_number=identification_number).first()
         if user and user.check_password(password):
+            # If club_slug is provided, verify user belongs to that club
+            if club_slug:
+                from app.models.club import Club
+                club = Club.query.filter_by(slug=club_slug).first()
+                if not club:
+                    return {"error": "Club no encontrado"}, 404
+                if user.club_id != club.id:
+                    return {"error": "Credenciales inválidas para este club"}, 401
+            
             access_token = create_access_token(identity=str(user.id))
             
             # Obtener datos del club
             club_name = "Global"
             subscription_status = "ACTIVE"
+            club_slug_val = None
             
             if user.club_id:
                 from app.models.club import Club
@@ -22,6 +32,7 @@ class AuthService:
                 if club:
                     club_name = club.name
                     subscription_status = club.subscription_status or "TRIAL"
+                    club_slug_val = club.slug
                 
             # Log para depuración en producción
             print(f"DEBUG LOGIN: User {user.identification_number} - Club: {club_name} - Status: {subscription_status}")
@@ -37,6 +48,7 @@ class AuthService:
                     "role": user.role,
                     "club_id": user.club_id,
                     "club_name": club_name,
+                    "club_slug": club_slug_val,
                     "subscription_status": subscription_status
                 }
             }, 200

@@ -1,29 +1,35 @@
 import { api } from './api';
 
 const clubService = {
+  // Admin methods
   getAllClubs: async () => {
     return await api('/clubs');
   },
-  getClubDetails: async (id) => {
-    return await api(`/clubs/${id}`);
-  },
-  createClub: async (clubData) => {
+
+  createClub: async (data) => {
     return await api('/clubs', {
       method: 'POST',
-      body: JSON.stringify(clubData)
+      body: JSON.stringify(data)
     });
   },
-  updateClub: async (id, clubData) => {
-    return await api(`/clubs/${id}`, {
+
+  updateClub: async (clubId, data) => {
+    return await api(`/clubs/${clubId}`, {
       method: 'PUT',
-      body: JSON.stringify(clubData)
+      body: JSON.stringify(data)
     });
   },
-  deleteClub: async (id) => {
-    return await api(`/clubs/${id}`, {
+
+  deleteClub: async (clubId) => {
+    return await api(`/clubs/${clubId}`, {
       method: 'DELETE'
     });
-  }
+  },
+
+  // Public method - no auth required
+  getPublicBySlug: async (slug) => {
+    return await api(`/clubs/public/${slug}`);
+  },
 };
 
 export default clubService;

@@ -164,9 +164,7 @@ const SuperAdminDashboard = () => {
 
                     <div className="card">
                         <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Planes Contratados</h3>
-                        <PlanRow label="Unlimited" price="$150" count={stats.clubs.distribution.filter(c => c.plan_type === 'UNLIMITED').length} color="var(--warning-500)" />
-                        <PlanRow label="Professional" price="$70" count={stats.clubs.distribution.filter(c => c.plan_type === 'PRO').length} color="var(--purple-500)" />
-                        <PlanRow label="Basic" price="$30" count={stats.clubs.distribution.filter(c => c.plan_type === 'BASIC').length} color="var(--brand-500)" />
+                        <PlanRow label="Básico" price="$120.000" count={stats.clubs.distribution.filter(c => c.plan_type === 'BASIC').length} color="var(--brand-500)" />
                     </div>
                 </aside>
             </div>

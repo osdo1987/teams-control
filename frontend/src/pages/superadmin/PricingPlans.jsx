@@ -3,67 +3,73 @@ import { IconZap } from '../../components/Icons';
 
 const plans = [
     {
-        name: "Básico",
+        name: "Prueba Gratis",
+        price: "0",
+        period: "15 días",
+        description: "Prueba la plataforma sin costo durante 15 días. Acceso completo a todas las funcionalidades.",
+        features: [
+            "Atletas ilimitados",
+            "Categorías ilimitadas",
+            "Gestión de asistencia",
+            "Seguimiento de pagos",
+            "Reportes y estadísticas",
+            "Múltiples entrenadores",
+            "Soporte prioritario"
+        ],
+        color: "var(--green-500)",
+        recommended: false,
+        trial: true
+    },
+    {
+        name: "Básico Mensual",
         price: "120.000",
         period: "mes",
-        description: "Ideal para escuelas pequeñas que están iniciando su digitalización.",
+        description: "Acceso completo a todas las funcionalidades de la plataforma. Pago mensual sin compromiso.",
         features: [
-            "Hasta 50 atletas registrados",
-            "Gestión de 2 categorías",
-            "Asistencia básica",
-            "Soporte por correo electrónico",
-            "Reportes mensuales en PDF"
+            "Atletas ilimitados",
+            "Categorías ilimitadas",
+            "Gestión de asistencia",
+            "Seguimiento de pagos",
+            "Reportes y estadísticas",
+            "Múltiples entrenadores",
+            "Soporte prioritario"
         ],
         color: "var(--brand-500)",
         recommended: false
     },
     {
-        name: "Profesional",
-        price: "280.000",
-        period: "mes",
-        description: "Perfecto para clubes medianos con múltiples grupos de entrenamiento.",
+        name: "Básico Semestral",
+        price: "600.000",
+        period: "semestre",
+        description: "Todas las funcionalidades incluidas. Ahorra $120.000 pagando el semestre completo.",
         features: [
-            "Hasta 200 atletas registrados",
+            "Atletas ilimitados",
             "Categorías ilimitadas",
-            "Gestión de hasta 5 entrenadores",
-            "Seguimiento de pagos avanzado",
-            "Reportes de rendimiento individuales",
+            "Gestión de asistencia",
+            "Seguimiento de pagos",
+            "Reportes y estadísticas",
+            "Múltiples entrenadores",
             "Soporte prioritario"
         ],
         color: "var(--purple-500)",
-        recommended: true
-    },
-    {
-        name: "Flexible",
-        price: "1.000",
-        period: "atleta/mes",
-        description: "Paga exactamente por lo que usas. Sin cargos fijos ni sorpresas.",
-        features: [
-            "Atletas ilimitados",
-            "Todas las funciones Pro",
-            "Gestión de pagos incluida",
-            "Escalabilidad automática",
-            "Ideal para clubes en crecimiento"
-        ],
-        color: "var(--pink-500)",
         recommended: false
     },
     {
-        name: "Ilimitado",
-        price: "600.000",
-        period: "mes",
-        description: "La solución total para grandes academias y franquicias deportivas.",
+        name: "Básico Anual",
+        price: "1.080.000",
+        period: "año",
+        description: "Todas las funcionalidades incluidas. Ahorra $360.000 pagando el año completo.",
         features: [
             "Atletas ilimitados",
-            "Entrenadores ilimitados",
-            "Personalización de marca",
-            "API de integración básica",
-            "Soporte 24/7 dedicado",
-            "Carga masiva de datos",
-            "Gestión multi-sede"
+            "Categorías ilimitadas",
+            "Gestión de asistencia",
+            "Seguimiento de pagos",
+            "Reportes y estadísticas",
+            "Múltiples entrenadores",
+            "Soporte prioritario"
         ],
         color: "var(--warning-500)",
-        recommended: false
+        recommended: true
     }
 ];
 
@@ -117,13 +123,32 @@ const PricingPlans = () => {
                                 Más Popular
                             </div>
                         )}
+                        {plan.trial && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '-14px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: 'var(--green-600)',
+                                color: 'white',
+                                padding: '4px 16px',
+                                borderRadius: '99px',
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.05em',
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap'
+                            }}>
+                                Sin Costo
+                            </div>
+                        )}
                         <h2 style={{ color: plan.color, fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>{plan.name}</h2>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '24px', minHeight: '45px' }}>
                             {plan.description}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '24px' }}>
                             <span style={{ fontSize: '1.3rem', fontWeight: 700, marginRight: '4px' }}>$</span>
-                            <span style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>{plan.price}</span>
+                            <span style={{ fontSize: plan.price.length > 7 ? '1.8rem' : '2.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>{plan.price}</span>
                             <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: '4px' }}>/{plan.period}</span>
                         </div>
 

@@ -40,7 +40,11 @@ def login():
     if errors:
         return jsonify(errors), 400
     
-    result, status = AuthService.login(data['identification_number'], data['password'])
+    result, status = AuthService.login(
+        data['identification_number'],
+        data['password'],
+        club_slug=data.get('club_slug')
+    )
     return jsonify(result), status
 
 @auth_bp.route('/register', methods=['POST'])

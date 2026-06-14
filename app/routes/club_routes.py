@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.models.club import Club
 from app.models.user import User
-from app.schemas.club_schema import ClubSchema
+from app.schemas.club_schema import ClubSchema, ClubPublicSchema
 from app.utils.decorators import role_required
 from flask_jwt_extended import jwt_required
 from app.extensions import db
@@ -9,6 +9,7 @@ from app.extensions import db
 club_bp = Blueprint('clubs', __name__)
 club_schema = ClubSchema()
 clubs_schema = ClubSchema(many=True)
+club_public_schema = ClubPublicSchema()
 
 @club_bp.route('', methods=['GET'])
 @role_required(['SUPER_ADMIN', 'ADMIN'])
@@ -40,6 +41,17 @@ def get_club_details(club_id):
     club_data['user_count'] = User.query.filter_by(club_id=club.id).count()
     return jsonify(club_data), 200
 
+@club_bp.route('/public/<slug>', methods=['GET'])
+def get_club_by_slug(slug):
+    """
+    Get Club Public Info by Slug (no auth required)
+    """
+    club = Club.query.filter_by(slug=slug).first()
+    if not club:
+        return jsonify({"error": "Club not found"}), 404
+    return jsonify(club_public_schema.dump(club)), 200
+
+
 @club_bp.route('', methods=['POST'])
 @role_required(['SUPER_ADMIN'])
 def create_club():
@@ -49,11 +61,21 @@ def create_club():
     data = request.get_json()
     if Club.query.filter_by(name=data['name']).first():
         return jsonify({"error": "Club name already exists"}), 400
+    
+    # Validate slug uniqueness if provided
+    if data.get('slug'):
+        if Club.query.filter_by(slug=data['slug']).first():
+            return jsonify({"error": "Slug already exists"}), 400
         
     new_club = Club(
         name=data['name'],
+        slug=data.get('slug', ''),
         description=data.get('description', ''),
-        sport=data.get('sport', 'Fútbol')
+        sport=data.get('sport', 'Fútbol'),
+        primary_color=data.get('primary_color', '#6366f1'),
+        logo_url=data.get('logo_url', ''),
+        welcome_message=data.get('welcome_message', ''),
+        show_features=data.get('show_features', True)
     )
     db.session.add(new_club)
     db.session.commit()
@@ -70,6 +92,12 @@ def update_club(club_id):
     
     if 'name' in data:
         club.name = data['name']
+    if 'slug' in data:
+        # Validate slug uniqueness if changing
+        existing = Club.query.filter_by(slug=data['slug']).first()
+        if existing and existing.id != club_id:
+            return jsonify({"error": "Slug already exists"}), 400
+        club.slug = data['slug']
     if 'description' in data:
         club.description = data['description']
     if 'sport' in data:
@@ -84,6 +112,15 @@ def update_club(club_id):
             club.subscription_end_date = datetime.fromisoformat(data['subscription_end_date'])
         except:
             pass
+    # Customization fields
+    if 'primary_color' in data:
+        club.primary_color = data['primary_color']
+    if 'logo_url' in data:
+        club.logo_url = data['logo_url']
+    if 'welcome_message' in data:
+        club.welcome_message = data['welcome_message']
+    if 'show_features' in data:
+        club.show_features = data['show_features']
         
     db.session.commit()
     return jsonify(club_schema.dump(club)), 200

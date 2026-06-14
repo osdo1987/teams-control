@@ -12,11 +12,16 @@ const ClubList = () => {
   const [editingClub, setEditingClub] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    slug: '',
     description: '',
     sport: 'Fútbol',
     subscription_status: 'TRIAL',
     plan_type: 'BASIC',
-    subscription_end_date: ''
+    subscription_end_date: '',
+    primary_color: '#6366f1',
+    logo_url: '',
+    welcome_message: '',
+    show_features: true,
   });
 
   useEffect(() => {
@@ -39,21 +44,31 @@ const ClubList = () => {
       setEditingClub(club);
       setFormData({
         name: club.name,
+        slug: club.slug || '',
         description: club.description || '',
         sport: club.sport || 'Fútbol',
         subscription_status: club.subscription_status || 'TRIAL',
         plan_type: club.plan_type || 'BASIC',
-        subscription_end_date: club.subscription_end_date ? club.subscription_end_date.split('T')[0] : ''
+        subscription_end_date: club.subscription_end_date ? club.subscription_end_date.split('T')[0] : '',
+        primary_color: club.primary_color || '#6366f1',
+        logo_url: club.logo_url || '',
+        welcome_message: club.welcome_message || '',
+        show_features: club.show_features !== false,
       });
     } else {
       setEditingClub(null);
       setFormData({
         name: '',
+        slug: '',
         description: '',
         sport: 'Fútbol',
         subscription_status: 'TRIAL',
         plan_type: 'BASIC',
-        subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        subscription_end_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        primary_color: '#6366f1',
+        logo_url: '',
+        welcome_message: '',
+        show_features: true,
       });
     }
     setShowModal(true);
@@ -99,10 +114,7 @@ const ClubList = () => {
 
   const getPlanBadge = (plan) => {
     switch (plan) {
-      case 'BASIC': return <span className="badge badge-info">Basic ($120.000)</span>;
-      case 'PRO': return <span className="badge badge-purple">Pro ($280.000)</span>;
-      case 'FLEXIBLE': return <span className="badge badge-pink">Flexible ($1.000 p/a)</span>;
-      case 'UNLIMITED': return <span className="badge badge-warning">Unlimited ($600.000)</span>;
+      case 'BASIC': return <span className="badge badge-info">Básico ($120.000/mes)</span>;
       default: return <span className="badge badge-neutral">{plan}</span>;
     }
   };
@@ -126,6 +138,7 @@ const ClubList = () => {
           <thead>
             <tr>
               <th>Club</th>
+              <th>Slug/URL</th>
               <th>Deporte</th>
               <th>Suscripción</th>
               <th>Plan</th>
@@ -144,6 +157,15 @@ const ClubList = () => {
                     </div>
                   </div>
                 </td>
+                <td>
+                  {club.slug ? (
+                    <a href={`/${club.slug}`} target="_blank" rel="noopener noreferrer"
+                      style={{ color: 'var(--brand-600)', fontFamily: 'monospace', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}
+                      title="Abrir login personalizado">
+                      /{club.slug}
+                    </a>
+                  ) : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.8rem' }}>Sin slug</span>}
+                </td>
                 <td><span className="badge badge-info badge-no-dot">{club.sport}</span></td>
                 <td>{getStatusBadge(club.subscription_status)}</td>
                 <td>{getPlanBadge(club.plan_type)}</td>
@@ -151,6 +173,12 @@ const ClubList = () => {
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(club)}>Gestionar</button>
+                    {club.slug && (
+                      <a href={`/${club.slug}`} target="_blank" rel="noopener noreferrer"
+                        className="btn btn-ghost btn-sm" title="Ver login personalizado">
+                        Ver
+                      </a>
+                    )}
                     <button className="btn btn-sm btn-danger"
                       onClick={() => { setClubToDelete(club); setIsConfirmOpen(true); }}>Eliminar</button>
                   </div>
@@ -159,7 +187,7 @@ const ClubList = () => {
             ))}
             {clubs.length === 0 && (
               <tr>
-                <td colSpan="6"><div className="table-empty">No hay clubes registrados</div></td>
+                <td colSpan="7"><div className="table-empty">No hay clubes registrados</div></td>
               </tr>
             )}
           </tbody>
@@ -228,10 +256,7 @@ const ClubList = () => {
                   value={formData.plan_type}
                   onChange={(e) => setFormData({ ...formData, plan_type: e.target.value })}
                 >
-                  <option value="BASIC">Básico ($120.000)</option>
-                  <option value="PRO">Profesional ($280.000)</option>
-                  <option value="FLEXIBLE">Flexible ($1.000 x Atleta)</option>
-                  <option value="UNLIMITED">Ilimitado ($600.000)</option>
+                  <option value="BASIC">Básico ($120.000/mes)</option>
                 </select>
               </div>
             </div>
@@ -255,6 +280,81 @@ const ClubList = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               ></textarea>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-soft)', margin: '8px 0' }}></div>
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--brand-600)', fontWeight: 700, marginBottom: '4px' }}>PERSONALIZACIÓN DEL LOGIN</h4>
+
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label">Slug / URL del Club</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="troya-voley"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') })}
+                />
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  URL amigable: /{formData.slug || 'mi-club'}
+                </small>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Color Primario</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    value={formData.primary_color}
+                    onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
+                    style={{ width: '44px', height: '38px', border: '1px solid var(--border-soft)', borderRadius: '6px', cursor: 'pointer', padding: '2px' }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.primary_color}
+                    onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
+                    style={{ fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Logo del Club (URL)</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="https://ejemplo.com/logo.png"
+                value={formData.logo_url}
+                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+              />
+              {formData.logo_url && (
+                <div style={{ marginTop: '8px' }}>
+                  <img src={formData.logo_url} alt="Preview logo" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-soft)' }} />
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Mensaje de Bienvenida</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Gestión deportiva sin fricción."
+                value={formData.welcome_message}
+                onChange={(e) => setFormData({ ...formData, welcome_message: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="show_features"
+                checked={formData.show_features}
+                onChange={(e) => setFormData({ ...formData, show_features: e.target.checked })}
+                style={{ width: '18px', height: '18px', accentColor: formData.primary_color }}
+              />
+              <label htmlFor="show_features" className="form-label" style={{ marginBottom: 0 }}>Mostrar lista de características en el login</label>
             </div>
 
             <div className="modal-footer">

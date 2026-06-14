@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/authService';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
+import ClubLogin from './pages/ClubLogin';
 import AdminLayout from './components/Admin/AdminLayout';
 import DashboardHome from './pages/admin/DashboardHome';
 import AthleteList from './pages/admin/AthleteList';
@@ -124,6 +125,7 @@ function App() {
         <Route path="/" element={
           isAppSubdomain ? <Navigate to="/login" replace /> : <LandingPage />
         } />
+        <Route path="/:clubSlug" element={<ClubLogin />} />
       </Routes>
     </BrowserRouter>
   );
