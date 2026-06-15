@@ -86,7 +86,7 @@ function App() {
                   </div>
                   <nav className="sidebar-nav">
                     <div style={{ flex: 1 }}></div>
-                    <button className="logout-btn" onClick={() => authService.logout()}>🚪 Cerrar Sesión</button>
+                    <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
                   </nav>
                 </aside>
                 <div className="app-main">
@@ -112,7 +112,7 @@ function App() {
                 </div>
                 <nav className="sidebar-nav">
                   <div style={{ flex: 1 }}></div>
-                  <button className="logout-btn" onClick={() => authService.logout()}>🚪 Cerrar Sesión</button>
+                  <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
                 </nav>
               </aside>
               <div className="app-main">

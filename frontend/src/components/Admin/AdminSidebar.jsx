@@ -52,7 +52,7 @@ const AdminSidebar = ({ open, onClose }) => {
             <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{user?.role}</div>
           </div>
         </div>
-        <button className="logout-btn" onClick={() => authService.logout()}>
+        <button className="logout-btn" onClick={() => authService.logout(user?.club_slug)}>
           <IconLogOut size={18} /> Cerrar Sesion
         </button>
       </div>

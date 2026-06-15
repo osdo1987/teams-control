@@ -2814,17 +2814,21 @@ select.form-input {
 
 .hero-subtitle {
   font-size: 1.2rem;
-  opacity: 0.9;
+  opacity: 1;
   margin: 0 0 8px;
   font-weight: 400;
   line-height: 1.6;
+  color: #ffffff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
 .hero-description {
   font-size: 1rem;
-  opacity: 0.8;
+  opacity: 1;
   margin: 0;
   line-height: 1.6;
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
 }
 
 .landing-hero-login {
@@ -2838,6 +2842,52 @@ select.form-input {
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.landing-login-card .input-with-icon {
+  position: relative;
+}
+
+.landing-login-card .input-with-icon svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.landing-login-card .input-with-icon .form-input {
+  padding-left: 42px;
+}
+
+.landing-login-card .form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.landing-login-card .auth-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+  animation: slideDown 0.3s var(--ease-out);
+}
+
+.landing-login-card .auth-error svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .login-card-header {

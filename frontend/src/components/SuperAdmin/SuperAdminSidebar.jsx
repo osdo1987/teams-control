@@ -39,7 +39,7 @@ const SuperAdminSidebar = () => {
             <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>SUPER_ADMIN</div>
           </div>
         </div>
-        <button className="logout-btn" onClick={() => authService.logout()}>
+        <button className="logout-btn" onClick={() => authService.logout(null)}>
           <IconLogOut size={18} /> Cerrar Sesion
         </button>
       </div>

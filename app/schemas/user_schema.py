@@ -23,3 +23,4 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
 class LoginSchema(ma.Schema):
     identification_number = fields.String(required=True)
     password = fields.String(required=True)
+    club_slug = fields.String(load_default=None)

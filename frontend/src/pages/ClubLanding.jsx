@@ -267,7 +267,7 @@ const ClubLanding = () => {
                         {landing?.hero_subtitle && (
                             <p className="hero-subtitle">{landing.hero_subtitle}</p>
                         )}
-                        {!club.description && (
+                        {club.description && (
                             <p className="hero-description">{club.description}</p>
                         )}
                     </div>
