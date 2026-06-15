@@ -66,6 +66,7 @@ class LandingService:
                 'show_gallery': landing.show_gallery,
                 'show_contact': landing.show_contact,
                 'show_footer_social': landing.show_footer_social,
+                'show_registration': landing.show_registration,
                 'footer_text': landing.footer_text,
             }
         }
@@ -152,6 +153,8 @@ class LandingService:
             landing.show_contact = data['show_contact']
         if 'show_footer_social' in data:
             landing.show_footer_social = data['show_footer_social']
+        if 'show_registration' in data:
+            landing.show_registration = data['show_registration']
 
         # Footer
         if 'footer_text' in data:

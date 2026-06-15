@@ -22,6 +22,25 @@ class Club(db.Model):
     welcome_message = db.Column(db.String(200), nullable=True)  # Custom welcome text
     show_features = db.Column(db.Boolean, default=True)  # Show feature list on login
     
+    # Role permissions (JSON) - controls what each role can see
+    role_permissions = db.Column(db.JSON, default=lambda: {
+        'TRAINER': {
+            'dashboard': True,
+            'profile': True,
+            'groups': True,
+            'attendance': True,
+            'tests': True,
+            'payments': False
+        },
+        'ATHLETE': {
+            'dashboard': True,
+            'profile': True,
+            'attendance': True,
+            'payments': True,
+            'tests': True
+        }
+    })
+    
     users = db.relationship('User', backref='club', lazy=True)
     groups = db.relationship('Group', backref='club', lazy=True)
     categories = db.relationship('Category', backref='club', lazy=True)

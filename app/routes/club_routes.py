@@ -121,9 +121,79 @@ def update_club(club_id):
         club.welcome_message = data['welcome_message']
     if 'show_features' in data:
         club.show_features = data['show_features']
+    # Role permissions
+    if 'role_permissions' in data:
+        club.role_permissions = data['role_permissions']
         
     db.session.commit()
     return jsonify(club_schema.dump(club)), 200
+
+@club_bp.route('/<int:club_id>/permissions', methods=['GET'])
+@role_required(['SUPER_ADMIN', 'ADMIN'])
+def get_role_permissions(club_id):
+    """
+    Get role permissions for a club
+    """
+    user = User.query.filter_by(id=1).first()  # Will use jwt_required
+    from flask_jwt_extended import get_jwt_identity
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if current_user.role == 'ADMIN' and current_user.club_id != club_id:
+        return jsonify({"error": "Access denied"}), 403
+    
+    club = Club.query.get_or_404(club_id)
+    permissions = club.role_permissions or {}
+    return jsonify(permissions), 200
+
+
+@club_bp.route('/<int:club_id>/permissions', methods=['PUT'])
+@role_required(['SUPER_ADMIN', 'ADMIN'])
+def update_role_permissions(club_id):
+    """
+    Update role permissions for a club
+    """
+    from flask_jwt_extended import get_jwt_identity
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if current_user.role == 'ADMIN' and current_user.club_id != club_id:
+        return jsonify({"error": "Access denied"}), 403
+    
+    club = Club.query.get_or_404(club_id)
+    data = request.get_json()
+    
+    # Merge with existing permissions
+    existing = club.role_permissions or {}
+    existing.update(data)
+    club.role_permissions = existing
+    
+    db.session.commit()
+    return jsonify(club.role_permissions), 200
+
+
+@club_bp.route('/<int:club_id>/my-permissions', methods=['GET'])
+@jwt_required()
+def get_my_permissions():
+    """
+    Get permissions for the current user's role
+    """
+    from flask_jwt_extended import get_jwt_identity
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if not current_user:
+        return jsonify({"error": "User not found"}), 404
+    
+    club = Club.query.get(current_user.club_id)
+    if not club:
+        return jsonify({"error": "Club not found"}), 404
+    
+    permissions = club.role_permissions or {}
+    user_permissions = permissions.get(current_user.role, {})
+    
+    return jsonify(user_permissions), 200
+
 
 @club_bp.route('/<int:club_id>', methods=['DELETE'])
 @role_required(['SUPER_ADMIN'])

@@ -130,89 +130,6 @@ const ClubLanding = () => {
         setMobileMenuOpen(false);
     };
 
-    // Login section component
-    const LoginForm = () => (
-        <div className="landing-login-card" id="login">
-            <div className="login-card-header">
-                <div className="login-card-logo">
-                    {club.logo_url ? (
-                        <img src={club.logo_url} alt={club.name} />
-                    ) : (
-                        <span>{club.name.charAt(0)}</span>
-                    )}
-                </div>
-                <h3>Iniciar Sesión</h3>
-                <p>Ingresa con tu número de identificación</p>
-            </div>
-
-            {error && (
-                <div className="auth-error">
-                    <IconAlertCircle size={18} />
-                    <span>{error}</span>
-                </div>
-            )}
-
-            <form onSubmit={handleLogin}>
-                <div className="form-group">
-                    <label className="form-label">Número de identificación</label>
-                    <div className="input-with-icon">
-                        <IconIdCard size={18} />
-                        <input
-                            type="text"
-                            className="form-input"
-                            value={identificationNumber}
-                            onChange={(e) => setIdentificationNumber(e.target.value)}
-                            placeholder="Ej: 1140892301"
-                            required
-                            autoComplete="username"
-                        />
-                    </div>
-                </div>
-
-                <div className="form-group">
-                    <label className="form-label">Contraseña</label>
-                    <div className="input-with-icon">
-                        <IconLock size={18} />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            className="form-input"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            required
-                            autoComplete="current-password"
-                            style={{ paddingRight: '44px' }}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="password-toggle"
-                            tabIndex={-1}
-                        >
-                            {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
-                        </button>
-                    </div>
-                </div>
-
-                <button
-                    type="submit"
-                    className="btn btn-primary btn-block btn-lg"
-                    disabled={loginLoading}
-                    style={{
-                        backgroundColor: loginLoading ? undefined : accentColor,
-                        borderColor: loginLoading ? undefined : accentColor,
-                    }}
-                >
-                    {loginLoading ? (
-                        <><span className="spinner" style={{ borderTopColor: 'white' }} /> Ingresando...</>
-                    ) : (
-                        <>Ingresar <IconArrowRight size={16} /></>
-                    )}
-                </button>
-            </form>
-        </div>
-    );
-
     return (
         <div className="landing-page" style={{ '--accent': accentColor, '--accent-light': accentLight }}>
             {/* Navigation Bar */}
@@ -235,6 +152,11 @@ const ClubLanding = () => {
                                 {item.label}
                             </button>
                         ))}
+                        {landing?.show_registration && (
+                            <a href={`/register?club=${club.slug}`} className="nav-link" style={{ background: 'var(--success-500)', color: 'white', borderRadius: 8, padding: '8px 16px', fontWeight: 600 }}>
+                                📝 Registrarse
+                            </a>
+                        )}
                         <button onClick={() => scrollTo('login')} className="nav-login-btn" style={{ background: accentColor, color: textColor }}>
                             Ingresar
                         </button>
@@ -274,7 +196,85 @@ const ClubLanding = () => {
 
                     {landing?.show_login_in_hero !== false && (
                         <div className="landing-hero-login">
-                            <LoginForm />
+                            <div className="landing-login-card" id="login">
+                                <div className="login-card-header">
+                                    <div className="login-card-logo">
+                                        {club.logo_url ? (
+                                            <img src={club.logo_url} alt={club.name} />
+                                        ) : (
+                                            <span>{club.name.charAt(0)}</span>
+                                        )}
+                                    </div>
+                                    <h3>Iniciar Sesión</h3>
+                                    <p>Ingresa con tu número de identificación</p>
+                                </div>
+
+                                {error && (
+                                    <div className="auth-error">
+                                        <IconAlertCircle size={18} />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleLogin}>
+                                    <div className="form-group">
+                                        <label className="form-label">Número de identificación</label>
+                                        <div className="input-with-icon">
+                                            <IconIdCard size={18} />
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={identificationNumber}
+                                                onChange={(e) => setIdentificationNumber(e.target.value)}
+                                                placeholder="Ej: 1140892301"
+                                                required
+                                                autoComplete="username"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Contraseña</label>
+                                        <div className="input-with-icon">
+                                            <IconLock size={18} />
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                className="form-input"
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                required
+                                                autoComplete="current-password"
+                                                style={{ paddingRight: '44px' }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="password-toggle"
+                                                tabIndex={-1}
+                                            >
+                                                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary btn-block btn-lg"
+                                        disabled={loginLoading}
+                                        style={{
+                                            backgroundColor: loginLoading ? undefined : accentColor,
+                                            borderColor: loginLoading ? undefined : accentColor,
+                                        }}
+                                    >
+                                        {loginLoading ? (
+                                            <><span className="spinner" style={{ borderTopColor: 'white' }} /> Ingresando...</>
+                                        ) : (
+                                            <>Ingresar <IconArrowRight size={16} /></>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     )}
                 </div>

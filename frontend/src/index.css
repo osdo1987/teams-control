@@ -3268,6 +3268,116 @@ select.form-input {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   PROFILE PAGES - Trainer & Athlete self-service
+   ═══════════════════════════════════════════════════════════════════ */
+
+.profile-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.profile-header-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-xs);
+}
+
+.profile-avatar-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.profile-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-header-info h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.profile-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.profile-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.profile-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-app);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.profile-tab-content {
+  min-height: 400px;
+}
+
+.profile-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-xs);
+}
+
+.profile-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.profile-card h3:not(:first-child) {
+  margin-top: 28px;
+}
+
+@media (max-width: 768px) {
+  .profile-header-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    LANDING EDITOR - Admin panel
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -3567,5 +3677,487 @@ select.form-input {
 
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ATHLETE REGISTRATION — Modern Form UI
+   ═══════════════════════════════════════════════════════════════════ */
+.reg-screen {
+  grid-template-columns: 420px 1fr;
+}
+
+.reg-side .reg-side-content {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reg-club-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 8px;
+}
+
+.reg-club-badge img {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px;
+}
+
+.reg-club-badge div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reg-club-badge strong {
+  color: white;
+  font-size: 0.9rem;
+}
+
+.reg-club-badge span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reg-form-side {
+  align-items: flex-start;
+  padding-top: 48px;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.reg-form {
+  max-width: 540px;
+}
+
+.reg-form .auth-form .welcome {
+  margin-bottom: 24px;
+}
+
+/* Progress Steps */
+.reg-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.reg-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--t-base) var(--ease-out);
+  position: relative;
+}
+
+.reg-step:hover {
+  background: var(--bg-hover);
+}
+
+.reg-step.completed {
+  cursor: pointer;
+}
+
+.reg-step.completed:hover .reg-step-circle {
+  transform: scale(1.1);
+}
+
+.reg-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 2px solid var(--border-main);
+  transition: all var(--t-base) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.reg-step.active .reg-step-circle {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.reg-step.completed .reg-step-circle {
+  background: var(--success-500);
+  border-color: var(--success-500);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.reg-step.completed .reg-step-circle svg {
+  width: 16px;
+  height: 16px;
+  stroke: white;
+}
+
+.reg-step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  display: none;
+}
+
+.reg-step.active .reg-step-label {
+  color: var(--text-primary);
+  display: inline;
+}
+
+.reg-step.completed .reg-step-label {
+  color: var(--success-700);
+  display: inline;
+}
+
+.reg-step-line {
+  width: 24px;
+  height: 3px;
+  background: var(--border-main);
+  border-radius: 4px;
+  margin: 0 4px;
+  transition: background var(--t-base) var(--ease-out);
+}
+
+.reg-step-line.completed {
+  background: var(--success-500);
+}
+
+/* Form Card */
+.reg-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-2xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  animation: fadeIn 0.3s var(--ease-out);
+}
+
+.reg-form-header {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.reg-form-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.reg-form-header p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Club Selected Badge */
+.reg-club-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--brand-500);
+  border-radius: var(--radius-md);
+  background: var(--brand-50);
+}
+
+.reg-club-selected img {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: white;
+  padding: 4px;
+  border: 1px solid var(--border-soft);
+}
+
+/* Section Divider */
+.reg-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+}
+
+.reg-section-divider::before,
+.reg-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+.reg-section-divider span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Navigation Buttons */
+.reg-nav-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.reg-nav-buttons .btn {
+  min-width: 140px;
+}
+
+/* Success State */
+.reg-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--success-50);
+  border: 1px solid var(--success-500);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  animation: scaleIn 0.3s var(--ease-out);
+}
+
+.reg-success-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.reg-success strong {
+  display: block;
+  color: var(--success-700);
+  font-size: 0.9375rem;
+  margin-bottom: 2px;
+}
+
+.reg-success p {
+  color: var(--success-700);
+  font-size: 0.8125rem;
+  opacity: 0.85;
+}
+
+/* Avatar Section */
+.reg-avatar-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-app);
+  border: 1px dashed var(--border-main);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+.reg-avatar-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid var(--border-main);
+  transition: border-color var(--t-base) var(--ease-out);
+}
+
+.reg-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reg-avatar-fallback {
+  opacity: 0.7;
+}
+
+.reg-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.reg-avatar-placeholder svg {
+  width: 24px;
+  height: 24px;
+}
+
+.reg-avatar-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.reg-avatar-uploading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.reg-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reg-upload-actions .btn-sm {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.reg-upload-actions .btn-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Password Strength */
+.reg-password-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.reg-password-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-app);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reg-password-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s var(--ease-out), background 0.3s var(--ease-out);
+}
+
+.reg-password-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+.reg-password-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.reg-password-rule {
+  font-size: 0.75rem;
+  color: var(--danger-500);
+  font-weight: 500;
+}
+
+.reg-password-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -10px;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* Login Link */
+.reg-login-link {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.reg-login-link a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 1024px) {
+  .reg-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .reg-side {
+    display: none;
+  }
+
+  .reg-form-side {
+    padding: 32px 20px;
+    max-height: none;
+  }
+
+  .reg-form {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .reg-form-card {
+    padding: 20px;
+  }
+
+  .reg-steps {
+    padding: 6px 12px;
+    gap: 0;
+  }
+
+  .reg-step {
+    padding: 6px 8px;
+  }
+
+  .reg-step-line {
+    width: 12px;
+  }
+
+  .reg-nav-buttons {
+    flex-direction: column;
+  }
+
+  .reg-nav-buttons .btn {
+    width: 100%;
+    min-width: 0;
   }
 }

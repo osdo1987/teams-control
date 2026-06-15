@@ -46,6 +46,7 @@ class ClubLandingPage(db.Model):
     show_gallery = db.Column(db.Boolean, default=True)
     show_contact = db.Column(db.Boolean, default=True)
     show_footer_social = db.Column(db.Boolean, default=True)
+    show_registration = db.Column(db.Boolean, default=False)  # Show "registrarse" link on landing
 
     # Custom footer
     footer_text = db.Column(db.String(500), nullable=True)

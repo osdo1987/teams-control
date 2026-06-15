@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
-import { IconHome, IconUsers, IconCreditCard, IconLogOut, IconZap, IconBuilding } from '../Icons';
+import { IconHome, IconUsers, IconCreditCard, IconLogOut, IconZap, IconBuilding, IconShield } from '../Icons';
 
 const links = [
   { to: '/super-admin', end: true, icon: IconHome, label: 'Dashboard' },
   { to: '/super-admin/clubs', icon: IconBuilding, label: 'Clubes' },
+  { to: '/super-admin/permissions', icon: IconShield, label: 'Permisos por Club' },
   { to: '/super-admin/users', icon: IconUsers, label: 'Usuarios Globales' },
   { to: '/super-admin/pricing', icon: IconCreditCard, label: 'Planes y Cobros' },
 ];

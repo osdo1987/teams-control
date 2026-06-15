@@ -50,6 +50,7 @@ const LandingEditor = () => {
         show_gallery: true,
         show_contact: true,
         show_footer_social: true,
+        show_registration: false,
         // Footer
         footer_text: '',
     });
@@ -648,6 +649,16 @@ const LandingEditor = () => {
                                         type="checkbox"
                                         checked={form.show_footer_social}
                                         onChange={e => handleChange('show_footer_social', e.target.checked)}
+                                    />
+                                    <span className="toggle-switch"></span>
+                                </label>
+
+                                <label className="toggle-row">
+                                    <span>Mostrar enlace "Registrarse" (atletas nuevos)</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={form.show_registration}
+                                        onChange={e => handleChange('show_registration', e.target.checked)}
                                     />
                                     <span className="toggle-switch"></span>
                                 </label>

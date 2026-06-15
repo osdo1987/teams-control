@@ -9,6 +9,7 @@ class Athlete(db.Model):
     birth_date = db.Column(db.Date)
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
+    photo_url = db.Column(db.Text, nullable=True)
     
     # Relationships
     guardians = db.relationship('Guardian', backref='athlete', lazy=True)
