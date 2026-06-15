@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import Topbar from '../UI/Topbar';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,6 +40,7 @@ const AdminLayout = () => {
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="app-main">
+        <Topbar breadcrumb="Club Manager" title="Panel de Administración" />
         <div className="app-content">
           <Outlet />
         </div>

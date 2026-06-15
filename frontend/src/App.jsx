@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { authService } from './services/authService';
+import Topbar from './components/UI/Topbar';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import ClubLogin from './pages/ClubLogin';
@@ -100,6 +101,7 @@ function App() {
                   </div>
                 </aside>
                 <div className="app-main">
+                  <Topbar breadcrumb="Club" title="Panel de Entrenador" />
                   <div className="app-content">
                     <TrainerDashboard />
                   </div>
@@ -129,6 +131,7 @@ function App() {
                   </div>
                 </aside>
                 <div className="app-main">
+                  <Topbar breadcrumb="Club" title="Mi Perfil" />
                   <div className="app-content">
                     <TrainerProfile />
                   </div>
@@ -158,6 +161,7 @@ function App() {
                 </div>
               </aside>
               <div className="app-main">
+                <Topbar breadcrumb="Club" title="Panel de Atleta" />
                 <div className="app-content">
                   <AthleteDashboard />
                 </div>
@@ -185,6 +189,7 @@ function App() {
                 </div>
               </aside>
               <div className="app-main">
+                <Topbar breadcrumb="Club" title="Mi Perfil" />
                 <div className="app-content">
                   <AthleteSelfProfile />
                 </div>

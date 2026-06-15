@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import './LandingPage.css';
 
 /* ─────────────────────────── DATA ─────────────────────────── */
 const plans = [
@@ -75,87 +76,6 @@ function LogoMark({ size = 32 }) {
 const LandingPage = () => {
   return (
     <div className="layout-container">
-      <style>{`
-        :root {
-          --bg: #ffffff;
-          --text-main: #09090b;
-          --text-muted: #71717a;
-          --border: rgba(0, 0, 0, 0.08);
-          --card-bg: #fafafa;
-          --card-hover: #ffffff;
-        }
-
-        body { 
-          margin: 0; background: var(--bg); color: var(--text-main); 
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
-          -webkit-font-smoothing: antialiased; 
-        }
-        * { box-sizing: border-box; }
-
-        .layout-container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; overflow-x: hidden; }
-        
-        /* Navbar */
-        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 100px; }
-        .logo-container { display: flex; align-items: center; gap: 12px; }
-        .logo-text { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; }
-        .nav-links { display: flex; gap: 32px; align-items: center; }
-        .nav-link { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
-        .nav-link:hover { color: var(--text-main); }
-        .nav-button { padding: 10px 24px; border-radius: 100px; background: var(--text-main); color: #fff; text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; }
-        .nav-button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-
-        /* Hero */
-        .hero { margin-bottom: 80px; text-align: center; }
-        .hero-title { font-size: clamp(3.5rem, 8vw, 7.5rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; margin: 0 0 32px 0; }
-        .hero-subtitle { font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6; }
-
-        /* Section Titles */
-        .section-header { text-align: center; margin-bottom: 64px; }
-        .section-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase; }
-        .section-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.03em; margin: 0; }
-
-        /* Bento Grid */
-        .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(280px, auto); gap: 24px; margin-bottom: 140px; }
-        .bento-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 32px; padding: 48px; display: flex; flex-direction: column; transition: transform 0.4s, box-shadow 0.4s, background 0.4s; }
-        .bento-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.06); background: var(--card-hover); }
-        .card-large { grid-column: span 2; grid-row: span 2; }
-        .card-wide  { grid-column: span 2; grid-row: span 1; }
-        .card-small { grid-column: span 1; grid-row: span 1; padding: 32px; }
-
-        /* Portfolio */
-        .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 140px; }
-        .port-card { padding: 32px; border: 1px solid var(--border); border-radius: 24px; background: var(--bg); display: flex; flex-direction: column; height: 100%; transition: box-shadow 0.3s; }
-        .port-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
-
-        /* Tech Stack */
-        .tech-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 140px; }
-        .tech-pill { padding: 8px 20px; border-radius: 100px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
-
-        /* Pricing */
-        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 140px; }
-        .price-card { padding: 32px 24px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
-        .price-highlight { border: 2px solid var(--text-main); background: var(--card-bg); }
-
-        /* Contact */
-        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-bottom: 80px; align-items: start; }
-        .contact-input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); font-family: inherit; font-size: 0.95rem; margin-bottom: 16px; outline: none; transition: border-color 0.2s; }
-        .contact-input:focus { border-color: var(--text-main); }
-        .contact-btn { width: 100%; padding: 16px; border-radius: 12px; background: var(--text-main); color: #fff; font-weight: 700; border: none; cursor: pointer; font-size: 1rem; }
-
-        @media (max-width: 1024px) {
-          .bento-grid { grid-template-columns: repeat(2, 1fr); }
-          .card-large, .card-wide { grid-column: span 2; grid-row: span 1; }
-          .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
-          .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-          .contact-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 768px) {
-          .nav-links { display: none; }
-          .bento-grid, .portfolio-grid, .pricing-grid { grid-template-columns: 1fr; }
-          .card-large, .card-wide, .card-small { grid-column: span 1; }
-        }
-      `}</style>
-
       {/* Navbar */}
       <nav className="navbar">
         <div className="logo-container">

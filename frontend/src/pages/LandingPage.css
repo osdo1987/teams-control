@@ -1,0 +1,78 @@
+.layout-container {
+  --lp-bg: var(--bg-app, #ffffff);
+  --lp-text-main: var(--text-primary, #09090b);
+  --lp-text-muted: var(--text-muted, #71717a);
+  --lp-border: var(--border-main, rgba(0, 0, 0, 0.08));
+  --lp-card-bg: var(--bg-surface, #fafafa);
+  --lp-card-hover: var(--bg-hover, #ffffff);
+
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  overflow-x: hidden;
+  background-color: var(--lp-bg);
+  color: var(--lp-text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Navbar */
+.layout-container .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 100px; }
+.layout-container .logo-container { display: flex; align-items: center; gap: 12px; }
+.layout-container .logo-text { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: var(--lp-text-main); }
+.layout-container .nav-links { display: flex; gap: 32px; align-items: center; }
+.layout-container .nav-link { color: var(--lp-text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+.layout-container .nav-link:hover { color: var(--lp-text-main); }
+.layout-container .nav-button { padding: 10px 24px; border-radius: 100px; background: var(--lp-text-main); color: var(--bg-app); text-decoration: none; font-size: 0.875rem; font-weight: 600; transition: transform 0.2s, box-shadow 0.2s; }
+.layout-container .nav-button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+/* Hero */
+.layout-container .hero { margin-bottom: 80px; text-align: center; }
+.layout-container .hero-title { font-size: clamp(3.5rem, 8vw, 7.5rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; margin: 0 0 32px 0; color: var(--lp-text-main); }
+.layout-container .hero-subtitle { font-size: clamp(1.1rem, 2vw, 1.5rem); color: var(--lp-text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+/* Section Titles */
+.layout-container .section-header { text-align: center; margin-bottom: 64px; }
+.layout-container .section-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; color: var(--lp-text-muted); margin-bottom: 16px; text-transform: uppercase; }
+.layout-container .section-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.03em; margin: 0; color: var(--lp-text-main); }
+
+/* Bento Grid */
+.layout-container .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(280px, auto); gap: 24px; margin-bottom: 140px; }
+.layout-container .bento-card { background: var(--lp-card-bg); border: 1px solid var(--lp-border); border-radius: 32px; padding: 48px; display: flex; flex-direction: column; transition: transform 0.4s, box-shadow 0.4s, background 0.4s; }
+.layout-container .bento-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px rgba(0,0,0,0.06); background: var(--lp-card-hover); }
+.layout-container .card-large { grid-column: span 2; grid-row: span 2; }
+.layout-container .card-wide  { grid-column: span 2; grid-row: span 1; }
+.layout-container .card-small { grid-column: span 1; grid-row: span 1; padding: 32px; }
+
+/* Portfolio */
+.layout-container .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 140px; }
+.layout-container .port-card { padding: 32px; border: 1px solid var(--lp-border); border-radius: 24px; background: var(--lp-bg); display: flex; flex-direction: column; height: 100%; transition: box-shadow 0.3s; }
+.layout-container .port-card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+
+/* Tech Stack */
+.layout-container .tech-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-bottom: 140px; }
+.layout-container .tech-pill { padding: 8px 20px; border-radius: 100px; border: 1px solid var(--lp-border); font-size: 0.85rem; font-weight: 500; color: var(--lp-text-muted); }
+
+/* Pricing */
+.layout-container .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 140px; }
+.layout-container .price-card { padding: 32px 24px; border-radius: 24px; border: 1px solid var(--lp-border); display: flex; flex-direction: column; position: relative; background: var(--lp-card-bg); }
+.layout-container .price-highlight { border: 2px solid var(--lp-text-main); background: var(--lp-bg); }
+
+/* Contact */
+.layout-container .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-bottom: 80px; align-items: start; }
+.layout-container .contact-input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--lp-border); background: var(--lp-card-bg); font-family: inherit; font-size: 0.95rem; margin-bottom: 16px; outline: none; transition: border-color 0.2s; color: var(--lp-text-main); }
+.layout-container .contact-input:focus { border-color: var(--lp-text-main); }
+.layout-container .contact-btn { width: 100%; padding: 16px; border-radius: 12px; background: var(--lp-text-main); color: var(--bg-app); font-weight: 700; border: none; cursor: pointer; font-size: 1rem; }
+
+@media (max-width: 1024px) {
+  .layout-container .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .layout-container .card-large, .layout-container .card-wide { grid-column: span 2; grid-row: span 1; }
+  .layout-container .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+  .layout-container .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+  .layout-container .contact-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .layout-container .nav-links { display: none; }
+  .layout-container .bento-grid, .layout-container .portfolio-grid, .layout-container .pricing-grid { grid-template-columns: 1fr; }
+  .layout-container .card-large, .layout-container .card-wide, .layout-container .card-small { grid-column: span 1; }
+}
