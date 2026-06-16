@@ -29,6 +29,7 @@ import AthleteDashboard from './pages/athlete/AthleteDashboard';
 import AthleteSelfProfile from './pages/athlete/AthleteProfile';
 import AthleteRegistration from './pages/AthleteRegistration';
 import ClubPermissions from './pages/superadmin/ClubPermissions';
+import TrainingPlanList from './pages/admin/TrainingPlanList';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = authService.getCurrentUser();
@@ -61,6 +62,7 @@ function App() {
           <Route path="payments" element={<PaymentList />} />
           <Route path="attendance" element={<AttendanceList />} />
           <Route path="tests" element={<TestList />} />
+          <Route path="training-plans" element={<TrainingPlanList />} />
           <Route path="athletes/:id" element={<AthleteProfile />} />
           <Route path="landing" element={<LandingEditor />} />
           <Route path="permissions" element={<PermissionsPage />} />
@@ -94,6 +96,7 @@ function App() {
                   </div>
                   <nav className="sidebar-nav">
                     <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                    <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
                     <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
                   </nav>
                   <div className="sidebar-footer">
@@ -124,6 +127,7 @@ function App() {
                   </div>
                   <nav className="sidebar-nav">
                     <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                    <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
                     <a href="/trainer/profile" className="nav-link active">👤 Mi Perfil</a>
                   </nav>
                   <div className="sidebar-footer">
@@ -134,6 +138,37 @@ function App() {
                   <Topbar breadcrumb="Club" title="Mi Perfil" />
                   <div className="app-content">
                     <TrainerProfile />
+                  </div>
+                </div>
+              </div>
+            </SubscriptionGate>
+          </ProtectedRoute>
+        } />
+        <Route path="/trainer/training-plans" element={
+          <ProtectedRoute allowedRoles={['TRAINER']}>
+            <SubscriptionGate>
+              <div className="app-shell">
+                <aside className="sidebar">
+                  <div className="sidebar-brand">
+                    <div className="brand-mark">⚡</div>
+                    <div className="brand-text">
+                      <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
+                      <span className="tag">Entrenador</span>
+                    </div>
+                  </div>
+                  <nav className="sidebar-nav">
+                    <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                    <a href="/trainer/training-plans" className="nav-link active">🏋️‍♂️ Planes de Ent.</a>
+                    <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
+                  </nav>
+                  <div className="sidebar-footer">
+                    <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
+                  </div>
+                </aside>
+                <div className="app-main">
+                  <Topbar breadcrumb="Club" title="Planes de Entrenamiento" />
+                  <div className="app-content">
+                    <TrainingPlanList />
                   </div>
                 </div>
               </div>

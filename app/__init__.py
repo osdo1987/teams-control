@@ -46,6 +46,8 @@ def create_app(config_class=Config):
     app.register_blueprint(trainer_bp, url_prefix='/api/trainer')
     from app.routes.registration_routes import registration_bp
     app.register_blueprint(registration_bp)
+    from app.routes.training_plan_routes import training_plan_bp
+    app.register_blueprint(training_plan_bp, url_prefix='/api/training-plans')
 
     @app.errorhandler(Exception)
     def handle_exception(e):

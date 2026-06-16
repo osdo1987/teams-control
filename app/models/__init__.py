@@ -9,3 +9,4 @@ from app.models.payment import Payment
 from app.models.category import Category
 from app.models.test import TestTemplate, TestResult
 from app.models.landing import ClubLandingPage
+from app.models.training_plan import TrainingPlan, TrainingCycle, TrainingSession, TrainingExercise, TrainingPlanAssignment

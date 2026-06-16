@@ -12,6 +12,7 @@ const links = [
   { t: 'link', to: '/admin/payments', icon: IconDollarSign, label: 'Pagos' },
   { t: 'link', to: '/admin/attendance', icon: IconCalendar, label: 'Asistencia' },
   { t: 'link', to: '/admin/tests', icon: IconActivity, label: 'Tests' },
+  { t: 'link', to: '/admin/training-plans', icon: IconZap, label: 'Planes de Ent.' },
   { t: 'link', to: '/admin/landing', icon: IconImage, label: 'Landing Page' },
 ];
 

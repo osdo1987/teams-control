@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { athleteService } from '../../services/athleteService';
 import { userService } from '../../services/userService';
 import { groupService } from '../../services/groupService';
@@ -15,12 +15,14 @@ const initials = (first = '?', last = '?') => `${first?.[0] || '?'}${last?.[0] |
 
 const AthleteList = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [athletes, setAthletes] = useState([]);
   const [groups, setGroups] = useState([]);
   const [clubs, setClubs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [filterNoGroup, setFilterNoGroup] = useState(false);
 
   // Create modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -41,7 +43,30 @@ const AthleteList = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  const openCreate = (defaultGroupId = '') => {
+    setCreateForm({
+      identification_number: '', email: '', password: '', first_name: '', last_name: '',
+      phone: '', birth_date: '', address: '', group_id: defaultGroupId || ''
+    });
+    setConfirmPassword('');
+    setPasswordError('');
+    setIsCreateOpen(true);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchAll();
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    const openParam = searchParams.get('openCreate');
+    const groupParam = searchParams.get('group_id');
+    if (openParam === 'true' && !loading) {
+      openCreate(groupParam);
+    }
+  }, [searchParams, loading]);
 
   const fetchAll = async () => {
     try {
@@ -63,19 +88,13 @@ const AthleteList = () => {
   const filteredAthletes = athletes.filter(a => {
     const name = `${a.user?.first_name} ${a.user?.last_name}`.toLowerCase();
     const id = (a.user?.identification_number || '').toString();
-    return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    if (!matchesSearch) return false;
+    if (filterNoGroup) {
+      return !a.current_groups || a.current_groups.length === 0;
+    }
+    return true;
   });
-
-  // --- CREATE ---
-  const openCreate = () => {
-    setCreateForm({
-      identification_number: '', email: '', password: '', first_name: '', last_name: '',
-      phone: '', birth_date: '', address: '', group_id: ''
-    });
-    setConfirmPassword('');
-    setPasswordError('');
-    setIsCreateOpen(true);
-  };
 
   const handleCreateChange = e => {
     setCreateForm({ ...createForm, [e.target.name]: e.target.value });
@@ -173,10 +192,36 @@ const AthleteList = () => {
         <button className="btn btn-primary" onClick={openCreate}>+ Nuevo Atleta</button>
       </div>
 
-      <div className="filter-row">
-        <div className="search-field">
+      <div className="filter-row" style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="search-field" style={{ flex: 1, minWidth: '280px' }}>
           <input type="text" placeholder="🔍 Buscar por nombre o identificación..." className="form-input"
             style={{ borderRadius: '12px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className={`btn ${!filterNoGroup ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ borderRadius: '12px', padding: '8px 16px' }}
+            onClick={() => setFilterNoGroup(false)}
+          >
+            Todos ({athletes.length})
+          </button>
+          <button
+            className={`btn ${filterNoGroup ? 'btn-primary' : 'btn-ghost'}`}
+            style={{ borderRadius: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            onClick={() => setFilterNoGroup(true)}
+          >
+            Sin Grupo
+            <span style={{
+              background: '#ef4444',
+              color: 'white',
+              borderRadius: '20px',
+              padding: '2px 8px',
+              fontSize: '0.75rem',
+              fontWeight: 'bold'
+            }}>
+              {athletes.filter(a => !a.current_groups || a.current_groups.length === 0).length}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -215,8 +260,55 @@ const AthleteList = () => {
                 <td style={{ fontSize: '0.85rem' }}>📞 {a.phone || '—'}</td>
                 <td>
                   {a.current_groups && a.current_groups.length > 0 ? (
-                    a.current_groups.map(g => <span key={g.id} className="badge badge-success">{g.name}</span>)
-                  ) : <span style={{ opacity: 0.5 }}>Sin grupo</span>}
+                    a.current_groups.map(g => (
+                      <span key={g.id} className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginRight: '4px' }}>
+                        {g.name}
+                        <button
+                          style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '0 2px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                          onClick={async () => {
+                            if (window.confirm(`¿Remover a ${a.user?.first_name} del grupo ${g.name}?`)) {
+                              try {
+                                await athleteService.updateAthlete(a.id, {
+                                  athlete: { birth_date: a.birth_date, phone: a.phone, address: a.address },
+                                  group_id: null
+                                });
+                                fetchAll();
+                              } catch (err) {
+                                setError('Error al remover del grupo');
+                              }
+                            }
+                          }}
+                          title="Remover del grupo"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <select
+                      className="form-input"
+                      style={{ padding: '4px 8px', fontSize: '0.8rem', height: 'auto', width: 'auto', minWidth: '130px', borderRadius: '8px', border: '1px solid #ef4444' }}
+                      value=""
+                      onChange={async (e) => {
+                        const groupId = e.target.value;
+                        if (!groupId) return;
+                        try {
+                          await athleteService.updateAthlete(a.id, {
+                            athlete: { birth_date: a.birth_date, phone: a.phone, address: a.address },
+                            group_id: parseInt(groupId)
+                          });
+                          fetchAll();
+                        } catch (err) {
+                          setError('Error al asignar grupo');
+                        }
+                      }}
+                    >
+                      <option value="">⚠️ Asignar grupo...</option>
+                      {clubGroups.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
