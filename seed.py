@@ -666,27 +666,103 @@ def seed_database():
         print(f"   ✓ {landing_count} landing pages creadas")
 
         # ── Sembrar Training Plans de prueba ──────────────────────────────────
-        from app.models.training_plan import TrainingPlan, TrainingCycle
+        from app.models.training_plan import TrainingPlan, TrainingCycle, TrainingSession, TrainingExercise, TrainingPlanAssignment
         plan_clubs = Club.query.all()
         plan_count = 0
         for pc in plan_clubs:
-            plan = TrainingPlan(
-                name=f"Plan {pc.name} 2026",
-                description="Plan de entrenamiento semestral para el club.",
-                club_id=pc.id, created_by=1,
-                start_date=date(2026, 1, 15), end_date=date(2026, 7, 15),
-                status="ACTIVE"
+            trainer = User.query.filter_by(role='TRAINER', club_id=pc.id).first()
+            if not trainer:
+                trainer = User.query.filter_by(role='ADMIN', club_id=pc.id).first()
+            if not trainer:
+                continue
+
+            # Plan 1: Fuerza
+            plan1 = TrainingPlan(
+                name=f"Fuerza y Potencia - {pc.name}",
+                description="Plan de 3 semanas enfocado en el desarrollo de la fuerza explosiva y acondicionamiento muscular general.",
+                club_id=pc.id, created_by=trainer.id
             )
-            db.session.add(plan); db.session.flush()
-            for cname in ["Físico", "Técnico", "Táctico"]:
-                db.session.add(TrainingCycle(
-                    training_plan_id=plan.id, name=cname,
-                    description=f"Ciclo {cname.lower()} del semestre",
-                    order=["Físico","Técnico","Táctico"].index(cname)
+            db.session.add(plan1); db.session.flush()
+
+            cycles_data = [
+                {"name": "Semana 1: Adaptación Estructural", "description": "Enfoque en volumen medio y acondicionamiento de tendones.", "sessions": [
+                    {"name": "Día 1: Tren Superior (Empuje)", "notes": "Calentar manguito rotador antes de empezar.", "exercises": [
+                        {"exercise_name": "Press de Banca", "sets": 4, "reps": "10-12", "weight": "60%", "rest_seconds": 90},
+                        {"exercise_name": "Press Militar con Mancuernas", "sets": 3, "reps": "10", "weight": "15kg", "rest_seconds": 60},
+                        {"exercise_name": "Fondos en Paralelas", "sets": 3, "reps": "Fallo", "weight": "Peso corporal", "rest_seconds": 60}
+                    ]},
+                    {"name": "Día 2: Tren Inferior (Fuerza)", "notes": "Mantener buena técnica en sentadilla profunda.", "exercises": [
+                        {"exercise_name": "Sentadilla Trasera con Barra", "sets": 4, "reps": "8", "weight": "70%", "rest_seconds": 120},
+                        {"exercise_name": "Prensa de Piernas", "sets": 3, "reps": "12", "weight": "120kg", "rest_seconds": 90},
+                        {"exercise_name": "Elevación de Talones (Pantorrilla)", "sets": 4, "reps": "15", "weight": "40kg", "rest_seconds": 45}
+                    ]}
+                ]},
+                {"name": "Semana 2: Intensificación", "description": "Subimos la carga y reducimos repeticiones ligeramente.", "sessions": [
+                    {"name": "Día 1: Fuerza Máxima Empuje", "notes": "Cargas pesadas.", "exercises": [
+                        {"exercise_name": "Press de Banca Pesado", "sets": 5, "reps": "5", "weight": "80%", "rest_seconds": 180},
+                        {"exercise_name": "Fondos Lastrados", "sets": 3, "reps": "6", "weight": "10kg", "rest_seconds": 90}
+                    ]}
+                ]}
+            ]
+            for c_idx, cycle_data in enumerate(cycles_data):
+                c = TrainingCycle(plan_id=plan1.id, name=cycle_data["name"], description=cycle_data["description"], order=c_idx + 1)
+                db.session.add(c); db.session.flush()
+                for s_idx, session_data in enumerate(cycle_data["sessions"]):
+                    s = TrainingSession(cycle_id=c.id, name=session_data["name"], notes=session_data["notes"], order=s_idx + 1)
+                    db.session.add(s); db.session.flush()
+                    for e_idx, ex in enumerate(session_data["exercises"]):
+                        db.session.add(TrainingExercise(
+                            session_id=s.id, exercise_name=ex["exercise_name"],
+                            sets=ex["sets"], reps=ex["reps"], weight=ex["weight"],
+                            rest_seconds=ex["rest_seconds"], order=e_idx + 1
+                        ))
+
+            # Plan 2: Cardio
+            plan2 = TrainingPlan(
+                name=f"Cardio y Acondicionamiento - {pc.name}",
+                description="Plan orientado a mejorar el VO2 Máx y la resistencia general en pretemporada.",
+                club_id=pc.id, created_by=trainer.id
+            )
+            db.session.add(plan2); db.session.flush()
+            cardio_cycles = [
+                {"name": "Semana 1: Resistencia Base", "description": "Carreras continuas a ritmo moderado.", "sessions": [
+                    {"name": "Día 1: Intervalos de Alta Intensidad (HIIT)", "notes": "Asegurar hidratación previa.", "exercises": [
+                        {"exercise_name": "Carreras de Velocidad (Sprints)", "sets": 6, "reps": "30s sprint / 60s trote", "weight": "Máximo", "rest_seconds": 60},
+                        {"exercise_name": "Burpees continuos", "sets": 4, "reps": "1 min", "weight": "Propio peso", "rest_seconds": 60}
+                    ]}
+                ]}
+            ]
+            for c_idx, cycle_data in enumerate(cardio_cycles):
+                c = TrainingCycle(plan_id=plan2.id, name=cycle_data["name"], description=cycle_data["description"], order=c_idx + 1)
+                db.session.add(c); db.session.flush()
+                for s_idx, session_data in enumerate(cycle_data["sessions"]):
+                    s = TrainingSession(cycle_id=c.id, name=session_data["name"], notes=session_data["notes"], order=s_idx + 1)
+                    db.session.add(s); db.session.flush()
+                    for e_idx, ex in enumerate(session_data["exercises"]):
+                        db.session.add(TrainingExercise(
+                            session_id=s.id, exercise_name=ex["exercise_name"],
+                            sets=ex["sets"], reps=ex["reps"], weight=ex["weight"],
+                            rest_seconds=ex["rest_seconds"], order=e_idx + 1
+                        ))
+
+            # Asignaciones
+            groups = Group.query.filter_by(club_id=pc.id).all()
+            athletes = Athlete.query.filter(Athlete.user.has(club_id=pc.id)).all()
+            for g in groups:
+                db.session.add(TrainingPlanAssignment(
+                    plan_id=plan1.id, group_id=g.id,
+                    start_date=date.today(), end_date=date.today() + timedelta(days=30),
+                    status="ACTIVE"
+                ))
+            if athletes:
+                db.session.add(TrainingPlanAssignment(
+                    plan_id=plan2.id, athlete_id=athletes[0].id,
+                    start_date=date.today(), end_date=date.today() + timedelta(days=30),
+                    status="ACTIVE"
                 ))
             plan_count += 1
         db.session.commit()
-        print(f"   ✓ {plan_count} planes de entrenamiento")
+        print(f"   ✓ {plan_count} planes de entrenamiento (con sesiones, ejercicios y asignaciones)")
 
         # Marcar todas las migraciones como aplicadas en alembic
         try:
