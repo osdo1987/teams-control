@@ -555,5 +555,13 @@ def seed_database():
         print("  admin@tigresibage.com     admin123   [ADMIN – Tigres Ibagué]")
         print("="*60)
 
+        # Marcar todas las migraciones como aplicadas en alembic
+        try:
+            from flask_migrate import stamp
+            stamp()
+            print("   ✓ Migraciones marcadas en alembic_version")
+        except Exception as e:
+            print(f"   ⚠ No se pudo stamp migraciones: {e}")
+
 if __name__ == "__main__":
     seed_database()
