@@ -555,6 +555,139 @@ def seed_database():
         print("  admin@tigresibage.com     admin123   [ADMIN – Tigres Ibagué]")
         print("="*60)
 
+        # ── Sembrar Landing Pages ─────────────────────────────────────────────
+        from app.models.landing import ClubLandingPage
+        landing_data = [
+            {
+                "club_name": "Troya Voley",
+                "hero_title": "Club Deportivo Troya Buga — Formación de Voleibol en Buga",
+                "hero_subtitle": "Enfocados en el desarrollo de niñas, niños y jóvenes. Enseñamos desde cero sin importar tu nivel de experiencia.",
+                "banner_url": "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1200&q=80",
+                "cta_text": "Ingresar al sistema",
+                "about_title": "Nuestro Club",
+                "about_text": "El Club Deportivo Troya Buga es un destacado club de formación de voleibol en Guadalajara de Buga (Valle del Cauca).\n\nEnfocados en el desarrollo de niñas, niños y jóvenes, enseñamos desde cero sin importar tu nivel de experiencia. Ofrecemos voleibol de piso en modalidad formativa y competitiva.\n\nNuestra metodología de trabajo en equipo y formación integral hace la diferencia en cada uno de nuestros atletas.",
+                "about_image_url": "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=600&q=80",
+                "features_title": "Nuestros programas",
+                "features": [
+                    {"icon": "zap", "title": "Voleibol de Piso", "description": "Modalidad formativa y competitiva para todas las edades y niveles."},
+                    {"icon": "heart", "title": "Formación desde Cero", "description": "Enseñamos voleibol desde cero, sin importar tu nivel de experiencia."},
+                    {"icon": "users", "title": "Niños y Jóvenes", "description": "Programas especializados para el desarrollo de niñas, niños y jóvenes."},
+                    {"icon": "award", "title": "Trabajo en Equipo", "description": "Metodología enfocada en valores, disciplina y trabajo en equipo."}
+                ],
+                "contact_email": "contacto@troyavoley.com", "contact_phone": "+57 301 234 5678",
+                "address": "Guadalajara de Buga, Valle del Cauca",
+                "social_facebook": "https://facebook.com/ClubDeportivoTroyaBuga",
+                "social_instagram": "https://instagram.com/clubdeportivotroya",
+                "social_whatsapp": "https://wa.me/573012345678",
+                "footer_text": "Formando talentos en Buga, Valle del Cauca.",
+            },
+            {
+                "club_name": "Águilas FC Bogotá",
+                "hero_title": "Águilas FC — El Futuro del Fútbol Bogotano",
+                "hero_subtitle": "Academia de fútbol masculino con más de 10 años formando talentos en Bogotá.",
+                "banner_url": "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1200&q=80",
+                "cta_text": "Iniciar sesión",
+                "about_title": "Quiénes somos",
+                "about_text": "Águilas FC Bogotá es una academia de fútbol masculino fundada en 2014.\n\nNos dedicamos a la formación integral de jóvenes futbolistas en las categorías Sub-17 y Sub-20. Nuestro equipo de entrenadores cuenta con amplia experiencia en el fútbol profesional colombiano.\n\nCreemos en el deporte como herramienta de transformación social y formamos no solo grandes jugadores, sino grandes personas.",
+                "about_image_url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80",
+                "features_title": "Lo que ofrecemos",
+                "features": [
+                    {"icon": "award", "title": "Alto Rendimiento", "description": "Preparación competitiva para torneos locales y nacionales."},
+                    {"icon": "trending", "title": "Scouting Profesional", "description": "Visibilidad ante clubes profesionales y universitarios."},
+                    {"icon": "shield", "title": "Formación Integral", "description": "Acompañamiento académico y psicológico para nuestros atletas."},
+                    {"icon": "clock", "title": "Entrenamientos Matutinos", "description": "Horarios flexibles en la mañana para compatibilizar estudio y deporte."}
+                ],
+                "contact_email": "info@aguilasfc.com", "contact_phone": "+57 320 456 7890",
+                "address": "Estadio El Campín, Cancha B, Cra 30 # 57-45, Bogotá",
+                "social_facebook": "https://facebook.com/aguilasfcbogota",
+                "social_instagram": "https://instagram.com/aguilasfc_",
+                "social_whatsapp": "https://wa.me/573204567890",
+                "footer_text": "Orgullosamente bogotanos.",
+            },
+            {
+                "club_name": "Academia Náutica Caribe",
+                "hero_title": "Academia Náutica Caribe",
+                "hero_subtitle": "Escuela de natación y deportes acuáticos en Barranquilla. Aprende, nada y compite con nosotros.",
+                "banner_url": "https://images.unsplash.com/photo-1530549387789-4c1017266634?w=1200&q=80",
+                "cta_text": "Ingresar",
+                "about_title": "Sobre la academia",
+                "about_text": "La Academia Náutica Caribe es una escuela de natación ubicada en Barranquilla, Atlántico.\n\nOfrecemos programas de iniciación y perfeccionamiento en natación para todas las edades. Nuestras instalaciones cuentan con piscina olímpica y equipo especializado.\n\nDesde nuestra fundación, hemos formado a cientos de nadadores, desde principiantes hasta competidores regionales.",
+                "features": [
+                    {"icon": "heart", "title": "Natación para Todos", "description": "Clases desde nivel principiante hasta avanzado, para niños y adultos."},
+                    {"icon": "zap", "title": "Entrenamiento Competitivo", "description": "Preparación para competencias de natación a nivel departamental."},
+                    {"icon": "users", "title": "Clases Grupales", "description": "Grupos reducidos con instrucción personalizada y seguimiento continuo."},
+                    {"icon": "star", "title": "Natación Terapéutica", "description": "Programas especiales de natación para rehabilitación y bienestar."}
+                ],
+                "features_title": "Nuestros servicios",
+                "contact_email": "info@nauticacaribe.com", "contact_phone": "+57 301 678 9012",
+                "address": "Piscina Olímpica El Prado, Cra 54 # 70-10, Barranquilla",
+                "social_facebook": "https://facebook.com/nauticacaribe",
+                "social_instagram": "https://instagram.com/nauticacaribe",
+                "social_whatsapp": "https://wa.me/573016789012",
+                "footer_text": "Sumérgete en la excelencia.",
+            },
+            {
+                "club_name": "Tigres de Ibagué FC",
+                "hero_title": "Tigres de Ibagué FC",
+                "hero_subtitle": "Club de fútbol con tradición y garra tolimense. Formando talentos desde 1998.",
+                "banner_url": "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=1200&q=80",
+                "cta_text": "Iniciar sesión",
+                "about_title": "Nuestra trayectoria",
+                "about_text": "Tigres de Ibagué FC es un club de fútbol con más de 25 años de historia en Ibagué, Tolima.\n\nNacimos como un sueño de barrio y hoy somos una institución reconocida en el fútbol juvenil tolimense. Hemos formado a decenas de jugadores que han llegado al fútbol profesional colombiano.\n\nNuestro lema: disciplina, respeto y pasión por el fútbol.",
+                "about_image_url": "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=600&q=80",
+                "features": [
+                    {"icon": "award", "title": "Formación Juvenil", "description": "Programa de desarrollo para jóvenes futbolistas de 14 a 20 años."},
+                    {"icon": "trending", "title": "Proyección Profesional", "description": "Conexiones con clubes profesionales para visibilizar talentos."},
+                    {"icon": "shield", "title": "Escuela de Valores", "description": "Formación en disciplina, trabajo en equipo y respeto."},
+                    {"icon": "clock", "title": "Entrenamientos Flexibles", "description": "Horarios adaptados para estudiantes y trabajadores."}
+                ],
+                "features_title": "Nuestros programas",
+                "contact_email": "contacto@tigresibague.com", "contact_phone": "+57 312 345 6789",
+                "address": "Estadio Manuel Murillo Toro, Campo 2, Cra 5 # 19-50, Ibagué",
+                "social_facebook": "https://facebook.com/tigresibaguefc",
+                "social_instagram": "https://instagram.com/tigresibaguefc",
+                "social_whatsapp": "https://wa.me/573123456789",
+                "footer_text": "La garra del Tolima.",
+            }
+        ]
+        landing_count = 0
+        for ld in landing_data:
+            club = Club.query.filter_by(name=ld["club_name"]).first()
+            if not club:
+                continue
+            landing = ClubLandingPage(club_id=club.id)
+            for k, v in ld.items():
+                if k == "club_name":
+                    continue
+                setattr(landing, k, v)
+            db.session.add(landing)
+            landing_count += 1
+        db.session.commit()
+        print(f"   ✓ {landing_count} landing pages creadas")
+
+        # ── Sembrar Training Plans de prueba ──────────────────────────────────
+        from app.models.training_plan import TrainingPlan, TrainingCycle
+        plan_clubs = Club.query.all()
+        plan_count = 0
+        for pc in plan_clubs:
+            plan = TrainingPlan(
+                name=f"Plan {pc.name} 2026",
+                description="Plan de entrenamiento semestral para el club.",
+                club_id=pc.id, created_by=1,
+                start_date=date(2026, 1, 15), end_date=date(2026, 7, 15),
+                status="ACTIVE"
+            )
+            db.session.add(plan); db.session.flush()
+            for cname in ["Físico", "Técnico", "Táctico"]:
+                db.session.add(TrainingCycle(
+                    training_plan_id=plan.id, name=cname,
+                    description=f"Ciclo {cname.lower()} del semestre",
+                    order=["Físico","Técnico","Táctico"].index(cname)
+                ))
+            plan_count += 1
+        db.session.commit()
+        print(f"   ✓ {plan_count} planes de entrenamiento")
+
         # Marcar todas las migraciones como aplicadas en alembic
         try:
             from flask_migrate import stamp
