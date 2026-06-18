@@ -5,6 +5,7 @@ import { paymentService } from '../../services/paymentService';
 import { authService } from '../../services/authService';
 import { statsService } from '../../services/statsService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
+import { IconCalendar, IconDollarSign, IconActivity, IconUsers, IconClipboard } from '../../components/Icons';
 
 const PIE_COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 const GROUP_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#6366f1', '#84cc16', '#94a3b8'];
@@ -98,39 +99,56 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card" style={{ borderBottom: '4px solid var(--primary-color)' }}>
-          <div className="stat-label">ATLETAS</div>
-          <div className="stat-value">{stats.athletes}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--primary-color)', marginTop: '4px' }}>Registrados activamente</div>
-        </div>
-        <div className="stat-card" style={{ borderBottom: '4px solid var(--success-color)' }}>
-          <div className="stat-label">GRUPOS</div>
-          <div className="stat-value">{stats.groups}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--success-color)', marginTop: '4px' }}>Equipos en entrenamiento</div>
-        </div>
-        <div className="stat-card" style={{ borderBottom: '4px solid #8b5cf6' }}>
-          <div className="stat-label">ENTRENADORES</div>
-          <div className="stat-value">{stats.trainers}</div>
-          <div style={{ fontSize: '0.75rem', color: '#8b5cf6', marginTop: '4px' }}>Personal técnico</div>
-        </div>
-      </div>
-
-      {/* Financial Summary */}
-      <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', fontWeight: 700 }}>Resumen Financiero del Mes</h2>
-      <div className="stat-grid">
-        <div className="card financial-card" style={{ background: '#f0fdf4' }}>
-          <div className="financial-icon" style={{ background: '#dcfce7' }}>💰</div>
-          <div>
-            <div style={{ color: '#166534', fontWeight: 600, fontSize: '0.875rem' }}>RECAUDACIÓN ACTUAL</div>
-            <div className="financial-amount" style={{ color: '#14532d' }}>${stats.recap.toLocaleString()}</div>
+      {/* Top Stats Row - 5 indicators in a single row */}
+      <div className="stat-grid-5">
+        <div className="stat-card-mini" style={{ borderLeft: '4px solid var(--brand-500)' }}>
+          <div className="stat-card-mini-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}>
+            <IconUsers size={20} />
+          </div>
+          <div className="stat-card-mini-body">
+            <div className="stat-card-mini-label">ATLETAS</div>
+            <div className="stat-card-mini-value">{stats.athletes}</div>
+            <div className="stat-card-mini-sub">Registrados</div>
           </div>
         </div>
-        <div className="card financial-card" style={{ background: '#fffbeb' }}>
-          <div className="financial-icon" style={{ background: '#fef3c7' }}>⏳</div>
-          <div>
-            <div style={{ color: '#92400e', fontWeight: 600, fontSize: '0.875rem' }}>PENDIENTE POR COBRAR</div>
-            <div className="financial-amount" style={{ color: '#78350f' }}>${stats.pending.toLocaleString()}</div>
+        <div className="stat-card-mini" style={{ borderLeft: '4px solid var(--success-500)' }}>
+          <div className="stat-card-mini-icon" style={{ background: 'var(--success-50)', color: 'var(--success-700)' }}>
+            <IconActivity size={20} />
+          </div>
+          <div className="stat-card-mini-body">
+            <div className="stat-card-mini-label">GRUPOS</div>
+            <div className="stat-card-mini-value">{stats.groups}</div>
+            <div className="stat-card-mini-sub">Activos</div>
+          </div>
+        </div>
+        <div className="stat-card-mini" style={{ borderLeft: '4px solid var(--purple-500)' }}>
+          <div className="stat-card-mini-icon" style={{ background: 'var(--purple-50)', color: 'var(--purple-700)' }}>
+            <IconClipboard size={20} />
+          </div>
+          <div className="stat-card-mini-body">
+            <div className="stat-card-mini-label">ENTRENADORES</div>
+            <div className="stat-card-mini-value">{stats.trainers}</div>
+            <div className="stat-card-mini-sub">Staff</div>
+          </div>
+        </div>
+        <div className="stat-card-mini" style={{ borderLeft: '4px solid var(--success-500)' }}>
+          <div className="stat-card-mini-icon" style={{ background: '#f0fdf4', color: '#14532d' }}>
+            <IconDollarSign size={20} />
+          </div>
+          <div className="stat-card-mini-body">
+            <div className="stat-card-mini-label">RECAUDADO</div>
+            <div className="stat-card-mini-value">${stats.recap.toLocaleString()}</div>
+            <div className="stat-card-mini-sub">Este mes</div>
+          </div>
+        </div>
+        <div className="stat-card-mini" style={{ borderLeft: '4px solid var(--warning-500)' }}>
+          <div className="stat-card-mini-icon" style={{ background: 'var(--warning-50)', color: 'var(--warning-700)' }}>
+            <IconCalendar size={20} />
+          </div>
+          <div className="stat-card-mini-body">
+            <div className="stat-card-mini-label">PENDIENTE</div>
+            <div className="stat-card-mini-value">${stats.pending.toLocaleString()}</div>
+            <div className="stat-card-mini-sub">Por cobrar</div>
           </div>
         </div>
       </div>
@@ -263,14 +281,50 @@ const DashboardHome = () => {
         )}
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - redesigned as visual action cards */}
       <div style={{ marginTop: '40px' }}>
         <h3 style={{ fontSize: '1rem', marginBottom: '16px', fontWeight: 700 }}>Acciones Rápidas</h3>
-        <div className="quick-actions">
-          <a href="/admin/attendance" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Tomar Asistencia Hoy</a>
-          <a href="/admin/payments" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Registrar Pagos</a>
-          <a href="/admin/tests" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Evaluar Atletas</a>
-          <a href="/admin/users" className="btn btn-ghost" style={{ textDecoration: 'none' }}>Ver Usuarios</a>
+        <div className="quick-actions-grid">
+          <a href="/admin/attendance" className="quick-action-card">
+            <div className="quick-action-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+              <IconCalendar size={22} />
+            </div>
+            <div className="quick-action-body">
+              <span className="quick-action-title">Tomar Asistencia</span>
+              <span className="quick-action-desc">Registra la asistencia del día</span>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </a>
+          <a href="/admin/payments" className="quick-action-card">
+            <div className="quick-action-icon" style={{ background: '#f0fdf4', color: '#15803d' }}>
+              <IconDollarSign size={22} />
+            </div>
+            <div className="quick-action-body">
+              <span className="quick-action-title">Registrar Pagos</span>
+              <span className="quick-action-desc">Gestiona cobros y pagos</span>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </a>
+          <a href="/admin/tests" className="quick-action-card">
+            <div className="quick-action-icon" style={{ background: '#fffbeb', color: '#b45309' }}>
+              <IconActivity size={22} />
+            </div>
+            <div className="quick-action-body">
+              <span className="quick-action-title">Evaluar Atletas</span>
+              <span className="quick-action-desc">Realiza pruebas físicas</span>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </a>
+          <a href="/admin/users" className="quick-action-card">
+            <div className="quick-action-icon" style={{ background: '#faf5ff', color: '#7e22ce' }}>
+              <IconUsers size={22} />
+            </div>
+            <div className="quick-action-body">
+              <span className="quick-action-title">Ver Usuarios</span>
+              <span className="quick-action-desc">Administra el club</span>
+            </div>
+            <span className="quick-action-arrow">→</span>
+          </a>
         </div>
       </div>
     </div>
