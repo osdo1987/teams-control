@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import clubService from '../../services/clubService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
@@ -23,6 +23,8 @@ const ClubList = () => {
     welcome_message: '',
     show_features: true,
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef(null);
 
   useEffect(() => {
     fetchClubs();
@@ -99,6 +101,40 @@ const ClubList = () => {
     } finally {
       setIsConfirmOpen(false);
       setClubToDelete(null);
+    }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('El archivo excede el tamaño máximo de 5MB');
+      e.target.value = '';
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Tipo de archivo no permitido. Usa PNG, JPG, GIF, WebP o SVG.');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const result = await clubService.uploadLogo(file);
+      setFormData({ ...formData, logo_url: result.url });
+    } catch (error) {
+      alert('Error al subir la imagen: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setUploadingLogo(false);
+      // Reset input so the same file can be selected again
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
     }
   };
 
@@ -320,19 +356,119 @@ const ClubList = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Logo del Club (URL)</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="https://ejemplo.com/logo.png"
-                value={formData.logo_url}
-                onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-              />
-              {formData.logo_url && (
-                <div style={{ marginTop: '8px' }}>
-                  <img src={formData.logo_url} alt="Preview logo" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-soft)' }} />
+              <label className="form-label">Logo del Club</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Image preview and upload area */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: formData.logo_url ? '8px' : '16px',
+                    border: '2px dashed var(--border-soft)',
+                    borderRadius: '12px',
+                    background: 'var(--bg-subtle)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {/* Preview */}
+                  {formData.logo_url && (
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <img
+                        src={formData.logo_url}
+                        alt="Preview logo"
+                        style={{
+                          width: '72px',
+                          height: '72px',
+                          objectFit: 'cover',
+                          borderRadius: '10px',
+                          border: '2px solid var(--border-soft)',
+                          background: '#fff',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, logo_url: '' })}
+                        style={{
+                          position: 'absolute',
+                          top: '-6px',
+                          right: '-6px',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          background: 'var(--danger-500, #ef4444)',
+                          color: '#fff',
+                          border: '2px solid #fff',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          lineHeight: 1,
+                          fontWeight: 700,
+                        }}
+                        title="Eliminar logo"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/svg+xml"
+                      style={{ display: 'none' }}
+                      onChange={handleLogoUpload}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                      >
+                        {uploadingLogo ? (
+                          <>
+                            <span className="spinner" style={{ width: 14, height: 14 }} />
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            📁 Seleccionar imagen
+                          </>
+                        )}
+                      </button>
+                      {formData.logo_url && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                          Logo cargado
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      PNG, JPG, GIF, WebP o SVG. Máx 5MB.
+                    </span>
+                  </div>
                 </div>
-              )}
+
+                {/* URL input as fallback */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>O ingresa una URL:</span>
+                  </div>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="https://ejemplo.com/logo.png"
+                    value={formData.logo_url}
+                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="form-group">

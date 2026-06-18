@@ -1,5 +1,6 @@
 import os
 import uuid
+import base64
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
@@ -107,7 +108,9 @@ def update_landing():
 @jwt_required()
 def upload_image():
     """
-    Upload an image for the landing page
+    Upload an image for the landing page as Base64
+    Converts the image to base64 and returns a data URI.
+    No files are saved to disk.
     ---
     tags:
       - Landing
@@ -128,21 +131,31 @@ def upload_image():
     if file.filename == '' or not allowed_file(file.filename):
         return jsonify({"error": "Invalid file type. Allowed: png, jpg, jpeg, gif, webp, svg"}), 400
 
-    # Create upload directory if it doesn't exist
-    club_id = user.club_id or 'common'
-    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', f'club_{club_id}')
-    os.makedirs(upload_dir, exist_ok=True)
+    # Check file size (5MB max)
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({"error": "File too large. Max 5MB"}), 400
 
-    # Save file with unique name
+    # Read file and convert to base64
+    file_data = file.read()
     ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    filepath = os.path.join(upload_dir, filename)
-    file.save(filepath)
 
-    # Return the URL path
-    url = f"/static/uploads/club_{club_id}/{filename}"
+    mime_map = {
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'svg': 'image/svg+xml',
+    }
+    mime_type = mime_map.get(ext, 'image/png')
 
-    return jsonify({"url": url, "filename": filename}), 200
+    b64_string = base64.b64encode(file_data).decode('utf-8')
+    data_uri = f"data:{mime_type};base64,{b64_string}"
+
+    return jsonify({"url": data_uri, "filename": file.filename}), 200
 
 @landing_bp.route('/landing/manage', methods=['DELETE'])
 @jwt_required()

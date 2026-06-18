@@ -1,5 +1,6 @@
 import os
 import uuid
+import base64
 from flask import Blueprint, jsonify, request, current_app
 from app.extensions import db
 from app.models.club import Club
@@ -39,8 +40,9 @@ def get_available_clubs():
 @registration_bp.route('/upload-photo', methods=['POST'])
 def upload_athlete_photo():
     """
-    Upload an athlete profile photo (used during registration)
-    Returns the URL of the uploaded image
+    Upload an athlete profile photo as Base64 (used during registration)
+    Converts the image to base64 and returns a data URI.
+    No files are saved to disk.
     """
     if 'file' not in request.files:
         return jsonify({"error": "No se proporcionó archivo"}), 400
@@ -49,18 +51,30 @@ def upload_athlete_photo():
     if file.filename == '' or not allowed_file(file.filename):
         return jsonify({"error": "Tipo de archivo no válido. Permitidos: png, jpg, jpeg, gif, webp"}), 400
 
-    # Save file with unique name
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f"athlete_{uuid.uuid4().hex}.{ext}"
-    
-    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'profiles')
-    os.makedirs(upload_dir, exist_ok=True)
-    
-    filepath = os.path.join(upload_dir, filename)
-    file.save(filepath)
+    # Check file size (5MB max)
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({"error": "Archivo demasiado máximo. Máximo 5MB"}), 400
 
-    url = f"/static/uploads/profiles/{filename}"
-    return jsonify({"url": url, "filename": filename}), 200
+    # Read file and convert to base64
+    file_data = file.read()
+    ext = file.filename.rsplit('.', 1)[1].lower()
+
+    mime_map = {
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+    }
+    mime_type = mime_map.get(ext, 'image/png')
+
+    b64_string = base64.b64encode(file_data).decode('utf-8')
+    data_uri = f"data:{mime_type};base64,{b64_string}"
+
+    return jsonify({"url": data_uri, "filename": file.filename}), 200
 
 
 @registration_bp.route('/register', methods=['POST'])

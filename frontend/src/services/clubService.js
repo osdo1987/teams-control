@@ -26,6 +26,27 @@ const clubService = {
     });
   },
 
+  /**
+   * Upload a club logo image file.
+   * Uses native fetch to send FormData (not JSON).
+   */
+  uploadLogo: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('access_token');
+    const response = await fetch('/api/clubs/upload-logo', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al subir imagen');
+    }
+    return data;
+  },
+
   // Public method - no auth required
   getPublicBySlug: async (slug) => {
     return await api(`/clubs/public/${slug}`);

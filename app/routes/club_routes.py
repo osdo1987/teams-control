@@ -1,9 +1,12 @@
-from flask import Blueprint, jsonify, request
+import os
+import uuid
+import base64
+from flask import Blueprint, jsonify, request, current_app
 from app.models.club import Club
 from app.models.user import User
 from app.schemas.club_schema import ClubSchema, ClubPublicSchema
 from app.utils.decorators import role_required
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 
 club_bp = Blueprint('clubs', __name__)
@@ -211,3 +214,54 @@ def delete_club(club_id):
     db.session.delete(club)
     db.session.commit()
     return jsonify({"message": "Club deleted successfully"}), 200
+
+
+# Allowed extensions for image uploads
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@club_bp.route('/upload-logo', methods=['POST'])
+@role_required(['SUPER_ADMIN'])
+def upload_club_logo():
+    """
+    Upload a club logo image as Base64 (Super Admin Only)
+    Converts the image to base64 and stores it directly in the database.
+    No files are saved to disk.
+    """
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    if file.filename == '' or not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Allowed: png, jpg, jpeg, gif, webp, svg"}), 400
+
+    # Check file size (5MB max)
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({"error": "File too large. Max 5MB"}), 400
+
+    # Read file and convert to base64
+    file_data = file.read()
+    ext = file.filename.rsplit('.', 1)[1].lower()
+
+    # Build MIME type
+    mime_map = {
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'svg': 'image/svg+xml',
+    }
+    mime_type = mime_map.get(ext, 'image/png')
+
+    # Encode to base64 data URI
+    b64_string = base64.b64encode(file_data).decode('utf-8')
+    data_uri = f"data:{mime_type};base64,{b64_string}"
+
+    return jsonify({"url": data_uri, "filename": file.filename}), 200
