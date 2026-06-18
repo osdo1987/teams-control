@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { authService } from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
 
 const FEATURES = {
     TRAINER: [
@@ -21,11 +22,10 @@ const FEATURES = {
 };
 
 const PermissionsPage = () => {
+    const { showError, showSuccess } = useToast();
     const [permissions, setPermissions] = useState({});
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false); // Mantener saving para el estado del botón
     const user = authService.getCurrentUser();
 
     useEffect(() => {
@@ -37,7 +37,7 @@ const PermissionsPage = () => {
             const data = await api(`/clubs/${user.club_id}/permissions`);
             setPermissions(data);
         } catch (err) {
-            setError('Error al cargar permisos');
+            showError('Error al cargar permisos');
         } finally {
             setLoading(false);
         }
@@ -55,16 +55,14 @@ const PermissionsPage = () => {
 
     const handleSave = async () => {
         setSaving(true);
-        setError('');
-        setSuccess('');
         try {
             await api(`/clubs/${user.club_id}/permissions`, {
                 method: 'PUT',
                 body: JSON.stringify(permissions),
             });
-            setSuccess('Permisos actualizados correctamente');
+            showSuccess('Permisos actualizados correctamente');
         } catch (err) {
-            setError('Error al guardar permisos');
+            showError('Error al guardar permisos');
         } finally {
             setSaving(false);
         }
@@ -96,9 +94,6 @@ const PermissionsPage = () => {
                     </button>
                 </div>
             </div>
-
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
                 {Object.entries(FEATURES).map(([role, features]) => (

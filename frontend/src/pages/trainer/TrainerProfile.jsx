@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import trainerService from '../../services/trainerService';
+import { useToast } from '../../contexts/ToastContext';
 
 const TrainerProfile = () => {
+    const { showError, showSuccess } = useToast();
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [loading, setLoading] = useState(true); // Keep loading state
+    const [saving, setSaving] = useState(false); // Keep saving state
     const [activeTab, setActiveTab] = useState('personal');
     const [editMode, setEditMode] = useState(false);
 
@@ -58,7 +58,7 @@ const TrainerProfile = () => {
                 },
             });
         } catch (err) {
-            setError('Error al cargar perfil');
+            showError('Error al cargar perfil');
         } finally {
             setLoading(false);
         }
@@ -66,15 +66,13 @@ const TrainerProfile = () => {
 
     const handleSave = async () => {
         setSaving(true);
-        setError('');
-        setSuccess('');
         try {
             await trainerService.updateMyProfile(formData);
-            setSuccess('Perfil actualizado correctamente');
+            showSuccess('Perfil actualizado correctamente');
             setEditMode(false);
             await fetchProfile();
         } catch (err) {
-            setError('Error al guardar perfil');
+            showError('Error al guardar perfil');
         } finally {
             setSaving(false);
         }
@@ -132,9 +130,6 @@ const TrainerProfile = () => {
                     )}
                 </div>
             </div>
-
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
 
             {/* Tabs */}
             <div className="profile-tabs">

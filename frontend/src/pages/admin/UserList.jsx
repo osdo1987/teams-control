@@ -4,6 +4,7 @@ import { groupService } from '../../services/groupService';
 import clubService from '../../services/clubService';
 import { authService } from '../../services/authService';
 import Modal from '../../components/UI/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import PasswordInput from '../../components/UI/PasswordInput';
 import { IconEye, IconEyeOff } from '../../components/Icons';
@@ -36,7 +37,7 @@ const UserList = () => {
   const [clubs, setClubs] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showError, showSuccess } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -66,8 +67,8 @@ const UserList = () => {
   }, []);
 
   const fetchInitialData = async () => {
+    // clearMessages(); // No longer needed with toast
     try {
-      setError('');
       const [usersData, clubsData, groupsData] = await Promise.all([
         userService.getUsers(),
         clubService.getAllClubs(),
@@ -77,8 +78,7 @@ const UserList = () => {
       setClubs(clubsData || []);
       setGroups(groupsData || []);
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Error al cargar datos. Verifique la conexión.');
+      showError(err.message || 'Error al cargar datos. Verifique la conexión.');
     } finally {
       setLoading(false);
     }
@@ -168,15 +168,15 @@ const UserList = () => {
         setUsers(usersData || []);
         setIsModalOpen(false);
       } else {
-        const newUser = await userService.createUser(payload);
+        await userService.createUser(payload);
         // Agregar el nuevo usuario directamente al state sin refetch
-        setUsers(prev => [...prev, { ...newUser, club: clubs.find(c => c.id === parseInt(formData.club_id)) }]);
+        showSuccess('Usuario creado correctamente');
         setConfirmPassword('');
         setIsModalOpen(false);
+        fetchInitialData(); // Refetch to get full user data including club name
       }
     } catch (err) {
-      console.error('Error al guardar:', err);
-      setError(err.message || 'Error al guardar usuario');
+      showError(err.message || 'Error al guardar usuario');
     }
   };
 
@@ -184,9 +184,10 @@ const UserList = () => {
     if (!userToDelete) return;
     try {
       await userService.deleteUser(userToDelete.id);
+      showSuccess('Usuario eliminado correctamente');
       fetchInitialData();
     } catch (err) {
-      setError('Error al eliminar usuario');
+      showError(err.message || 'Error al eliminar usuario');
     } finally {
       setIsConfirmOpen(false);
       setUserToDelete(null);
@@ -232,8 +233,6 @@ const UserList = () => {
           </div>
         )}
       </div>
-
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
 
       <div className="table-container">
         <table className="data-table">

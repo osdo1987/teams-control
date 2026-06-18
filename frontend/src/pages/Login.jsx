@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { IconLock, IconIdCard, IconAlertCircle, IconZap, IconUsers, IconCreditCard, IconClipboard, IconArrowRight, IconEye, IconEyeOff } from '../components/Icons';
+import { useToast } from '../contexts/ToastContext';
 
 const DEMO_USERS = [
   { id: '0000000001', pass: 'super123', label: 'Super Admin', role: 'SUPER_ADMIN' },
@@ -11,16 +12,17 @@ const DEMO_USERS = [
 ];
 
 const Login = () => {
+  const { showError } = useToast();
   const [identificationNumber, setIdentificationNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  // const [error, setError] = useState(''); // Removed, using useToast
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    // setError(''); // Removed, using useToast
     setLoading(true);
     try {
       const data = await authService.login(identificationNumber, password);
@@ -29,7 +31,7 @@ const Login = () => {
       else if (data.user.role === 'TRAINER') navigate('/trainer');
       else navigate('/athlete');
     } catch (err) {
-      setError(err.message || 'Credenciales inválidas. Intente nuevamente.');
+      showError(err.message || 'Credenciales inválidas. Intente nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -76,13 +78,6 @@ const Login = () => {
             <h2>Bienvenido de vuelta</h2>
             <p>Ingresa con tu número de identificación para continuar</p>
           </div>
-
-          {error && (
-            <div className="auth-error">
-              <IconAlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
 
           <div className="form-group">
             <label className="form-label">Número de identificación</label>

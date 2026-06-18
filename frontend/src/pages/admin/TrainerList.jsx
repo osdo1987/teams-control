@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { authService } from '../../services/authService';
 import { userService } from '../../services/userService';
 import Modal from '../../components/UI/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import PasswordInput from '../../components/UI/PasswordInput';
 
@@ -27,6 +28,7 @@ const TrainerList = () => {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showError, showSuccess } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
   // Create modal
@@ -48,8 +50,8 @@ const TrainerList = () => {
   useEffect(() => { fetchTrainers(); }, []);
 
   const fetchTrainers = async () => {
-    try {
-      const data = await authService.getTrainers();
+    try { // clearMessages(); // No longer needed with toast
+      const data = await authService.getTrainers(); // This fetches users with role TRAINER
       setTrainers(data || []);
     } catch { setError('Error al cargar entrenadores'); }
     finally { setLoading(false); }
@@ -76,7 +78,7 @@ const TrainerList = () => {
 
   const validatePassword = (pass) => {
     const errors = [];
-    if (pass.length < 6) errors.push('Mínimo 6 caracteres');
+    if (pass.length < 8) errors.push('Mínimo 8 caracteres');
     if (!/[A-Z]/.test(pass) && !/[a-z]/.test(pass)) errors.push('Debe contener letras');
     if (!/[0-9]/.test(pass)) errors.push('Al menos un número');
     return errors;
@@ -86,12 +88,12 @@ const TrainerList = () => {
     e.preventDefault();
     setPasswordError('');
     if (createForm.password !== confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden');
+      showError('Las contraseñas no coinciden');
       return;
     }
     const pwdErrors = validatePassword(createForm.password);
     if (pwdErrors.length > 0) {
-      setPasswordError(pwdErrors.join('. '));
+      showError(pwdErrors.join('. '));
       return;
     }
     try {
@@ -103,7 +105,8 @@ const TrainerList = () => {
       await userService.createUser(payload);
       setIsCreateOpen(false);
       fetchTrainers();
-    } catch (err) { setError(err.message || 'Error al crear entrenador'); }
+      showSuccess('Entrenador creado correctamente');
+    } catch (err) { showError(err.message || 'Error al crear entrenador'); }
   };
 
   // --- EDIT PROFILE ---
@@ -139,7 +142,8 @@ const TrainerList = () => {
       await userService.updateUser(selectedTrainer.id, payload);
       setIsProfileOpen(false);
       fetchTrainers();
-    } catch (err) { setError(err.message || 'Error al guardar perfil'); }
+      showSuccess('Perfil de entrenador actualizado correctamente');
+    } catch (err) { showError(err.message || 'Error al guardar perfil'); }
   };
 
   // --- DELETE ---
@@ -147,8 +151,9 @@ const TrainerList = () => {
     if (!trainerToDelete) return;
     try {
       await userService.deleteUser(trainerToDelete.id);
+      showSuccess('Entrenador eliminado correctamente');
       fetchTrainers();
-    } catch { setError('Error al eliminar entrenador'); }
+    } catch (err) { showError(err.message || 'Error al eliminar entrenador'); }
     finally { setIsConfirmOpen(false); setTrainerToDelete(null); }
   };
 
@@ -177,8 +182,6 @@ const TrainerList = () => {
             style={{ borderRadius: '12px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
-
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
 
       <div className="table-container">
         <table className="data-table">

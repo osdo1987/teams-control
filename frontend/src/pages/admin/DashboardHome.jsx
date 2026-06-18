@@ -3,6 +3,7 @@ import { athleteService } from '../../services/athleteService';
 import { groupService } from '../../services/groupService';
 import { paymentService } from '../../services/paymentService';
 import { authService } from '../../services/authService';
+import { useToast } from '../../contexts/ToastContext';
 import { statsService } from '../../services/statsService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { IconCalendar, IconDollarSign, IconActivity, IconUsers, IconClipboard } from '../../components/Icons';
@@ -19,6 +20,7 @@ const DashboardHome = () => {
     pending: 0
   });
   const [dashboardData, setDashboardData] = useState(null);
+  const { showError } = useToast();
   const [loading, setLoading] = useState(true);
   const user = authService.getCurrentUser();
 
@@ -68,7 +70,7 @@ const DashboardHome = () => {
         pending: totalPending
       });
     } catch (err) {
-      console.error("Error al cargar estadísticas:", err);
+      showError(err.message || "Error al cargar estadísticas del dashboard");
     } finally {
       setLoading(false);
     }

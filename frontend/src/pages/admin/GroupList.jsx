@@ -7,9 +7,27 @@ import { athleteService } from '../../services/athleteService';
 import { userService } from '../../services/userService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
 
-const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9','#f59e0b'];
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#f59e0b'];
 const groupColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
+
+const LEVELS = [
+  'Recreativo',
+  'Principiante',
+  'Básico',
+  'Intermedio',
+  'Avanzado',
+  'Competitivo',
+  'Élite',
+  'Semiprofesional',
+  'Profesional',
+  'Pre-competitivo'
+];
+
+const WEEK_DAYS = [
+  'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
+];
 
 const STATUS_BADGE = {
   ACTIVE: 'badge badge-success',
@@ -20,7 +38,7 @@ const STATUS_BADGE = {
 const INITIAL_FORM = {
   name: '', club_id: 1, category_id: '', description: '',
   max_capacity: '', schedule: '', schedule_days: '', schedule_start_time: '',
-  schedule_end_time: '', training_location: '', level: '', season: '',
+  schedule_end_time: '', schedule_blocks: '', training_location: '', level: '', season: '',
   monthly_fee: '', trainer_ids: []
 };
 
@@ -32,7 +50,7 @@ const GroupList = () => {
   const [athletes, setAthletes] = useState([]);
   const [selectedAthleteIds, setSelectedAthleteIds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showError, showSuccess } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -42,6 +60,7 @@ const GroupList = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTrainerForChange, setSelectedTrainerForChange] = useState(null);
 
   // Inline category/trainer states
   const [isAddingCategoryInline, setIsAddingCategoryInline] = useState(false);
@@ -51,6 +70,9 @@ const GroupList = () => {
     first_name: '', last_name: '', identification_number: '', phone: '', password: 'Entrenador123*'
   });
 
+  // Multi-block schedule
+  const [scheduleBlocks, setScheduleBlocks] = useState([]);
+
   const user = authService.getCurrentUser();
 
   useEffect(() => {
@@ -59,6 +81,7 @@ const GroupList = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    // clearMessages(); // No longer needed with toast
     try {
       const [groupsData, trainersData, categoriesData, athletesData] = await Promise.all([
         groupService.getGroups(),
@@ -70,11 +93,11 @@ const GroupList = () => {
       setTrainers(trainersData || []);
       setCategories(categoriesData || []);
       setAthletes(athletesData || []);
-    } catch { setError('Error al cargar datos'); }
+    } catch (err) { showError(err.message || 'Error al cargar datos'); }
     finally { setLoading(false); }
   };
 
-  const filteredGroups = groups.filter(g => 
+  const filteredGroups = groups.filter(g =>
     g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (g.category_obj?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -102,10 +125,42 @@ const GroupList = () => {
     });
   };
 
+  // Multi-block schedule helpers
+  const addScheduleBlock = () => {
+    setScheduleBlocks([...scheduleBlocks, { days: [], start: '', end: '' }]);
+  };
+
+  const removeScheduleBlock = (index) => {
+    setScheduleBlocks(scheduleBlocks.filter((_, i) => i !== index));
+  };
+
+  const toggleBlockDay = (blockIndex, day) => {
+    setScheduleBlocks(scheduleBlocks.map((block, i) => {
+      if (i !== blockIndex) return block;
+      const days = block.days.includes(day)
+        ? block.days.filter(d => d !== day)
+        : [...block.days, day];
+      return { ...block, days };
+    }));
+  };
+
+  const updateBlockField = (blockIndex, field, value) => {
+    setScheduleBlocks(scheduleBlocks.map((block, i) =>
+      i === blockIndex ? { ...block, [field]: value } : block
+    ));
+  };
+
+  const getScheduleSummary = (blocks) => {
+    if (!blocks || blocks.length === 0) return '';
+    return blocks.map(b => `${b.days.join('-')} ${b.start} a ${b.end}`).join(' | ');
+  };
+
   const openCreateModal = () => {
     setEditingGroup(null);
     setFormData({ ...INITIAL_FORM, club_id: user.club_id });
     setSelectedAthleteIds([]);
+    setScheduleBlocks([]);
+    setSelectedTrainerForChange(null);
     setIsAddingCategoryInline(false);
     setIsAddingTrainerInline(false);
     setInlineCategoryName('');
@@ -115,6 +170,22 @@ const GroupList = () => {
 
   const openEditModal = (group) => {
     setEditingGroup(group);
+
+    // Parse existing schedule_blocks from JSON or create from legacy fields
+    let parsedBlocks = [];
+    try {
+      parsedBlocks = group.schedule_blocks ? JSON.parse(group.schedule_blocks) : [];
+    } catch {
+      parsedBlocks = [];
+    }
+    // If no blocks but legacy schedule fields exist, create one block
+    if (parsedBlocks.length === 0 && group.schedule_days && group.schedule_start_time && group.schedule_end_time) {
+      const days = (group.schedule_days || '').split(',').filter(Boolean);
+      parsedBlocks = [{ days, start: group.schedule_start_time || '', end: group.schedule_end_time || '' }];
+    }
+
+    setScheduleBlocks(parsedBlocks);
+
     setFormData({
       name: group.name,
       club_id: group.club_id,
@@ -125,13 +196,14 @@ const GroupList = () => {
       schedule_days: group.schedule_days || '',
       schedule_start_time: group.schedule_start_time || '',
       schedule_end_time: group.schedule_end_time || '',
+      schedule_blocks: group.schedule_blocks || '',
       training_location: group.training_location || '',
       level: group.level || '',
       season: group.season || '',
       monthly_fee: group.monthly_fee || '',
       trainer_ids: (group.trainers || []).map(t => t.id)
     });
-    
+
     // Find athletes currently in this group
     const currentAthleteIds = athletes
       .filter(a => a.current_groups?.some(g => g.id === group.id))
@@ -141,6 +213,7 @@ const GroupList = () => {
     setIsAddingCategoryInline(false);
     setIsAddingTrainerInline(false);
     setInlineCategoryName('');
+    setSelectedTrainerForChange(null);
     setActiveTab('general');
     setIsModalOpen(true);
   };
@@ -148,12 +221,21 @@ const GroupList = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     if (!formData.trainer_ids || formData.trainer_ids.length === 0) {
-      setError('Debe asignar al menos un entrenador al grupo');
+      showError('Debe asignar al menos un entrenador al grupo');
       return;
     }
     try {
+      // Build schedule_blocks JSON
+      const validBlocks = scheduleBlocks.filter(b => b.days.length > 0 && b.start && b.end);
+      const scheduleBlocksJson = validBlocks.length > 0 ? JSON.stringify(validBlocks) : null;
+
       const payload = {
         ...formData,
+        schedule_blocks: scheduleBlocksJson,
+        schedule: validBlocks.length > 0 ? getScheduleSummary(validBlocks) : formData.schedule,
+        schedule_days: validBlocks.length > 0 ? validBlocks.flatMap(b => b.days).join(',') : formData.schedule_days,
+        schedule_start_time: validBlocks.length > 0 ? validBlocks[0].start : formData.schedule_start_time,
+        schedule_end_time: validBlocks.length > 0 ? validBlocks[0].end : formData.schedule_end_time,
         category_id: formData.category_id ? parseInt(formData.category_id) : null,
         club_id: parseInt(formData.club_id),
         max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
@@ -166,11 +248,11 @@ const GroupList = () => {
       } else {
         savedGroup = await groupService.createGroup(payload);
       }
-      
+
       const groupId = editingGroup ? editingGroup.id : savedGroup.id;
 
       // Bulk assign / remove athletes
-      const initialAthleteIds = editingGroup 
+      const initialAthleteIds = editingGroup
         ? athletes.filter(a => a.current_groups?.some(g => g.id === editingGroup.id)).map(a => a.id)
         : [];
 
@@ -190,8 +272,9 @@ const GroupList = () => {
 
       setIsModalOpen(false);
       setError('');
+      showSuccess(editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado correctamente');
       fetchData();
-    } catch (err) { setError(err.message || 'Error al guardar grupo'); }
+    } catch (err) { showError(err.message || 'Error al guardar grupo'); }
   };
 
   const handleCreateCategory = async (e) => {
@@ -200,8 +283,9 @@ const GroupList = () => {
     try {
       await categoryService.createCategory({ name: newCategoryName, club_id: user.club_id });
       setNewCategoryName('');
+      showSuccess('Categoría creada correctamente');
       fetchData();
-    } catch (err) { setError('Error al crear categoría'); }
+    } catch (err) { showError(err.message || 'Error al crear categoría'); }
   };
 
   const handleCreateCategoryInline = async (e) => {
@@ -216,15 +300,14 @@ const GroupList = () => {
       if (newCat && newCat.id) {
         setFormData(prev => ({ ...prev, category_id: newCat.id.toString() }));
       }
-    } catch (err) {
-      setError('Error al crear categoría inline');
-    }
+      showSuccess('Categoría creada y asignada');
+    } catch (err) { showError(err.message || 'Error al crear categoría'); }
   };
 
   const handleCreateTrainerInline = async (e) => {
     e.preventDefault();
     if (!inlineTrainerForm.first_name || !inlineTrainerForm.last_name || !inlineTrainerForm.identification_number) {
-      setError('Complete los campos obligatorios del entrenador');
+      showError('Complete los campos obligatorios del entrenador');
       return;
     }
     try {
@@ -246,25 +329,26 @@ const GroupList = () => {
           return { ...prev, trainer_ids: [...current, newTrainer.id] };
         });
       }
-    } catch (err) {
-      setError(err.message || 'Error al crear entrenador inline');
-    }
+      showSuccess('Entrenador creado y asignado');
+    } catch (err) { showError(err.message || 'Error al crear entrenador'); }
   };
 
   const handleDeleteCategory = async (id) => {
     try {
       await categoryService.deleteCategory(id);
+      showSuccess('Categoría eliminada correctamente');
       fetchData();
-    } catch (err) { setError('Error al eliminar categoría'); }
+    } catch (err) { showError(err.message || 'Error al eliminar categoría'); }
   };
 
   const confirmDelete = async () => {
     if (!groupToDelete) return;
     try {
       await groupService.deleteGroup(groupToDelete.id);
+      showSuccess('Grupo eliminado correctamente');
       fetchData();
     } catch (err) {
-      setError('Error al eliminar grupo');
+      showError(err.message || 'Error al eliminar grupo');
     } finally {
       setIsConfirmOpen(false);
       setGroupToDelete(null);
@@ -309,8 +393,6 @@ const GroupList = () => {
         />
       </div>
 
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
-
       {groups.length === 0 ? (
         <div style={{
           background: 'white',
@@ -324,7 +406,7 @@ const GroupList = () => {
         }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>¡Te damos la bienvenida a la gestión de Grupos! 🚀</h2>
           <p className="text-muted" style={{ marginBottom: '24px', fontSize: '0.9rem' }}>Para comenzar a operar, te recomendamos seguir estos sencillos pasos:</p>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left', marginBottom: '24px' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: categories.length > 0 ? '#10b981' : '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', flexShrink: 0 }}>
@@ -356,7 +438,7 @@ const GroupList = () => {
               </div>
             </div>
           </div>
-          
+
           <button className="btn btn-primary" onClick={openCreateModal} disabled={trainers.length === 0 || categories.length === 0}>
             + Crear Grupo
           </button>
@@ -368,54 +450,82 @@ const GroupList = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
           {filteredGroups.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>No se encontraron grupos.</p>
-          ) : filteredGroups.map(group => (
-            <div key={group.id} className="card" style={{ padding: '22px', cursor: 'default' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: groupColor(group.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', marginBottom: 14 }}>
-                  {user.sport?.includes('Baloncesto') ? '🏀' : '⚽'}
-                </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span className={STATUS_BADGE[group.status] || 'badge badge-success'}>{group.status || 'ACTIVE'}</span>
-                  <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }} onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}>
-                    ✕
-                  </button>
-                </div>
-              </div>
+          ) : filteredGroups.map(group => {
+            // Parse schedule blocks for display
+            let blocks = [];
+            try {
+              blocks = group.schedule_blocks ? JSON.parse(group.schedule_blocks) : [];
+            } catch { blocks = []; }
+            const hasMultiBlock = blocks.length > 1;
 
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 4 }}>{group.name}</h3>
-              
-              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                {group.category_obj?.name && <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{group.category_obj.name}</span>}
-                <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{user.sport}</span>
-                {group.level && <span className="badge badge-inactive" style={{ fontSize: '0.7rem' }}>{group.level}</span>}
-              </div>
-
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 4 }}>
-                🕐 {group.schedule || 'Sin horario definido'}
-              </div>
-              {group.training_location && (
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-                  📍 {group.training_location}
+            return (
+              <div key={group.id} className="card" style={{ padding: '22px', cursor: 'default' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: groupColor(group.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', marginBottom: 14 }}>
+                    {user.sport?.includes('Baloncesto') ? '🏀' : '⚽'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span className={STATUS_BADGE[group.status] || 'badge badge-success'}>{group.status || 'ACTIVE'}</span>
+                    <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }} onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}>
+                      ✕
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
-                <span className="badge badge-primary">
-                  {group.athletes_count ?? group.athletes?.length ?? 0}{group.max_capacity ? ` / ${group.max_capacity}` : ''} Atletas
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--primary-color)' }}
-                    onClick={() => navigate(`/admin/athletes?openCreate=true&group_id=${group.id}`)}
-                  >
-                    + Atleta
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(group)}>Editar</button>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 4 }}>{group.name}</h3>
+
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  {group.category_obj?.name && <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{group.category_obj.name}</span>}
+                  <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{user.sport}</span>
+                  {group.level && <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{group.level}</span>}
+                </div>
+
+                {/* Schedule display - supports multi-block */}
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                  🕐 {hasMultiBlock ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {blocks.map((b, i) => (
+                        <span key={i}>{b.days.join(' - ')} {b.start} a {b.end}</span>
+                      ))}
+                    </div>
+                  ) : (group.schedule || 'Sin horario definido')}
+                </div>
+
+                {/* Show assigned trainer(s) on card */}
+                {group.trainers && group.trainers.length > 0 && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                    🏅 {group.trainers.map((t, i) => (
+                      <span key={t.id} className="badge badge-info" style={{ fontSize: '0.68rem' }}>
+                        {t.first_name} {t.last_name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {group.training_location && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
+                    📍 {group.training_location}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
+                  <span className="badge badge-primary">
+                    {group.athletes_count ?? group.athletes?.length ?? 0}{group.max_capacity ? ` / ${group.max_capacity}` : ''} Atletas
+                  </span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--primary-color)' }}
+                      onClick={() => navigate(`/admin/athletes?openCreate=true&group_id=${group.id}`)}
+                    >
+                      + Atleta
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(group)}>Editar</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -485,10 +595,9 @@ const GroupList = () => {
                   <label className="form-label">Nivel</label>
                   <select name="level" value={formData.level} onChange={handleInputChange} className="form-input">
                     <option value="">Seleccionar</option>
-                    <option value="Principiante">Principiante</option>
-                    <option value="Intermedio">Intermedio</option>
-                    <option value="Avanzado">Avanzado</option>
-                    <option value="Competitivo">Competitivo</option>
+                    {LEVELS.map(lvl => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -511,38 +620,192 @@ const GroupList = () => {
 
           {activeTab === 'schedule' && (
             <>
-              <div className="form-group">
-                <label className="form-label">Horario Resumido</label>
-                <input type="text" name="schedule" value={formData.schedule} onChange={handleInputChange} className="form-input" placeholder="Lun-Mie-Vie 5PM a 7PM" />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                Define los bloques de horario. Cada bloque puede tener días y horarios diferentes.
+              </p>
+
+              {/* Multi-block schedule */}
+              {scheduleBlocks.map((block, index) => (
+                <div key={index} style={{
+                  padding: '14px',
+                  border: '1px solid var(--border-main)',
+                  borderRadius: '12px',
+                  marginBottom: 12,
+                  background: 'var(--bg-app)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <strong style={{ fontSize: '0.85rem' }}>Bloque {index + 1}</strong>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '2px 8px', fontSize: '0.75rem' }}
+                      onClick={() => removeScheduleBlock(index)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+
+                  {/* Day checkboxes */}
+                  <div style={{ marginBottom: 10 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 6, display: 'block' }}>Días</label>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {WEEK_DAYS.map(day => (
+                        <label
+                          key={day}
+                          onClick={() => toggleBlockDay(index, day)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            background: block.days.includes(day) ? 'var(--brand-600)' : 'var(--bg-surface)',
+                            color: block.days.includes(day) ? '#fff' : 'var(--text-secondary)',
+                            border: block.days.includes(day) ? '1px solid var(--brand-600)' : '1px solid var(--border-main)',
+                            userSelect: 'none'
+                          }}
+                        >
+                          {day}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 4, display: 'block' }}>Hora Inicio</label>
+                      <input
+                        type="time"
+                        value={block.start}
+                        onChange={e => updateBlockField(index, 'start', e.target.value)}
+                        className="form-input"
+                        style={{ padding: '6px 10px', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 4, display: 'block' }}>Hora Fin</label>
+                      <input
+                        type="time"
+                        value={block.end}
+                        onChange={e => updateBlockField(index, 'end', e.target.value)}
+                        className="form-input"
+                        style={{ padding: '6px 10px', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={addScheduleBlock}
+                style={{ marginBottom: 12, fontSize: '0.8rem' }}
+              >
+                + Agregar bloque horario
+              </button>
+
+              {/* Legacy single schedule fields (fallback) */}
+              <div style={{ borderTop: '1px dashed var(--border-main)', paddingTop: 14 }}>
                 <div className="form-group">
-                  <label className="form-label">Hora Inicio</label>
-                  <input type="time" name="schedule_start_time" value={formData.schedule_start_time} onChange={handleInputChange} className="form-input" />
+                  <label className="form-label">Horario Resumido (texto libre)</label>
+                  <input type="text" name="schedule" value={formData.schedule} onChange={handleInputChange} className="form-input" placeholder="Lun-Mie-Vie 5PM a 7PM" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Hora Fin</label>
-                  <input type="time" name="schedule_end_time" value={formData.schedule_end_time} onChange={handleInputChange} className="form-input" />
+                  <label className="form-label">Lugar de Entrenamiento</label>
+                  <input type="text" name="training_location" value={formData.training_location} onChange={handleInputChange} className="form-input" placeholder="Cancha Principal, Gimnasio..." />
                 </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Lugar de Entrenamiento</label>
-                <input type="text" name="training_location" value={formData.training_location} onChange={handleInputChange} className="form-input" placeholder="Cancha Principal, Gimnasio..." />
               </div>
             </>
           )}
 
           {activeTab === 'trainer' && (
             <div>
+              {/* Current assigned trainers - prominent display */}
+              {(formData.trainer_ids || []).length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+                    🏅 Entrenador{formData.trainer_ids.length > 1 ? 'es' : ''} asignado{formData.trainer_ids.length > 1 ? 's' : ''} actual{formData.trainer_ids.length > 1 ? 'es' : ''}:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {formData.trainer_ids.map(tId => {
+                      const t = trainers.find(trainer => trainer.id === tId);
+                      if (!t) return null;
+                      return (
+                        <div key={tId} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '12px 16px',
+                          background: 'var(--brand-50)',
+                          border: '2px solid var(--brand-500)',
+                          borderRadius: '12px'
+                        }}>
+                          <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: 'var(--brand-500)',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                            flexShrink: 0
+                          }}>
+                            {t.first_name?.[0]}{t.last_name?.[0]}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <strong style={{ fontSize: '0.9rem' }}>{t.first_name} {t.last_name}</strong>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {t.identification_number || 'Sin ID'} {t.phone ? `· ${t.phone}` : ''}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '4px 10px', fontSize: '0.75rem' }}
+                            onClick={() => handleTrainerSelect(tId)}
+                          >
+                            ✕ Quitar
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(formData.trainer_ids || []).length === 0 && (
+                <div style={{
+                  padding: '14px',
+                  background: 'var(--warning-50)',
+                  border: '1px solid var(--warning-500)',
+                  borderRadius: '10px',
+                  marginBottom: 16,
+                  fontSize: '0.85rem',
+                  color: 'var(--warning-700)',
+                  fontWeight: 600
+                }}>
+                  ⚠️ No hay entrenador asignado. Selecciona uno de la lista o crea uno nuevo.
+                </div>
+              )}
+
+              {/* Options to change: register new trainer + list */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span className="text-muted" style={{ fontSize: '0.8rem' }}>Asigna entrenadores al grupo:</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {formData.trainer_ids && formData.trainer_ids.length > 0
+                    ? '¿Cambiar entrenador? Selecciona de la lista:'
+                    : 'Selecciona entrenador(es) para el grupo:'}
+                </span>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
                   style={{ height: 'auto', padding: '4px 8px', fontSize: '0.75rem' }}
                   onClick={() => setIsAddingTrainerInline(!isAddingTrainerInline)}
                 >
-                  {isAddingTrainerInline ? 'Cancelar' : '+ Registrar Entrenador'}
+                  {isAddingTrainerInline ? 'Cancelar' : '+ Registrar Nuevo'}
                 </button>
               </div>
 
@@ -589,18 +852,58 @@ const GroupList = () => {
                     onClick={handleCreateTrainerInline}
                     style={{ alignSelf: 'flex-end', marginTop: '4px' }}
                   >
-                    Crear y Seleccionar
+                    Crear y Asignar
                   </button>
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 200, overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
                 {trainers.map(trainer => {
                   const isSelected = (formData.trainer_ids || []).includes(trainer.id);
                   return (
-                    <div key={trainer.id} onClick={() => handleTrainerSelect(trainer.id)}
-                      style={{ padding: '10px', borderRadius: 8, border: isSelected ? '2px solid var(--primary-color)' : '1px solid var(--border-color)', cursor: 'pointer', background: isSelected ? 'rgba(37,99,235,0.05)' : 'white' }}>
-                      <strong>{trainer.first_name} {trainer.last_name}</strong>
+                    <div key={trainer.id} onClick={() => {
+                      // For single selection mode (common case), replace if already selected
+                      if (isSelected) {
+                        handleTrainerSelect(trainer.id);
+                      } else {
+                        // Replace all current with this one (single trainer mode)
+                        setFormData(prev => ({ ...prev, trainer_ids: [trainer.id] }));
+                      }
+                    }}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        border: isSelected ? '2px solid var(--brand-500)' : '1px solid var(--border-main)',
+                        cursor: 'pointer',
+                        background: isSelected ? 'var(--brand-50)' : 'var(--bg-surface)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12
+                      }}>
+                      <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        background: isSelected ? 'var(--brand-500)' : 'var(--bg-hover)',
+                        color: isSelected ? 'white' : 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        flexShrink: 0
+                      }}>
+                        {trainer.first_name?.[0]}{trainer.last_name?.[0]}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ fontSize: '0.85rem' }}>{trainer.first_name} {trainer.last_name}</strong>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {trainer.identification_number || 'Sin ID'}
+                        </div>
+                      </div>
+                      <span className={`badge ${isSelected ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.65rem' }}>
+                        {isSelected ? '✓ Asignado' : 'Seleccionar'}
+                      </span>
                     </div>
                   );
                 })}
@@ -647,10 +950,10 @@ const GroupList = () => {
                   const isUnassigned = !a.current_groups || a.current_groups.length === 0;
                   return isInThisGroup || isUnassigned;
                 }).length === 0 && (
-                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px', fontSize: '0.85rem' }}>
-                    No hay atletas sin grupo disponibles en el club.
-                  </p>
-                )}
+                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px', fontSize: '0.85rem' }}>
+                      No hay atletas sin grupo disponibles en el club.
+                    </p>
+                  )}
               </div>
             </div>
           )}

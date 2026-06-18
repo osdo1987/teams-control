@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { attendanceService } from '../../services/attendanceService';
 import { groupService } from '../../services/groupService';
 import Modal from '../../components/UI/Modal';
+import { useToast } from '../../contexts/ToastContext';
 
 /* ═══════════════════════════════════════════════════
    STATUS HELPERS
@@ -93,8 +94,7 @@ const AttendanceList = () => {
   // --- Groups ---
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const { showError, showSuccess } = useToast();
 
   // --- Tab: 'take' | 'history' ---
   const [activeTab, setActiveTab] = useState('take');
@@ -126,11 +126,11 @@ const AttendanceList = () => {
     try {
       const data = await groupService.getGroups();
       setGroups(data);
-    } catch { setError('Error al cargar grupos.'); }
+    } catch (err) { showError(err.message || 'Error al cargar grupos.'); }
     finally { setLoading(false); }
   };
 
-  const clearMessages = () => { setError(''); setSuccessMsg(''); };
+  // const clearMessages = () => { setError(''); setSuccessMsg(''); }; // No longer needed with toast
 
   // ─── TAKE ATTENDANCE ───────────────────────────
   const handleOpenBulk = async (group) => {
@@ -200,10 +200,10 @@ const AttendanceList = () => {
     try {
       await attendanceService.registerBulkAttendance(selectedGroup.id, bulkRecords);
       setIsBulkModalOpen(false);
-      setSuccessMsg(`✅ Asistencia guardada: ${bulkRecords.length} atletas procesados para ${formatDate(bulkDate)}.`);
-      setTimeout(() => setSuccessMsg(''), 5000);
-    } catch {
-      setError("Error al guardar en el servidor.");
+      showSuccess(`✅ Asistencia guardada: ${bulkRecords.length} atletas procesados para ${formatDate(bulkDate)}.`);
+      // setTimeout(() => setSuccessMsg(''), 5000); // No longer needed with toast
+    } catch (err) {
+      showError(err.message || "Error al guardar en el servidor.");
     } finally {
       setLoading(false);
     }
@@ -230,7 +230,7 @@ const AttendanceList = () => {
       const stats = await attendanceService.getGroupStats(historyGroup.id, startDate, endDate);
       setHistoryStats(stats);
     } catch {
-      setError('Error al cargar estadísticas.');
+      showError('Error al cargar estadísticas.');
     } finally {
       setHistoryLoading(false);
     }
@@ -276,28 +276,6 @@ const AttendanceList = () => {
           <p className="text-muted">Control de asistencia de tus grupos</p>
         </div>
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div style={{
-          padding: '12px 16px', borderRadius: 10, marginBottom: 16,
-          background: '#fef2f2', color: '#991b1b', fontWeight: 500,
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          ⚠️ {error}
-          <button onClick={clearMessages} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-      )}
-      {successMsg && (
-        <div style={{
-          padding: '12px 16px', borderRadius: 10, marginBottom: 16,
-          background: '#ecfdf5', color: '#047857', fontWeight: 500,
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          {successMsg}
-          <button onClick={clearMessages} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
-        </div>
-      )}
 
       {/* Tab Switcher */}
       <div style={{

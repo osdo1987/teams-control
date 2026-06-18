@@ -3,15 +3,16 @@ import { paymentService } from '../../services/paymentService';
 import { athleteService } from '../../services/athleteService';
 import { groupService } from '../../services/groupService';
 import Modal from '../../components/UI/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 
 const PaymentList = () => {
   const [athletes, setAthletes] = useState([]);
   const [groups, setGroups] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [loading, setLoading] = useState(true);
+  const { showError, showSuccess } = useToast();
+
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +33,7 @@ const PaymentList = () => {
   }, []);
 
   const fetchData = async () => {
+    // clearMessages(); // No longer needed with toast
     setLoading(true);
     try {
       const [athletesData, groupsData, paymentsData] = await Promise.all([
@@ -42,8 +44,8 @@ const PaymentList = () => {
       setAthletes(athletesData);
       setGroups(groupsData);
       setPayments(paymentsData);
-    } catch {
-      setError('Error al cargar la información financiera.');
+    } catch (err) {
+      showError(err.message || 'Error al cargar la información financiera.');
     } finally {
       setLoading(false);
     }
@@ -52,10 +54,10 @@ const PaymentList = () => {
   const getAthleteStatus = (athleteId) => {
     return payments.some(p => {
       const pDate = new Date(p.payment_date);
-      return p.athlete_id === athleteId && 
-             p.status === 'PAID' && 
-             pDate.getMonth() === selectedMonth && 
-             pDate.getFullYear() === selectedYear;
+      return p.athlete_id === athleteId &&
+        p.status === 'PAID' &&
+        pDate.getMonth() === selectedMonth &&
+        pDate.getFullYear() === selectedYear;
     });
   };
 
@@ -63,7 +65,7 @@ const PaymentList = () => {
   const monthlyMetrics = (() => {
     let totalReceived = 0;
     let totalPending = 0;
-    
+
     // 1. Sumar lo que ya se recibió este mes
     const paidThisMonth = payments.filter(p => {
       const pDate = new Date(p.payment_date);
@@ -80,7 +82,7 @@ const PaymentList = () => {
         totalPending += Number(groupFee);
       }
     });
-    
+
     return { received: totalReceived, pending: totalPending, count: paidThisMonth.length };
   })();
 
@@ -120,13 +122,14 @@ const PaymentList = () => {
       });
       setIsModalOpen(false);
       fetchData();
-    } catch (err) { setError('Error al registrar el pago.'); }
+      showSuccess('Pago registrado correctamente');
+    } catch (err) { showError(err.message || 'Error al registrar el pago.'); }
   };
 
   const renderAthleteTable = (groupAthletes, groupId) => {
     const isCollapsed = collapsedGroups[groupId];
     const currentFilter = groupFilters[groupId] || 'all';
-    
+
     const filteredList = groupAthletes.filter(athlete => {
       const hasPaid = getAthleteStatus(athlete.id);
       if (currentFilter === 'paid') return hasPaid;
@@ -148,11 +151,11 @@ const PaymentList = () => {
           </div>
           {!isCollapsed && (
             <div className="payment-group-actions">
-              <select 
-                className="form-input" 
+              <select
+                className="form-input"
                 style={{ padding: '4px 8px', fontSize: '0.75rem', width: 'auto', height: 'auto', borderRadius: '8px' }}
                 value={currentFilter}
-                onChange={(e) => setGroupFilters({...groupFilters, [groupId]: e.target.value})}
+                onChange={(e) => setGroupFilters({ ...groupFilters, [groupId]: e.target.value })}
               >
                 <option value="all">Todos</option>
                 <option value="paid">Pagados</option>
@@ -166,7 +169,7 @@ const PaymentList = () => {
             </div>
           )}
         </div>
-        
+
         {!isCollapsed && (
           <table className="data-table" style={{ margin: 0 }}>
             <thead>
@@ -251,10 +254,8 @@ const PaymentList = () => {
         </div>
       </div>
 
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}
-
       {groups.map(group => {
-        const groupAthletes = athletes.filter(a => 
+        const groupAthletes = athletes.filter(a =>
           a.current_groups?.some(g => g.id === group.id) &&
           (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
         );
@@ -263,7 +264,7 @@ const PaymentList = () => {
       })}
 
       {(() => {
-        const unassigned = athletes.filter(a => 
+        const unassigned = athletes.filter(a =>
           (!a.current_groups || a.current_groups.length === 0) &&
           (`${a.user?.first_name} ${a.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
         );
@@ -274,16 +275,16 @@ const PaymentList = () => {
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
           <div className="form-group">
             <label className="form-label">Concepto</label>
-            <input type="text" name="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="form-input" required />
+            <input type="text" name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="form-input" required />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div className="form-group">
               <label className="form-label">Monto ($)</label>
-              <input type="number" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="form-input" required />
+              <input type="number" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="form-input" required />
             </div>
             <div className="form-group">
               <label className="form-label">Método</label>
-              <select value={formData.payment_method} onChange={e => setFormData({...formData, payment_method: e.target.value})} className="form-input">
+              <select value={formData.payment_method} onChange={e => setFormData({ ...formData, payment_method: e.target.value })} className="form-input">
                 <option value="Efectivo">Efectivo</option>
                 <option value="Transferencia">Transferencia</option>
               </select>

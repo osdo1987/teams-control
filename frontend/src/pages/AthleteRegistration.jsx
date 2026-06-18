@@ -39,13 +39,12 @@ const AthleteRegistration = () => {
     const [searchParams] = useSearchParams();
     const clubSlug = searchParams.get('club');
 
+    const { showError, showSuccess } = useToast(); // Use toast for errors/success
     const [clubs, setClubs] = useState([]);
     const [clubInfo, setClubInfo] = useState(null);
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
 
     const [form, setForm] = useState({
         club_id: '',
@@ -347,22 +346,6 @@ const AthleteRegistration = () => {
                                 {step === 4 && 'Datos académicos y seguridad'}
                             </p>
                         </div>
-
-                        {error && (
-                            <div className="auth-error">
-                                <span>⚠️</span>
-                                <span>{error}</span>
-                            </div>
-                        )}
-                        {success && (
-                            <div className="alert alert-success reg-success">
-                                <div className="reg-success-icon">✅</div>
-                                <div>
-                                    <strong>¡Registro exitoso!</strong>
-                                    <p>{success}</p>
-                                </div>
-                            </div>
-                        )}
 
                         <form onSubmit={handleSubmit}>
                             {/* Step 1 - Personal Data */}

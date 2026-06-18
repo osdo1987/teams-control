@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { athleteService } from '../../services/athleteService';
 import { api } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 const AthleteProfile = () => {
+    const { showError, showSuccess } = useToast();
     const [athlete, setAthlete] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [activeTab, setActiveTab] = useState('personal');
     const [editMode, setEditMode] = useState(false);
 
@@ -37,7 +37,7 @@ const AthleteProfile = () => {
                 academic: data.academic_info || {},
             });
         } catch (err) {
-            setError('Error al cargar perfil');
+            showError('Error al cargar perfil');
         } finally {
             setLoading(false);
         }
@@ -45,15 +45,13 @@ const AthleteProfile = () => {
 
     const handleSave = async () => {
         setSaving(true);
-        setError('');
-        setSuccess('');
         try {
             await athleteService.updateMyProfile(formData);
-            setSuccess('Perfil actualizado correctamente');
+            showSuccess('Perfil actualizado correctamente');
             setEditMode(false);
             await fetchProfile();
         } catch (err) {
-            setError('Error al guardar perfil');
+            showError('Error al guardar perfil');
         } finally {
             setSaving(false);
         }
@@ -118,8 +116,6 @@ const AthleteProfile = () => {
                 </div>
             </div>
 
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
 
             {/* Tabs */}
             <div className="profile-tabs">

@@ -5,6 +5,7 @@ import { userService } from '../../services/userService';
 import { groupService } from '../../services/groupService';
 import { authService } from '../../services/authService';
 import clubService from '../../services/clubService';
+import { useToast } from '../../contexts/ToastContext';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import Modal from '../../components/UI/Modal';
 import PasswordInput from '../../components/UI/PasswordInput';
@@ -20,8 +21,8 @@ const AthleteList = () => {
   const [groups, setGroups] = useState([]);
   const [clubs, setClubs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Keep loading state
+  const { showError, showSuccess } = useToast(); // Use toast for errors/success
   const [filterNoGroup, setFilterNoGroup] = useState(false);
 
   // Create modal
@@ -69,6 +70,7 @@ const AthleteList = () => {
   }, [searchParams, loading]);
 
   const fetchAll = async () => {
+    // clearMessages(); // No longer needed with toast
     try {
       const [athletesData, groupsData, clubsData] = await Promise.all([
         athleteService.getAthletes(),
@@ -78,7 +80,7 @@ const AthleteList = () => {
       setAthletes(athletesData || []);
       setGroups(groupsData || []);
       setClubs(clubsData || []);
-    } catch { setError('Error al cargar datos'); }
+    } catch (err) { showError(err.message || 'Error al cargar datos'); }
     finally { setLoading(false); }
   };
 
@@ -103,7 +105,7 @@ const AthleteList = () => {
 
   const validatePassword = (pass) => {
     const errors = [];
-    if (pass.length < 6) errors.push('Mínimo 6 caracteres');
+    if (pass.length < 8) errors.push('Mínimo 8 caracteres');
     if (!/[A-Z]/.test(pass) && !/[a-z]/.test(pass)) errors.push('Debe contener letras');
     if (!/[0-9]/.test(pass)) errors.push('Al menos un número');
     return errors;
@@ -113,12 +115,12 @@ const AthleteList = () => {
     e.preventDefault();
     setPasswordError('');
     if (createForm.password !== confirmPassword) {
-      setPasswordError('Las contraseñas no coinciden');
+      showError('Las contraseñas no coinciden');
       return;
     }
     const pwdErrors = validatePassword(createForm.password);
     if (pwdErrors.length > 0) {
-      setPasswordError(pwdErrors.join('. '));
+      showError(pwdErrors.join('. '));
       return;
     }
     try {
@@ -136,7 +138,8 @@ const AthleteList = () => {
       await userService.createUser(payload);
       setIsCreateOpen(false);
       fetchAll();
-    } catch (err) { setError(err.message || 'Error al crear atleta'); }
+      showSuccess('Atleta creado correctamente');
+    } catch (err) { showError(err.message || 'Error al crear atleta'); }
   };
 
   // --- EDIT ---
@@ -167,7 +170,8 @@ const AthleteList = () => {
       await athleteService.updateAthlete(editingAthlete.id, payload);
       setIsEditOpen(false);
       fetchAll();
-    } catch (err) { setError(err.message || 'Error al guardar cambios'); }
+      showSuccess('Atleta actualizado correctamente');
+    } catch (err) { showError(err.message || 'Error al guardar cambios'); }
   };
 
   // --- DELETE ---
@@ -175,8 +179,9 @@ const AthleteList = () => {
     if (!athleteToDelete) return;
     try {
       await athleteService.deleteAthlete(athleteToDelete.id);
+      showSuccess('Atleta eliminado correctamente');
       fetchAll();
-    } catch { setError('Error al eliminar atleta'); }
+    } catch (err) { showError(err.message || 'Error al eliminar atleta'); }
     finally { setIsConfirmOpen(false); setAthleteToDelete(null); }
   };
 
@@ -225,8 +230,6 @@ const AthleteList = () => {
         </div>
       </div>
 
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', padding: '10px 16px', borderRadius: '10px', display: 'block' }}>{error}</div>}
-
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -274,7 +277,7 @@ const AthleteList = () => {
                                 });
                                 fetchAll();
                               } catch (err) {
-                                setError('Error al remover del grupo');
+                                showError(err.message || 'Error al remover del grupo');
                               }
                             }
                           }}
@@ -299,7 +302,7 @@ const AthleteList = () => {
                           });
                           fetchAll();
                         } catch (err) {
-                          setError('Error al asignar grupo');
+                          showError(err.message || 'Error al asignar grupo');
                         }
                       }}
                     >

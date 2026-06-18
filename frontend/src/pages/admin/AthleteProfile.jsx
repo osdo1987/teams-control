@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { athleteService } from '../../services/athleteService';
 import { testService } from '../../services/testService';
 import { api } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar } from 'recharts';
 
-const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f97316','#ec4899','#0ea5e9'];
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
 const initials = (first = '?', last = '?') => `${first?.[0] || '?'}${last?.[0] || '?'}`.toUpperCase();
 
@@ -25,9 +26,9 @@ const AthleteProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [athlete, setAthlete] = useState(null);
-  const [templates, setTemplates] = useState([]);
+  const [templates, setTemplates] = useState([]); // Keep templates for dropdown
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showError } = useToast(); // Use toast for errors
   const [activeTab, setActiveTab] = useState('info');
 
   const [profileData, setProfileData] = useState({
@@ -61,7 +62,7 @@ const AthleteProfile = () => {
       setTestHistory(history);
       setTestStats(statsData);
     } catch (err) {
-      setError('Error al cargar perfil del atleta');
+      showError(err.message || 'Error al cargar perfil del atleta');
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ const AthleteProfile = () => {
   };
 
   if (loading) return <div className="loading-state"><p>Cargando perfil...</p></div>;
-  if (error) return <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>{error}</div>;
+  // if (error) return <div style={{ padding: '40px', textAlign: 'center', color: 'red' }}>{error}</div>; // Error is now handled by toast
   if (!athlete) return <div style={{ padding: '40px', textAlign: 'center' }}>Atleta no encontrado.</div>;
 
   const chartData = getChartData();
@@ -260,7 +261,7 @@ const AthleteProfile = () => {
       {activeTab === 'attendance' && (
         <div className="card" style={{ padding: '24px' }}>
           <h3 style={{ marginBottom: '16px' }}>Historial de Asistencia</h3>
-          
+
           {/* Monthly attendance chart */}
           {attendanceMonthly.length > 1 && (
             <div style={{ marginBottom: '24px', padding: '16px', background: '#f9fafb', borderRadius: '12px' }}>

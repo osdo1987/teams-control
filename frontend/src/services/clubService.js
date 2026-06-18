@@ -51,6 +51,22 @@ const clubService = {
   getPublicBySlug: async (slug) => {
     return await api(`/clubs/public/${slug}`);
   },
+
+  // Club login method
+  login: async (identificationNumber, password) => {
+    return await api('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        identification_number: identificationNumber,
+        password: password
+      })
+    });
+  },
+
+  // Get club by slug (alias for getPublicBySlug)
+  getBySlug: async (slug) => {
+    return await api(`/clubs/public/${slug}`);
+  },
 };
 
 export default clubService;

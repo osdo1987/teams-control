@@ -3,6 +3,7 @@ import { testService } from '../../services/testService';
 import { athleteService } from '../../services/athleteService';
 import { groupService } from '../../services/groupService';
 import Modal from '../../components/UI/Modal';
+import { useToast } from '../../contexts/ToastContext';
 import ConfirmModal from '../../components/UI/ConfirmModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
@@ -25,8 +26,8 @@ const TestList = () => {
   const [sessions, setSessions] = useState([]);
   const [stats, setStats] = useState(null);
   const [progress, setProgress] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Keep loading state
+  const { showError, showSuccess } = useToast(); // Use toast for errors/success
 
   // Modal state
   const [isTemplateModal, setIsTemplateModal] = useState(false);
@@ -53,6 +54,7 @@ const TestList = () => {
   useEffect(() => { if (activeTab === 'progress') fetchProgress(); }, [activeTab, filterGroup, filterTemplate, filterFrom, filterTo]);
 
   const fetchData = async () => {
+    // clearMessages(); // No longer needed with toast
     try {
       const [t, a, g, r, s, st] = await Promise.all([
         testService.getTemplates(), athleteService.getAthletes(),
@@ -61,7 +63,7 @@ const TestList = () => {
       ]);
       setTemplates(t); setAthletes(a); setGroups(g);
       setResults(r); setSessions(s); setStats(st);
-    } catch (err) { setError('Error al cargar datos'); } finally { setLoading(false); }
+    } catch (err) { showError(err.message || 'Error al cargar datos'); } finally { setLoading(false); }
   };
 
   const fetchProgress = async () => {
@@ -73,7 +75,7 @@ const TestList = () => {
       if (filterTo) params.to = filterTo;
       const data = await testService.getProgress(params);
       setProgress(data);
-    } catch (err) { console.error('Error fetching progress:', err); }
+    } catch (err) { showError(err.message || 'Error al cargar progreso'); }
   };
 
   const toggleCompareAthlete = (athleteId) => {
@@ -138,13 +140,14 @@ const TestList = () => {
       if (editingTemplate) await testService.updateTemplate(editingTemplate.id, formData);
       else await testService.createTemplate(formData);
       setIsTemplateModal(false); fetchData();
-    } catch (err) { setError('Error al guardar plantilla'); }
+      showSuccess('Plantilla guardada correctamente');
+    } catch (err) { showError(err.message || 'Error al guardar plantilla'); }
   };
 
   const confirmDeleteTemplate = async () => {
     if (!deleteTarget) return;
-    try { await testService.deleteTemplate(deleteTarget.id); fetchData(); }
-    catch (err) { setError('Error al eliminar plantilla'); }
+    try { await testService.deleteTemplate(deleteTarget.id); showSuccess('Plantilla eliminada correctamente'); fetchData(); }
+    catch (err) { showError(err.message || 'Error al eliminar plantilla'); }
     finally { setIsConfirmOpen(false); setDeleteTarget(null); }
   };
 
@@ -163,10 +166,11 @@ const TestList = () => {
           if (v !== undefined && v !== '') resultsArray.push({ template_id: testId, athlete_id: athleteId, value: parseFloat(v) });
         });
       });
-      if (resultsArray.length === 0) { setError('Debe ingresar al menos un resultado'); return; }
+      if (resultsArray.length === 0) { showError('Debe ingresar al menos un resultado'); return; }
       await testService.createSession({ name: sessionData.name, notes: sessionData.notes, session_date: sessionData.session_date, results: resultsArray });
       setIsSessionModal(false); fetchData();
-    } catch (err) { setError('Error al crear sesion'); }
+      showSuccess('Sesión de tests creada correctamente');
+    } catch (err) { showError(err.message || 'Error al crear sesión'); }
   };
 
   if (loading) return <div className="loading-state"><p>Cargando...</p></div>;
@@ -183,8 +187,6 @@ const TestList = () => {
           {activeTab === 'sessions' && <button className="btn btn-primary" onClick={openCreateSession}>+ Nueva Sesion</button>}
         </div>
       </div>
-
-      {error && <div className="badge badge-danger" style={{ marginBottom: '16px', width: '100%' }}>{error}</div>}
 
       <div className="tabs" style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <button onClick={() => setActiveTab('progress')} className={`btn ${activeTab === 'progress' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📊 Progreso</button>

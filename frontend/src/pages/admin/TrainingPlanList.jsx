@@ -4,14 +4,14 @@ import { athleteService } from '../../services/athleteService';
 import { groupService } from '../../services/groupService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
 
 const TrainingPlanList = () => {
   const [plans, setPlans] = useState([]);
   const [athletes, setAthletes] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const { showError, showSuccess } = useToast();
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'editor'
 
   // Modal states
@@ -62,11 +62,6 @@ const TrainingPlanList = () => {
     }
   };
 
-  const showSuccessMsg = (msg) => {
-    setSuccess(msg);
-    setTimeout(() => setSuccess(''), 4000);
-  };
-
   const handlePlanDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -74,7 +69,7 @@ const TrainingPlanList = () => {
       showSuccessMsg('Plan de entrenamiento eliminado correctamente.');
       fetchData();
     } catch (err) {
-      setError('Error al eliminar el plan');
+      showError(err.message || 'Error al eliminar el plan');
     } finally {
       setIsConfirmOpen(false);
       setDeleteTarget(null);
@@ -237,20 +232,20 @@ const TrainingPlanList = () => {
   const handleSavePlan = async (e) => {
     e.preventDefault();
     if (!planForm.name.trim()) {
-      setError('El nombre del plan es obligatorio.');
+      showError('El nombre del plan es obligatorio.');
       return;
     }
 
     // Prepare payload
     const payload = {
       name: planForm.name,
-      description: planForm.description,
+      description: planForm.description || null,
       cycles: planForm.cycles.map((c, cIdx) => ({
         name: c.name,
-        description: c.description,
+        description: c.description || null,
         order: cIdx + 1,
         sessions: c.sessions.map((s, sIdx) => ({
-          name: s.name,
+          name: s.name || `Sesión ${sIdx + 1}`,
           notes: s.notes,
           order: sIdx + 1,
           exercises: s.exercises.map((ex, exIdx) => ({
@@ -270,15 +265,15 @@ const TrainingPlanList = () => {
     try {
       if (editingPlanId) {
         await trainingPlanService.updatePlan(editingPlanId, payload);
-        showSuccessMsg('Plan de entrenamiento actualizado correctamente.');
+        showSuccess('Plan de entrenamiento actualizado correctamente.');
       } else {
         await trainingPlanService.createPlan(payload);
-        showSuccessMsg('Plan de entrenamiento creado correctamente.');
+        showSuccess('Plan de entrenamiento creado correctamente.');
       }
       setActiveTab('list');
       fetchData();
     } catch (err) {
-      setError('Error al guardar el plan de entrenamiento.');
+      showError(err.message || 'Error al guardar el plan de entrenamiento.');
     }
   };
 
@@ -341,14 +336,11 @@ const TrainingPlanList = () => {
         )}
       </div>
 
-      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
-      {success && <div className="alert alert-success" style={{ marginBottom: 16 }}>{success}</div>}
-
       {/* ==================== PLAN EDITOR ==================== */}
       {activeTab === 'editor' && (
         <form onSubmit={handleSavePlan} className="card" style={{ padding: 24 }}>
           <h2>{editingPlanId ? '📝 Editar Plan' : '⚡ Nuevo Plan de Entrenamiento'}</h2>
-          
+
           <div className="form-group" style={{ marginTop: 16 }}>
             <label className="form-label">Nombre del Plan</label>
             <input

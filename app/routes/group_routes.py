@@ -86,6 +86,7 @@ def create_group():
         schedule_days=data.get('schedule_days'),
         schedule_start_time=data.get('schedule_start_time'),
         schedule_end_time=data.get('schedule_end_time'),
+        schedule_blocks=data.get('schedule_blocks'),
         training_location=data.get('training_location'),
         level=data.get('level'),
         season=data.get('season'),
@@ -204,7 +205,7 @@ def update_group(id):
     simple_fields = [
         'name', 'schedule', 'club_id', 'category_id', 'description',
         'max_capacity', 'schedule_days', 'schedule_start_time', 'schedule_end_time',
-        'training_location', 'status', 'level', 'season', 'monthly_fee'
+        'schedule_blocks', 'training_location', 'status', 'level', 'season', 'monthly_fee'
     ]
     for field in simple_fields:
         if field in data:

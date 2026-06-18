@@ -11,7 +11,6 @@ class Group(db.Model):
     # --- Información ampliada ---
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    description = db.Column(db.Text, nullable=True)
     max_capacity = db.Column(db.Integer, nullable=True)
     
     # --- Horario detallado ---
@@ -19,6 +18,7 @@ class Group(db.Model):
     schedule_days = db.Column(db.String(100), nullable=True)  # "Lunes,Miércoles,Viernes"
     schedule_start_time = db.Column(db.String(10), nullable=True)  # "17:00"
     schedule_end_time = db.Column(db.String(10), nullable=True)  # "19:00"
+    schedule_blocks = db.Column(db.Text, nullable=True)  # JSON array: [{"days":["Martes","Jueves"],"start":"07:00","end":"09:00"},{"days":["Sábado"],"start":"16:00","end":"18:00"}]
     training_location = db.Column(db.String(150), nullable=True)  # Cancha principal, Gimnasio, etc.
     
     # --- Estado y metadata ---
