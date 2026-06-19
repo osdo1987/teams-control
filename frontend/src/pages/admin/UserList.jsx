@@ -279,8 +279,19 @@ const UserList = () => {
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>Editar</button>
-                    <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                      onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>Eliminar</button>
+                    {user.is_active !== false ? (
+                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                        onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>Eliminar</button>
+                    ) : (
+                      <button className="btn btn-sm btn-success"
+                        onClick={async () => {
+                          try {
+                            await userService.reactivateUser(user.id);
+                            showSuccess('Usuario reactivado correctamente');
+                            fetchInitialData();
+                          } catch (err) { showError(err.message || 'Error al reactivar usuario'); }
+                        }}>Reactivar</button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -291,8 +302,8 @@ const UserList = () => {
 
       <ConfirmModal
         isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Eliminar Usuario"
-        message={`¿Está seguro de que desea eliminar a ${userToDelete?.first_name}? Esta acción eliminará su acceso al sistema.`}
+        title="Desactivar Usuario"
+        message={`¿Desactivar a ${userToDelete?.first_name} ${userToDelete?.last_name}? No podrá iniciar sesión hasta que sea reactivado.`}
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}>

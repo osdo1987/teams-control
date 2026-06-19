@@ -466,9 +466,19 @@ const GroupList = () => {
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span className={STATUS_BADGE[group.status] || 'badge badge-success'}>{group.status || 'ACTIVE'}</span>
-                    <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }} onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}>
-                      ✕
-                    </button>
+                    {group.is_active !== false ? (
+                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }} onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}>
+                        ✕
+                      </button>
+                    ) : (
+                      <button className="btn btn-sm btn-success" onClick={async () => {
+                        try {
+                          await groupService.reactivateGroup(group.id);
+                          showSuccess('Grupo reactivado correctamente');
+                          fetchData();
+                        } catch (err) { showError(err.message || 'Error al reactivar grupo'); }
+                      }}>Reactivar</button>
+                    )}
                   </div>
                 </div>
 
@@ -531,8 +541,8 @@ const GroupList = () => {
 
       <ConfirmModal
         isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Eliminar Grupo"
-        message={`¿Está seguro de que desea eliminar ${groupToDelete?.name}? Esto desvinculará a todos los miembros.`}
+        title="Desactivar Grupo"
+        message={`¿Está seguro de desactivar ${groupToDelete?.name}? El grupo dejará de estar visible para los usuarios. Puede reactivarlo después.`}
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingGroup ? "Editar Grupo" : "Crear Nuevo Grupo"}>
@@ -974,7 +984,17 @@ const GroupList = () => {
           {categories.map(cat => (
             <div key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-main)', borderRadius: 10 }}>
               <span>{cat.name}</span>
-              <button className="btn btn-sm" style={{ color: '#ef4444', border: 'none', background: 'transparent' }} onClick={() => handleDeleteCategory(cat.id)}>Eliminar</button>
+              {cat.is_active !== false ? (
+                <button className="btn btn-sm" style={{ color: '#ef4444', border: 'none', background: 'transparent' }} onClick={() => handleDeleteCategory(cat.id)}>Eliminar</button>
+              ) : (
+                <button className="btn btn-sm btn-success" onClick={async () => {
+                  try {
+                    await categoryService.reactivateCategory(cat.id);
+                    showSuccess('Categoría reactivada correctamente');
+                    fetchData();
+                  } catch (err) { showError(err.message || 'Error al reactivar categoría'); }
+                }}>Reactivar</button>
+              )}
             </div>
           ))}
           {categories.length === 0 && <p className="text-muted">No has creado categorías todavía.</p>}

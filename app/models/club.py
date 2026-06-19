@@ -9,6 +9,7 @@ class Club(db.Model):
     slug = db.Column(db.String(100), unique=True, nullable=True)  # URL-friendly identifier
     description = db.Column(db.Text)
     sport = db.Column(db.String(100), default='Fútbol') # El deporte se define a nivel club
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Monetization fields

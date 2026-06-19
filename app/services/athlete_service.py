@@ -65,9 +65,23 @@ class AthleteService:
         if not athlete:
             return False, "Athlete not found"
         
+        # Soft delete: mark athlete and user as inactive
+        athlete.is_active = False
         user = User.query.get(athlete.user_id)
-        db.session.delete(athlete)
         if user:
-            db.session.delete(user)
+            user.is_active = False
         db.session.commit()
-        return True, "Athlete deleted successfully"
+        return True, "Athlete desactivado correctamente"
+    
+    @staticmethod
+    def reactivate_athlete(athlete_id):
+        athlete = Athlete.query.get(athlete_id)
+        if not athlete:
+            return False, "Athlete not found"
+        
+        athlete.is_active = True
+        user = User.query.get(athlete.user_id)
+        if user:
+            user.is_active = True
+        db.session.commit()
+        return True, "Athlete reactivado correctamente"

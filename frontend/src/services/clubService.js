@@ -26,6 +26,16 @@ const clubService = {
     });
   },
 
+  reactivateClub: async (clubId) => {
+    return await api(`/clubs/${clubId}/reactivate`, {
+      method: 'PATCH'
+    });
+  },
+
+  getAllClubsIncludingInactive: async () => {
+    return await api('/clubs?include_inactive=true');
+  },
+
   /**
    * Upload a club logo image file.
    * Uses native fetch to send FormData (not JSON).

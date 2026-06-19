@@ -17,9 +17,9 @@ def get_categories():
     user = User.query.get(current_user_id)
     
     if user.role == 'SUPER_ADMIN':
-        categories = Category.query.all()
+        categories = Category.query.filter_by(is_active=True).all()
     else:
-        categories = Category.query.filter_by(club_id=user.club_id).all()
+        categories = Category.query.filter_by(club_id=user.club_id, is_active=True).all()
         
     return jsonify(categories_schema.dump(categories)), 200
 
@@ -39,8 +39,17 @@ def create_category():
 @category_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 @role_required(['ADMIN'])
-def delete_category(id):
+def deactivate_category(id):
     category = Category.query.get_or_404(id)
-    db.session.delete(category)
+    category.is_active = False
     db.session.commit()
-    return jsonify({"message": "Categoría eliminada"}), 200
+    return jsonify({"message": "Categoría desactivada correctamente"}), 200
+
+@category_bp.route('/<int:id>/reactivate', methods=['PATCH'])
+@jwt_required()
+@role_required(['ADMIN'])
+def reactivate_category(id):
+    category = Category.query.get_or_404(id)
+    category.is_active = True
+    db.session.commit()
+    return jsonify({"message": "Categoría reactivada correctamente"}), 200

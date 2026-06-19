@@ -6,6 +6,7 @@ class ClubLandingPage(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
 
     # Hero / Banner section
     hero_title = db.Column(db.String(200), nullable=True, default='Bienvenido a nuestro club')

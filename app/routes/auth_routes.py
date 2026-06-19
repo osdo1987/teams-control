@@ -99,10 +99,18 @@ def get_users():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    
     if user.role == 'SUPER_ADMIN':
-        users = User.query.all()
+        if include_inactive:
+            users = User.query.all()
+        else:
+            users = User.query.filter_by(is_active=True).all()
     else:
-        users = User.query.filter_by(club_id=user.club_id).all()
+        if include_inactive:
+            users = User.query.filter_by(club_id=user.club_id).all()
+        else:
+            users = User.query.filter_by(club_id=user.club_id, is_active=True).all()
         
     return jsonify(UserSchema(many=True).dump(users)), 200
 
@@ -127,12 +135,21 @@ def update_user(id):
     return jsonify({"error": "User not found"}), 404
 
 @auth_bp.route('/users/<int:id>', methods=['DELETE'])
-def delete_user(id):
+def deactivate_user(id):
     """
-    Delete User
+    Deactivate User (Soft Delete)
     """
-    if AuthService.delete_user(id):
-        return jsonify({"message": "User deleted"}), 200
+    if AuthService.deactivate_user(id):
+        return jsonify({"message": "Usuario desactivado correctamente"}), 200
+    return jsonify({"error": "User not found"}), 404
+
+@auth_bp.route('/users/<int:id>/reactivate', methods=['PATCH'])
+def reactivate_user(id):
+    """
+    Reactivate User
+    """
+    if AuthService.reactivate_user(id):
+        return jsonify({"message": "Usuario reactivado correctamente"}), 200
     return jsonify({"error": "User not found"}), 404
 
 @auth_bp.route('/trainers', methods=['GET'])
@@ -142,9 +159,17 @@ def get_trainers():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    
     if user.role == 'SUPER_ADMIN':
-        trainers = User.query.filter_by(role='TRAINER').all()
+        if include_inactive:
+            trainers = User.query.filter_by(role='TRAINER').all()
+        else:
+            trainers = User.query.filter_by(role='TRAINER', is_active=True).all()
     else:
-        trainers = User.query.filter_by(role='TRAINER', club_id=user.club_id).all()
+        if include_inactive:
+            trainers = User.query.filter_by(role='TRAINER', club_id=user.club_id).all()
+        else:
+            trainers = User.query.filter_by(role='TRAINER', club_id=user.club_id, is_active=True).all()
         
     return jsonify(UserSchema(many=True).dump(trainers)), 200

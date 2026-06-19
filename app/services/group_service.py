@@ -79,11 +79,17 @@ class GroupService:
         if not group:
             return False, "Group not found"
         
-        # Clear athletes associations
-        group.athletes = []
-        # Clear trainers associations
-        group.trainers = []
-        
-        db.session.delete(group)
+        # Soft delete: mark as INACTIVE
+        group.status = 'INACTIVE'
         db.session.commit()
-        return True, "Group deleted successfully"
+        return True, "Group deactivated successfully"
+    
+    @staticmethod
+    def reactivate_group(group_id):
+        group = Group.query.get(group_id)
+        if not group:
+            return False, "Group not found"
+        
+        group.status = 'ACTIVE'
+        db.session.commit()
+        return True, "Group reactivated successfully"

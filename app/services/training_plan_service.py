@@ -6,8 +6,11 @@ from datetime import date
 class TrainingPlanService:
 
     @staticmethod
-    def get_plans(club_id):
-        return TrainingPlan.query.filter_by(club_id=club_id).order_by(TrainingPlan.created_at.desc()).all()
+    def get_plans(club_id, include_inactive=False):
+        query = TrainingPlan.query.filter_by(club_id=club_id)
+        if not include_inactive:
+            query = query.filter_by(is_active=True)
+        return query.order_by(TrainingPlan.created_at.desc()).all()
 
     @staticmethod
     def get_plan(plan_id):
@@ -115,11 +118,20 @@ class TrainingPlanService:
         return plan
 
     @staticmethod
-    def delete_plan(plan_id):
+    def deactivate_plan(plan_id):
         plan = TrainingPlan.query.get(plan_id)
         if not plan:
             return False
-        db.session.delete(plan)
+        plan.is_active = False
+        db.session.commit()
+        return True
+    
+    @staticmethod
+    def reactivate_plan(plan_id):
+        plan = TrainingPlan.query.get(plan_id)
+        if not plan:
+            return False
+        plan.is_active = True
         db.session.commit()
         return True
 

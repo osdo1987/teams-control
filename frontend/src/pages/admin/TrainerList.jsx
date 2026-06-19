@@ -151,9 +151,9 @@ const TrainerList = () => {
     if (!trainerToDelete) return;
     try {
       await userService.deleteUser(trainerToDelete.id);
-      showSuccess('Entrenador eliminado correctamente');
+      showSuccess('Entrenador desactivado correctamente');
       fetchTrainers();
-    } catch (err) { showError(err.message || 'Error al eliminar entrenador'); }
+    } catch (err) { showError(err.message || 'Error al desactivar entrenador'); }
     finally { setIsConfirmOpen(false); setTrainerToDelete(null); }
   };
 
@@ -218,8 +218,19 @@ const TrainerList = () => {
                 <td>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openProfile(t)}>📋 Perfil</button>
-                    <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                      onClick={() => { setTrainerToDelete(t); setIsConfirmOpen(true); }}>✕</button>
+                    {t.is_active !== false ? (
+                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                        onClick={() => { setTrainerToDelete(t); setIsConfirmOpen(true); }}>✕</button>
+                    ) : (
+                      <button className="btn btn-sm btn-success"
+                        onClick={async () => {
+                          try {
+                            await userService.reactivateUser(t.id);
+                            showSuccess('Entrenador reactivado correctamente');
+                            fetchTrainers();
+                          } catch (err) { showError(err.message || 'Error al reactivar entrenador'); }
+                        }}>Reactivar</button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -341,7 +352,7 @@ const TrainerList = () => {
       </Modal>
 
       <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Eliminar Entrenador" message={`¿Eliminar permanentemente a ${trainerToDelete?.first_name} ${trainerToDelete?.last_name}? Esta acción no se puede deshacer.`} />
+        title="Desactivar Entrenador" message={`¿Desactivar a ${trainerToDelete?.first_name} ${trainerToDelete?.last_name}? No podrá iniciar sesión hasta que sea reactivado.`} />
     </div>
   );
 };

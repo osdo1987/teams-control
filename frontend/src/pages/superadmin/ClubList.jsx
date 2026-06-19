@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import clubService from '../../services/clubService';
 import Modal from '../../components/UI/Modal';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import { useToast } from '../../contexts/ToastContext';
 
 const ClubList = () => {
   const [clubs, setClubs] = useState([]);
@@ -25,6 +26,7 @@ const ClubList = () => {
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef(null);
+  const { showError, showSuccess } = useToast();
 
   useEffect(() => {
     fetchClubs();
@@ -95,12 +97,23 @@ const ClubList = () => {
     if (!clubToDelete) return;
     try {
       await clubService.deleteClub(clubToDelete.id);
+      showSuccess('Club desactivado correctamente');
       fetchClubs();
     } catch (error) {
-      alert('Error: ' + (error.message || 'Error al eliminar el club'));
+      showError(error.message || 'Error al desactivar el club');
     } finally {
       setIsConfirmOpen(false);
       setClubToDelete(null);
+    }
+  };
+
+  const handleReactivate = async (clubId) => {
+    try {
+      await clubService.reactivateClub(clubId);
+      showSuccess('Club reactivado correctamente');
+      fetchClubs();
+    } catch (error) {
+      showError(error.message || 'Error al reactivar el club');
     }
   };
 
@@ -146,6 +159,10 @@ const ClubList = () => {
       case 'INACTIVE': return <span className="badge badge-neutral">Inactivo</span>;
       default: return <span className="badge badge-neutral">{status}</span>;
     }
+  };
+
+  const getActiveBadge = (isActive) => {
+    return isActive !== false ? null : <span className="badge badge-danger" style={{ marginLeft: 6 }}>Desactivado</span>;
   };
 
   const getPlanBadge = (plan) => {
@@ -215,8 +232,13 @@ const ClubList = () => {
                         Ver
                       </a>
                     )}
-                    <button className="btn btn-sm btn-danger"
-                      onClick={() => { setClubToDelete(club); setIsConfirmOpen(true); }}>Eliminar</button>
+                    {club.is_active !== false ? (
+                      <button className="btn btn-sm btn-danger"
+                        onClick={() => { setClubToDelete(club); setIsConfirmOpen(true); }}>Eliminar</button>
+                    ) : (
+                      <button className="btn btn-sm btn-success"
+                        onClick={() => handleReactivate(club.id)}>Reactivar</button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -234,8 +256,8 @@ const ClubList = () => {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handleDelete}
-        title="Eliminar Club"
-        message={`¿Estás seguro de eliminar el club "${clubToDelete?.name}"? Esta acción no se puede deshacer.`}
+        title="Desactivar Club"
+        message={`¿Estás seguro de desactivar el club "${clubToDelete?.name}"? Los usuarios no podrán acceder hasta que sea reactivado.`}
       />
 
       {showModal && (

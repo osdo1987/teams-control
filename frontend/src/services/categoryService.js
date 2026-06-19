@@ -14,5 +14,10 @@ export const categoryService = {
     return await api(`/categories/${id}`, {
       method: 'DELETE'
     });
+  },
+  reactivateCategory: async (id) => {
+    return await api(`/categories/${id}/reactivate`, {
+      method: 'PATCH'
+    });
   }
 };

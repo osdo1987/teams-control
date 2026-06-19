@@ -18,11 +18,19 @@ def get_all_athletes():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    
     if user.role == 'SUPER_ADMIN':
-        athletes = Athlete.query.all()
+        if include_inactive:
+            athletes = Athlete.query.all()
+        else:
+            athletes = Athlete.query.filter_by(is_active=True).all()
     else:
         # Unir con User para filtrar por club_id del usuario asociado al atleta
-        athletes = Athlete.query.join(User).filter(User.club_id == user.club_id).all()
+        query = Athlete.query.join(User).filter(User.club_id == user.club_id)
+        if not include_inactive:
+            query = query.filter(Athlete.is_active == True)
+        athletes = query.all()
         
     return jsonify(athletes_schema.dump(athletes)), 200
 
@@ -194,9 +202,21 @@ def update_athlete(id):
 @role_required(['ADMIN'])
 def delete_athlete(id):
     """
-    Delete Athlete (Admin Only)
+    Deactivate Athlete (Soft Delete)
     """
     success, message = AthleteService.delete_athlete(id)
+    if success:
+        return jsonify({"message": message}), 200
+    return jsonify({"error": message}), 404
+
+@athlete_bp.route('/<int:id>/reactivate', methods=['PATCH'])
+@jwt_required()
+@role_required(['ADMIN'])
+def reactivate_athlete(id):
+    """
+    Reactivate Athlete
+    """
+    success, message = AthleteService.reactivate_athlete(id)
     if success:
         return jsonify({"message": message}), 200
     return jsonify({"error": message}), 404

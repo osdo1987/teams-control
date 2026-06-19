@@ -10,6 +10,7 @@ class Athlete(db.Model):
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
     photo_url = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
     
     # Relationships
     guardians = db.relationship('Guardian', backref='athlete', lazy=True)

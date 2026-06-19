@@ -4,7 +4,7 @@ export const userService = {
   getUsers: async () => {
     return await api('/auth/users'); // We might need to add this endpoint to the backend
   },
-  
+
   createUser: async (userData) => {
     return await api('/auth/register', {
       method: 'POST',
@@ -22,6 +22,12 @@ export const userService = {
   deleteUser: async (id) => {
     return await api(`/auth/users/${id}`, {
       method: 'DELETE'
+    });
+  },
+
+  reactivateUser: async (id) => {
+    return await api(`/auth/users/${id}/reactivate`, {
+      method: 'PATCH'
     });
   }
 };

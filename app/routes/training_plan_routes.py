@@ -21,7 +21,8 @@ def get_plans():
     club_id = user.club_id if user.role != 'SUPER_ADMIN' else request.args.get('club_id', type=int)
     if not club_id:
         return jsonify({"error": "club_id is required"}), 400
-    plans = TrainingPlanService.get_plans(club_id=club_id)
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    plans = TrainingPlanService.get_plans(club_id=club_id, include_inactive=include_inactive)
     return jsonify(plans_schema.dump(plans)), 200
 
 
@@ -62,11 +63,20 @@ def update_plan(plan_id):
 @training_plan_bp.route('/<int:plan_id>', methods=['DELETE'])
 @jwt_required()
 @role_required(['ADMIN', 'TRAINER'])
-def delete_plan(plan_id):
-    success = TrainingPlanService.delete_plan(plan_id)
+def deactivate_plan(plan_id):
+    success = TrainingPlanService.deactivate_plan(plan_id)
     if not success:
         return jsonify({"error": "Training plan not found"}), 404
-    return jsonify({"message": "Training plan deleted successfully"}), 200
+    return jsonify({"message": "Plan de entrenamiento desactivado correctamente"}), 200
+
+@training_plan_bp.route('/<int:plan_id>/reactivate', methods=['PATCH'])
+@jwt_required()
+@role_required(['ADMIN', 'TRAINER'])
+def reactivate_plan(plan_id):
+    success = TrainingPlanService.reactivate_plan(plan_id)
+    if not success:
+        return jsonify({"error": "Training plan not found"}), 404
+    return jsonify({"message": "Plan de entrenamiento reactivado correctamente"}), 200
 
 
 @training_plan_bp.route('/<int:plan_id>/assign', methods=['POST'])

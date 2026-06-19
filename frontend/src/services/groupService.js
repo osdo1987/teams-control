@@ -4,7 +4,7 @@ export const groupService = {
   getGroups: async () => {
     return await api('/groups');
   },
-  
+
   createGroup: async (groupData) => {
     return await api('/groups', {
       method: 'POST',
@@ -15,14 +15,14 @@ export const groupService = {
   getGroupAthletes: async (groupId) => {
     return await api(`/groups/${groupId}/athletes`);
   },
-  
+
   assignAthlete: async (groupId, athleteId) => {
     return await api(`/groups/${groupId}/assign`, {
       method: 'POST',
       body: JSON.stringify({ athlete_id: athleteId })
     });
   },
-  
+
   changeAthleteGroup: async (data) => {
     return await api('/groups/change-athlete', {
       method: 'POST',
@@ -40,6 +40,12 @@ export const groupService = {
   deleteGroup: async (id) => {
     return await api(`/groups/${id}`, {
       method: 'DELETE'
+    });
+  },
+
+  reactivateGroup: async (id) => {
+    return await api(`/groups/${id}/reactivate`, {
+      method: 'PATCH'
     });
   }
 };

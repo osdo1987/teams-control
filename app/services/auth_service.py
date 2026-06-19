@@ -9,6 +9,8 @@ class AuthService:
     @staticmethod
     def login(identification_number, password, club_slug=None):
         user = User.query.filter_by(identification_number=identification_number).first()
+        if not user or not user.is_active:
+            return {"error": "Credenciales inválidas"}, 401
         if user and user.check_password(password):
             # If club_slug is provided, verify user belongs to that club
             if club_slug:
@@ -132,18 +134,24 @@ class AuthService:
         return user
 
     @staticmethod
-    def delete_user(user_id):
+    def deactivate_user(user_id):
         user = User.query.get(user_id)
         if not user: return False
         
-        if user.trainer_profile:
-            db.session.delete(user.trainer_profile)
-        
+        user.is_active = False
+        # Also deactivate related athlete or trainer profile
         if user.athlete_profile:
-            # Limpiar asociaciones de grupos primero
-            user.athlete_profile.current_groups = []
-            db.session.delete(user.athlete_profile)
-
-        db.session.delete(user)
+            user.athlete_profile.is_active = False
+        db.session.commit()
+        return True
+    
+    @staticmethod
+    def reactivate_user(user_id):
+        user = User.query.get(user_id)
+        if not user: return False
+        
+        user.is_active = True
+        if user.athlete_profile:
+            user.athlete_profile.is_active = True
         db.session.commit()
         return True

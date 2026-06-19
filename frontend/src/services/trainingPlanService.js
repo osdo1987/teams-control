@@ -29,6 +29,12 @@ export const trainingPlanService = {
     });
   },
 
+  reactivatePlan: async (id) => {
+    return await api(`/training-plans/${id}/reactivate`, {
+      method: 'PATCH'
+    });
+  },
+
   assignPlan: async (planId, data) => {
     return await api(`/training-plans/${planId}/assign`, {
       method: 'POST',

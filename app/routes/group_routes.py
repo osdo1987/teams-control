@@ -18,11 +18,19 @@ def get_groups():
 
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
+    
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
 
     if user.role == 'SUPER_ADMIN':
-        groups = Group.query.all()
+        if include_inactive:
+            groups = Group.query.all()
+        else:
+            groups = Group.query.filter(Group.status != 'INACTIVE').all()
     else:
-        groups = Group.query.filter_by(club_id=user.club_id).all()
+        if include_inactive:
+            groups = Group.query.filter_by(club_id=user.club_id).all()
+        else:
+            groups = Group.query.filter_by(club_id=user.club_id).filter(Group.status != 'INACTIVE').all()
         
     return jsonify(groups_schema.dump(groups)), 200
 
@@ -229,9 +237,23 @@ def update_group(id):
 @role_required(['ADMIN'])
 def delete_group(id):
     """
-    Delete Group
+    Deactivate Group (Soft Delete)
     """
     success, message = GroupService.delete_group(id)
+    if success:
+        return jsonify({"message": message}), 200
+    return jsonify({"error": message}), 404
+
+@group_bp.route('/<int:id>/reactivate', methods=['PATCH'])
+@jwt_required()
+@role_required(['ADMIN'])
+def reactivate_group(id):
+    """
+    Reactivate Group
+    """
+    from app import db
+    from app.models.group import Group
+    success, message = GroupService.reactivate_group(id)
     if success:
         return jsonify({"message": message}), 200
     return jsonify({"error": message}), 404

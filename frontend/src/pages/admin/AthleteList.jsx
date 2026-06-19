@@ -317,8 +317,19 @@ const AthleteList = () => {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/admin/athletes/${a.id}`)}>👁 Ver</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)}>✏️ Editar</button>
-                    <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                      onClick={() => { setAthleteToDelete(a); setIsConfirmOpen(true); }}>✕</button>
+                    {a.is_active !== false ? (
+                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                        onClick={() => { setAthleteToDelete(a); setIsConfirmOpen(true); }}>✕</button>
+                    ) : (
+                      <button className="btn btn-sm btn-success"
+                        onClick={async () => {
+                          try {
+                            await athleteService.reactivateAthlete(a.id);
+                            showSuccess('Atleta reactivado correctamente');
+                            fetchAll();
+                          } catch (err) { showError(err.message || 'Error al reactivar atleta'); }
+                        }}>Reactivar</button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -413,7 +424,7 @@ const AthleteList = () => {
       </Modal>
 
       <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
-        title="Eliminar Atleta" message={`¿Eliminar permanentemente a ${athleteToDelete?.user?.first_name} ${athleteToDelete?.user?.last_name}? Esta acción no se puede deshacer.`} />
+        title="Desactivar Atleta" message={`¿Desactivar a ${athleteToDelete?.user?.first_name} ${athleteToDelete?.user?.last_name}? No podrá acceder al sistema hasta que sea reactivado.`} />
     </div>
   );
 };

@@ -66,13 +66,23 @@ const TrainingPlanList = () => {
     if (!deleteTarget) return;
     try {
       await trainingPlanService.deletePlan(deleteTarget.id);
-      showSuccessMsg('Plan de entrenamiento eliminado correctamente.');
+      showSuccessMsg('Plan de entrenamiento desactivado correctamente.');
       fetchData();
     } catch (err) {
-      showError(err.message || 'Error al eliminar el plan');
+      showError(err.message || 'Error al desactivar el plan');
     } finally {
       setIsConfirmOpen(false);
       setDeleteTarget(null);
+    }
+  };
+
+  const handleReactivatePlan = async (plan) => {
+    try {
+      await trainingPlanService.reactivatePlan(plan.id);
+      showSuccessMsg('Plan de entrenamiento reactivado correctamente.');
+      fetchData();
+    } catch (err) {
+      showError(err.message || 'Error al reactivar el plan');
     }
   };
 
@@ -572,9 +582,15 @@ const TrainingPlanList = () => {
                   <button className="btn btn-ghost btn-sm" onClick={() => startEditPlan(plan)}>
                     Editar
                   </button>
-                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-color)' }} onClick={() => { setDeleteTarget(plan); setIsConfirmOpen(true); }}>
-                    Eliminar
-                  </button>
+                  {plan.is_active !== false ? (
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger-color)' }} onClick={() => { setDeleteTarget(plan); setIsConfirmOpen(true); }}>
+                      Eliminar
+                    </button>
+                  ) : (
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--success-color)' }} onClick={() => handleReactivatePlan(plan)}>
+                      Reactivar
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -726,8 +742,8 @@ const TrainingPlanList = () => {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={handlePlanDelete}
-        title="Eliminar Plan"
-        message={`¿Estás seguro de que deseas eliminar el plan "${deleteTarget?.name}"? Esta acción no se puede deshacer y eliminará las asignaciones activas.`}
+        title="Desactivar Plan"
+        message={`¿Estás seguro de desactivar el plan "${deleteTarget?.name}"? No estará disponible para nuevas asignaciones.`}
       />
     </div>
   );

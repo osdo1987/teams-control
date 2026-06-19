@@ -18,9 +18,15 @@ club_public_schema = ClubPublicSchema()
 @role_required(['SUPER_ADMIN', 'ADMIN'])
 def get_all_clubs():
     """
-    Get All Clubs (Super Admin Only)
+    Get All Clubs (Super Admin Only) - filters active only by default
     """
-    clubs = Club.query.all()
+    include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+    
+    if include_inactive:
+        clubs = Club.query.all()
+    else:
+        clubs = Club.query.filter_by(is_active=True).all()
+    
     result = []
     for club in clubs:
         club_data = club_schema.dump(club)
@@ -49,7 +55,7 @@ def get_club_by_slug(slug):
     """
     Get Club Public Info by Slug (no auth required)
     """
-    club = Club.query.filter_by(slug=slug).first()
+    club = Club.query.filter_by(slug=slug, is_active=True).first()
     if not club:
         return jsonify({"error": "Club not found"}), 404
     return jsonify(club_public_schema.dump(club)), 200
@@ -137,7 +143,6 @@ def get_role_permissions(club_id):
     """
     Get role permissions for a club
     """
-    user = User.query.filter_by(id=1).first()  # Will use jwt_required
     from flask_jwt_extended import get_jwt_identity
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
@@ -175,7 +180,7 @@ def update_role_permissions(club_id):
     return jsonify(club.role_permissions), 200
 
 
-@club_bp.route('/<int:club_id>/my-permissions', methods=['GET'])
+@club_bp.route('/my-permissions', methods=['GET'])
 @jwt_required()
 def get_my_permissions():
     """
@@ -200,20 +205,26 @@ def get_my_permissions():
 
 @club_bp.route('/<int:club_id>', methods=['DELETE'])
 @role_required(['SUPER_ADMIN'])
-def delete_club(club_id):
+def deactivate_club(club_id):
     """
-    Delete Club (Super Admin Only)
+    Deactivate Club (Soft Delete) - Super Admin Only
     """
     club = Club.query.get_or_404(club_id)
-    
-    # Check if there are users associated
-    user_count = User.query.filter_by(club_id=club_id).count()
-    if user_count > 0:
-        return jsonify({"error": f"Cannot delete club. It has {user_count} associated users."}), 400
-        
-    db.session.delete(club)
+    club.is_active = False
     db.session.commit()
-    return jsonify({"message": "Club deleted successfully"}), 200
+    return jsonify({"message": "Club desactivado correctamente"}), 200
+
+
+@club_bp.route('/<int:club_id>/reactivate', methods=['PATCH'])
+@role_required(['SUPER_ADMIN'])
+def reactivate_club(club_id):
+    """
+    Reactivate Club - Super Admin Only
+    """
+    club = Club.query.get_or_404(club_id)
+    club.is_active = True
+    db.session.commit()
+    return jsonify({"message": "Club reactivado correctamente"}), 200
 
 
 # Allowed extensions for image uploads
