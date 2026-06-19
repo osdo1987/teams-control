@@ -106,13 +106,23 @@ docker exec teams_api_prod python seed_demo.py
 
 Después de ejecutar `seed_demo.py`:
 
-- **Super Admin**: `super@admin.com` / `super123`
-- **Admin**: `admin@futbolelite.com` / `admin123`
+**⚠️ IMPORTANTE**: El login se realiza con **número de identificación**, NO con correo electrónico.
+
+- **Super Admin**: identificación `0000000001` / `super123`
+- **Admin**: identificación `1234567890` / `admin123`
 - **Entrenadores**: 
-  - `entrenador1@futbolelite.com` / `trainer123`
-  - `entrenador2@futbolelite.com` / `trainer123`
-  - `entrenador3@futbolelite.com` / `trainer123`
-- **Atletas**: `[nombre].[apellido]@futbolelite.com` / `athlete123`
+  - identificación `9876543210` / `trainer123` (Roberto García)
+  - identificación `9876543211` / `trainer123` (Andrés López)
+  - identificación `9876543212` / `trainer123` (María Rodríguez)
+- **Atletas**: identificación `10XXXXXXXX` / `athlete123` (formato: 10 + número de 8 dígitos)
+
+**Ejemplo de login:**
+```json
+{
+  "identification_number": "1234567890",
+  "password": "admin123"
+}
+```
 
 ## ⚠️ Notas Importantes
 
