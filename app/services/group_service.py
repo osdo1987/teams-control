@@ -6,6 +6,8 @@ from app.models.relations import group_athletes
 class GroupService:
     @staticmethod
     def assign_athlete_to_group(athlete_id, group_id):
+        if not athlete_id or not group_id:
+            return False, "athlete_id and group_id are required"
         athlete = Athlete.query.get(athlete_id)
         group = Group.query.get(group_id)
         
@@ -36,6 +38,8 @@ class GroupService:
 
     @staticmethod
     def change_athlete_group(athlete_id, old_group_id, new_group_id):
+        if not athlete_id or not old_group_id or not new_group_id:
+            return False, "athlete_id, old_group_id and new_group_id are required"
         athlete = Athlete.query.get(athlete_id)
         old_group = Group.query.get(old_group_id)
         new_group = Group.query.get(new_group_id)

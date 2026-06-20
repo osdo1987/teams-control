@@ -130,6 +130,27 @@ class AuthService:
                     history = GroupHistory(athlete_id=athlete.id, group_id=new_group.id, action="JOINED")
                     db.session.add(history)
         
+        # --- Update TrainerProfile if user is a TRAINER ---
+        if user.role == 'TRAINER':
+            profile = TrainerProfile.query.filter_by(user_id=user_id).first()
+            if not profile:
+                profile = TrainerProfile(user_id=user_id)
+                db.session.add(profile)
+
+            trainer_fields = [
+                'birth_date', 'gender', 'address', 'city', 'state',
+                'emergency_contact_name', 'emergency_contact_phone',
+                'profile_photo_url', 'bank_name', 'bank_account_number',
+                'bank_account_type', 'salary', 'payment_frequency', 'tax_id',
+                'education_level', 'institution', 'degree_title', 'graduation_year',
+                'certifications', 'specialization',
+                'years_of_experience', 'previous_clubs', 'bio',
+                'hire_date', 'contract_type', 'status'
+            ]
+            for field in trainer_fields:
+                if field in data and data[field] is not None and data[field] != '':
+                    setattr(profile, field, data[field])
+
         db.session.commit()
         return user
 
