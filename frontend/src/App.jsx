@@ -14,6 +14,7 @@ import AthleteList from './pages/admin/AthleteList';
 import GroupList from './pages/admin/GroupList';
 import UserList from './pages/admin/UserList';
 import TrainerList from './pages/admin/TrainerList';
+import AdminTrainerProfile from './pages/admin/TrainerProfile';
 import PaymentList from './pages/admin/PaymentList';
 import AttendanceList from './pages/admin/AttendanceList';
 import TestList from './pages/admin/TestList';
@@ -58,14 +59,15 @@ function App() {
           }>
             <Route index element={<DashboardHome />} />
             <Route path="athletes" element={<AthleteList />} />
+            <Route path="athletes/:id" element={<AthleteProfile />} />
             <Route path="groups" element={<GroupList />} />
             <Route path="users" element={<UserList />} />
             <Route path="trainers" element={<TrainerList />} />
+            <Route path="trainers/:id" element={<AdminTrainerProfile />} />
             <Route path="payments" element={<PaymentList />} />
             <Route path="attendance" element={<AttendanceList />} />
             <Route path="tests" element={<TestList />} />
             <Route path="training-plans" element={<TrainingPlanList />} />
-            <Route path="athletes/:id" element={<AthleteProfile />} />
             <Route path="landing" element={<LandingEditor />} />
             <Route path="permissions" element={<PermissionsPage />} />
           </Route>

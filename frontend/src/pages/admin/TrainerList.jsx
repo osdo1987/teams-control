@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { userService } from '../../services/userService';
 import Modal from '../../components/UI/Modal';
@@ -30,6 +31,7 @@ const TrainerList = () => {
   const [error, setError] = useState('');
   const { showError, showSuccess } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,12 +43,6 @@ const TrainerList = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  // Edit profile modal
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [selectedTrainer, setSelectedTrainer] = useState(null);
-  const [profileForm, setProfileForm] = useState({ ...INITIAL_PROFILE_FORM });
-  const [activeTab, setActiveTab] = useState('personal');
-
   // Delete
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [trainerToDelete, setTrainerToDelete] = useState(null);
@@ -54,8 +50,8 @@ const TrainerList = () => {
   useEffect(() => { fetchTrainers(); }, []);
 
   const fetchTrainers = async () => {
-    try { // clearMessages(); // No longer needed with toast
-      const data = await authService.getTrainers(); // This fetches users with role TRAINER
+    try {
+      const data = await authService.getTrainers();
       setTrainers(data || []);
     } catch { setError('Error al cargar entrenadores'); }
     finally { setLoading(false); }
@@ -64,8 +60,15 @@ const TrainerList = () => {
   const filteredTrainers = trainers.filter(t => {
     const name = `${t.first_name} ${t.last_name}`.toLowerCase();
     const id = (t.identification_number || '').toString();
-    return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    if (!matchesSearch) return false;
+    if (filterStatus === 'active') return t.is_active !== false;
+    if (filterStatus === 'inactive') return t.is_active === false;
+    return true;
   });
+
+  const totalActive = trainers.filter(t => t.is_active !== false).length;
+  const totalInactive = trainers.filter(t => t.is_active === false).length;
 
   // Pagination
   const totalPages = Math.ceil(filteredTrainers.length / ITEMS_PER_PAGE);
@@ -74,7 +77,6 @@ const TrainerList = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // --- CREATE ---
   const openCreate = () => {
     setCreateForm({ ...INITIAL_USER_FORM });
     setConfirmPassword('');
@@ -120,44 +122,12 @@ const TrainerList = () => {
     } catch (err) { showError(err.message || 'Error al crear entrenador'); }
   };
 
-  // --- EDIT PROFILE ---
+  const navigate = useNavigate();
+
   const openProfile = (trainer) => {
-    setSelectedTrainer(trainer);
-    const tp = trainer.trainer_profile || {};
-    setProfileForm({
-      birth_date: tp.birth_date || '', gender: tp.gender || '', address: tp.address || '',
-      city: tp.city || '', state: tp.state || '',
-      emergency_contact_name: tp.emergency_contact_name || '', emergency_contact_phone: tp.emergency_contact_phone || '',
-      bank_name: tp.bank_name || '', bank_account_number: tp.bank_account_number || '',
-      bank_account_type: tp.bank_account_type || '', salary: tp.salary || '',
-      payment_frequency: tp.payment_frequency || '', tax_id: tp.tax_id || '',
-      education_level: tp.education_level || '', institution: tp.institution || '',
-      degree_title: tp.degree_title || '', graduation_year: tp.graduation_year || '',
-      certifications: tp.certifications || '', specialization: tp.specialization || '',
-      years_of_experience: tp.years_of_experience || '', previous_clubs: tp.previous_clubs || '',
-      bio: tp.bio || '', hire_date: tp.hire_date || '', contract_type: tp.contract_type || ''
-    });
-    setActiveTab('personal');
-    setIsProfileOpen(true);
+    navigate(`/admin/trainers/${trainer.id}`);
   };
 
-  const handleProfileChange = e => setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
-
-  const handleProfileSubmit = async e => {
-    e.preventDefault();
-    try {
-      const payload = { ...profileForm, role: 'TRAINER' };
-      if (payload.salary) payload.salary = parseFloat(payload.salary);
-      if (payload.graduation_year) payload.graduation_year = parseInt(payload.graduation_year);
-      if (payload.years_of_experience) payload.years_of_experience = parseInt(payload.years_of_experience);
-      await userService.updateUser(selectedTrainer.id, payload);
-      setIsProfileOpen(false);
-      fetchTrainers();
-      showSuccess('Perfil de entrenador actualizado correctamente');
-    } catch (err) { showError(err.message || 'Error al guardar perfil'); }
-  };
-
-  // --- DELETE ---
   const confirmDelete = async () => {
     if (!trainerToDelete) return;
     try {
@@ -168,80 +138,149 @@ const TrainerList = () => {
     finally { setIsConfirmOpen(false); setTrainerToDelete(null); }
   };
 
-
   if (loading) return <div className="loading-state"><p>Cargando entrenadores...</p></div>;
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="athlete-list-page">
+      {/* Header */}
+      <div className="header">
         <div>
           <h1>Entrenadores</h1>
-          <p className="text-muted">Gestiona los perfiles profesionales y datos de los entrenadores.</p>
+          <p>Gestiona los perfiles profesionales y datos de los entrenadores.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Nuevo Entrenador</button>
+        <div className="header-actions">
+          <div className="search-bar">
+            🔍 <input type="text" placeholder="Buscar por nombre o identificación..."
+              value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+          </div>
+          <button className="btn-primary" onClick={openCreate}>+ Nuevo Entrenador</button>
+        </div>
       </div>
 
-      <div className="filter-row">
-        <div className="search-field">
-          <input type="text" placeholder="🔍 Buscar por nombre o identificación..." className="form-input"
-            style={{ borderRadius: '12px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+      {/* Mini KPIs */}
+      <div className="kpi-mini-grid">
+        <div className="mini-kpi">
+          <div>
+            <h3>Total Entrenadores</h3>
+            <div className="val">{trainers.length}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}>👥</div>
+        </div>
+        <div className="mini-kpi">
+          <div>
+            <h3>Activos</h3>
+            <div className="val">{totalActive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#ECFDF5', color: '#10B981' }}>🟢</div>
+        </div>
+        <div className="mini-kpi">
+          <div>
+            <h3>Inactivos</h3>
+            <div className="val">{totalInactive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>🔴</div>
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Entrenador</th>
-              <th>Identificación</th>
-              <th>Contacto</th>
-              <th>Especialización</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedTrainers.length === 0 ? (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron entrenadores</td></tr>
-            ) : paginatedTrainers.map(t => (
-              <tr key={t.id}>
-                <td>
-                  <div className="table-cell-name">
-                    <div className="table-avatar" style={{
-                      background: avatarColor(t.first_name || 'E'), width: '40px', height: '40px',
-                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontWeight: '600', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }}>{initials(t.first_name, t.last_name)}</div>
-                    <div>
-                      <strong>{t.first_name} {t.last_name}</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>#{t.id} · {t.email || 'Sin email'}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{t.identification_number}</td>
-                <td style={{ fontSize: '0.85rem' }}>📞 {t.phone || '—'}</td>
-                <td><span className="badge badge-primary">{t.trainer_profile?.specialization || 'No definida'}</span></td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openProfile(t)}>📋 Perfil</button>
-                    {t.is_active !== false ? (
-                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                        onClick={() => { setTrainerToDelete(t); setIsConfirmOpen(true); }}>✕</button>
-                    ) : (
-                      <button className="btn btn-sm btn-success"
-                        onClick={async () => {
-                          try {
-                            await userService.reactivateUser(t.id);
-                            showSuccess('Entrenador reactivado correctamente');
-                            fetchTrainers();
-                          } catch (err) { showError(err.message || 'Error al reactivar entrenador'); }
-                        }}>Reactivar</button>
-                    )}
-                  </div>
-                </td>
+      {/* Table Card */}
+      <div className="table-card">
+        <div className="table-filters">
+          <div className="filter-pills">
+            <div className={`filter-pill ${filterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('all'); setCurrentPage(1); }}>
+              Todos ({trainers.length})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'active' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('active'); setCurrentPage(1); }}>
+              Activos ({totalActive})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'inactive' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('inactive'); setCurrentPage(1); }}>
+              Inactivos ({totalInactive})
+            </div>
+          </div>
+          <div className="sort-info">
+            Ordenar por: <span className="sort-value">Nombre A-Z ↓</span>
+          </div>
+        </div>
+
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Entrenador</th>
+                <th>Identificación</th>
+                <th>Contacto</th>
+                <th>Especialización</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedTrainers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="empty-cell">No se encontraron entrenadores</td>
+                </tr>
+              ) : paginatedTrainers.map(t => (
+                <tr key={t.id}>
+                  <td>
+                    <div className="table-cell-name">
+                      <div className="table-avatar" style={{
+                        background: avatarColor(t.first_name || 'E'), width: '40px', height: '40px',
+                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontWeight: '600', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}>{initials(t.first_name, t.last_name)}</div>
+                      <div>
+                        <strong>{t.first_name} {t.last_name}</strong>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>#{t.id} · {t.email || 'Sin email'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{t.identification_number}</td>
+                  <td style={{ fontSize: '0.85rem' }}>📞 {t.phone || '—'}</td>
+                  <td><span className="badge badge-primary">{t.trainer_profile?.specialization || 'No definida'}</span></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openProfile(t)}>📋 Perfil</button>
+                      {t.is_active !== false ? (
+                        <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                          onClick={() => { setTrainerToDelete(t); setIsConfirmOpen(true); }}>✕</button>
+                      ) : (
+                        <button className="btn btn-sm btn-success"
+                          onClick={async () => {
+                            try {
+                              await userService.reactivateUser(t.id);
+                              showSuccess('Entrenador reactivado correctamente');
+                              fetchTrainers();
+                            } catch (err) { showError(err.message || 'Error al reactivar entrenador'); }
+                          }}>Reactivar</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {filteredTrainers.length > ITEMS_PER_PAGE && (
+          <div className="pagination">
+            <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredTrainers.length)} de {filteredTrainers.length} resultados</span>
+            <div className="pagination-buttons">
+              <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}>←</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button key={page}
+                  className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
+                  onClick={() => setCurrentPage(page)}>
+                  {page}
+                </button>
+              ))}
+              <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}>→</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Crear Entrenador */}
@@ -282,99 +321,6 @@ const TrainerList = () => {
           </div>
         </form>
       </Modal>
-
-      {/* Modal Perfil Entrenador */}
-      <Modal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title={`Perfil de ${selectedTrainer?.first_name}`}>
-        <div className="profile-tabs">
-          <button type="button" className={`profile-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>👤 Personal</button>
-          <button type="button" className={`profile-tab ${activeTab === 'payment' ? 'active' : ''}`} onClick={() => setActiveTab('payment')}>💰 Pago</button>
-          <button type="button" className={`profile-tab ${activeTab === 'education' ? 'active' : ''}`} onClick={() => setActiveTab('education')}>🎓 Educación</button>
-          <button type="button" className={`profile-tab ${activeTab === 'experience' ? 'active' : ''}`} onClick={() => setActiveTab('experience')}>📋 Experiencia</button>
-        </div>
-        <form onSubmit={handleProfileSubmit} style={{ display: 'contents' }}>
-          {activeTab === 'personal' && (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group"><label className="form-label">Fecha Nacimiento</label><input type="date" name="birth_date" value={profileForm.birth_date} onChange={handleProfileChange} className="form-input" /></div>
-                <div className="form-group"><label className="form-label">Género</label>
-                  <select name="gender" value={profileForm.gender} onChange={handleProfileChange} className="form-input">
-                    <option value="">Seleccionar</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option><option value="Otro">Otro</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-group"><label className="form-label">Dirección</label><input type="text" name="address" value={profileForm.address} onChange={handleProfileChange} className="form-input" placeholder="Calle 45 #12-30" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group"><label className="form-label">Ciudad</label><input type="text" name="city" value={profileForm.city} onChange={handleProfileChange} className="form-input" /></div>
-                <div className="form-group"><label className="form-label">Departamento</label><input type="text" name="state" value={profileForm.state} onChange={handleProfileChange} className="form-input" /></div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group"><label className="form-label">Contacto Emergencia</label><input type="text" name="emergency_contact_name" value={profileForm.emergency_contact_name} onChange={handleProfileChange} className="form-input" /></div>
-                <div className="form-group"><label className="form-label">Tel. Emergencia</label><input type="text" name="emergency_contact_phone" value={profileForm.emergency_contact_phone} onChange={handleProfileChange} className="form-input" /></div>
-              </div>
-            </>
-          )}
-          {activeTab === 'payment' && (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group"><label className="form-label">Banco</label><input type="text" name="bank_name" value={profileForm.bank_name} onChange={handleProfileChange} className="form-input" /></div>
-                <div className="form-group"><label className="form-label">Tipo Cuenta</label>
-                  <select name="bank_account_type" value={profileForm.bank_account_type} onChange={handleProfileChange} className="form-input">
-                    <option value="">Seleccionar</option><option value="Ahorros">Ahorros</option><option value="Corriente">Corriente</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-group"><label className="form-label">Número de Cuenta</label><input type="text" name="bank_account_number" value={profileForm.bank_account_number} onChange={handleProfileChange} className="form-input" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group"><label className="form-label">Salario</label><input type="number" name="salary" value={profileForm.salary} onChange={handleProfileChange} className="form-input" /></div>
-                <div className="form-group"><label className="form-label">Frecuencia Pago</label>
-                  <select name="payment_frequency" value={profileForm.payment_frequency} onChange={handleProfileChange} className="form-input">
-                    <option value="">Seleccionar</option><option value="Mensual">Mensual</option><option value="Quincenal">Quincenal</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-group"><label className="form-label">Tipo Contrato</label><input type="text" name="contract_type" value={profileForm.contract_type} onChange={handleProfileChange} className="form-input" /></div>
-            </>
-          )}
-          {activeTab === 'education' && (
-            <>
-              <div className="form-group"><label className="form-label">Nivel Educativo</label><input type="text" name="education_level" value={profileForm.education_level} onChange={handleProfileChange} className="form-input" /></div>
-              <div className="form-group"><label className="form-label">Institución</label><input type="text" name="institution" value={profileForm.institution} onChange={handleProfileChange} className="form-input" /></div>
-              <div className="form-group"><label className="form-label">Especialización Deportiva</label><input type="text" name="specialization" value={profileForm.specialization} onChange={handleProfileChange} className="form-input" /></div>
-              <div className="form-group"><label className="form-label">Certificaciones</label><textarea name="certifications" value={profileForm.certifications} onChange={handleProfileChange} className="form-input" rows={3} /></div>
-            </>
-          )}
-          {activeTab === 'experience' && (
-            <>
-              <div className="form-group"><label className="form-label">Años de Experiencia</label><input type="number" name="years_of_experience" value={profileForm.years_of_experience} onChange={handleProfileChange} className="form-input" /></div>
-              <div className="form-group"><label className="form-label">Bio / Resumen Profesional</label><textarea name="bio" value={profileForm.bio} onChange={handleProfileChange} className="form-input" rows={5} /></div>
-            </>
-          )}
-          <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsProfileOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">Guardar Perfil</button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Pagination */}
-      {filteredTrainers.length > ITEMS_PER_PAGE && (
-        <div className="pagination">
-          <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredTrainers.length)} de {filteredTrainers.length} resultados</span>
-          <div className="pagination-buttons">
-            <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}>←</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button key={page}
-                className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
-                onClick={() => setCurrentPage(page)}>
-                {page}
-              </button>
-            ))}
-            <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}>→</button>
-          </div>
-        </div>
-      )}
 
       <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
         title="Desactivar Entrenador" message={`¿Desactivar a ${trainerToDelete?.first_name} ${trainerToDelete?.last_name}? No podrá iniciar sesión hasta que sea reactivado.`} />

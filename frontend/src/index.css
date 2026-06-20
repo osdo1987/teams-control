@@ -2010,6 +2010,214 @@ select.form-input {
   margin-bottom: 24px;
 }
 
+/* ─── Trainer Profile (pefil_trainer.html style) ────────────────── */
+.profile-hero {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-xs);
+}
+
+.profile-hero-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--brand-500), var(--purple-500));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 10px 15px rgba(99, 102, 241, 0.2);
+  flex-shrink: 0;
+}
+
+.profile-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero-info h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.profile-hero-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.profile-hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-hero-badge {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  border: 1px solid var(--border-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.profile-hero-badge-success {
+  background: var(--success-50);
+  color: var(--success-700);
+  border-color: #A7F3D0;
+}
+
+.profile-grid-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.profile-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  box-shadow: var(--shadow-xs);
+  margin-bottom: 20px;
+}
+
+.profile-card:last-child {
+  margin-bottom: 0;
+}
+
+.profile-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-card-title-icon {
+  width: 30px;
+  height: 30px;
+  background: var(--bg-app);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-info-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.profile-info-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.profile-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-tag {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.profile-tag-blue {
+  background: var(--info-50);
+  color: var(--info-700);
+}
+
+.profile-tag-orange {
+  background: var(--warning-50);
+  color: var(--warning-700);
+}
+
+.profile-tag-purple {
+  background: var(--purple-50);
+  color: var(--purple-700);
+}
+
+.profile-schedule-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--bg-app);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-soft);
+  font-size: 0.9rem;
+}
+
+.profile-schedule-item:last-child {
+  margin-bottom: 0;
+}
+
+.profile-bio-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+}
+
+@media (max-width: 1024px) {
+  .profile-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-hero-badges {
+    justify-content: center;
+  }
+
+  .profile-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Responsive Utility Classes ────────────────────────────────── */
 
 /* Flex helpers */
