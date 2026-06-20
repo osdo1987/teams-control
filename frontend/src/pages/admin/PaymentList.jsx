@@ -20,6 +20,8 @@ const PaymentList = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'paid' | 'pending'
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -230,6 +232,38 @@ const PaymentList = () => {
 
     return filtered;
   }, [payments, athletes, selectedMonth, selectedYear, searchTerm, filterStatus]);
+
+  // ─── PAGINACIÓN ──────────────────────────────────────────────
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTransactions = transactions.slice(startIndex, startIndex + itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, selectedMonth, selectedYear]);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      if (currentPage <= 3) { start = 2; end = 4; }
+      if (currentPage >= totalPages - 2) { start = totalPages - 3; end = totalPages - 1; }
+      if (start > 2) pages.push('...');
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   // ─── ACCIONES ───────────────────────────────────────────────
   const openQuickPayment = (athlete) => {
@@ -544,14 +578,14 @@ const PaymentList = () => {
               </tr>
             </thead>
             <tbody>
-              {transactions.length === 0 ? (
+              {paginatedTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                     No se encontraron transacciones para este período
                   </td>
                 </tr>
               ) : (
-                transactions.map(t => {
+                paginatedTransactions.map(t => {
                   const athleteName = `${t.athlete.user?.first_name || ''} ${t.athlete.user?.last_name || ''}`.trim();
                   return (
                     <tr key={t.id}>
@@ -668,6 +702,80 @@ const PaymentList = () => {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINACIÓN */}
+        {totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '14px 20px',
+            borderTop: '1px solid var(--border-main)'
+          }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Mostrando {startIndex + 1}–{Math.min(startIndex + itemsPerPage, transactions.length)} de {transactions.length} transacciones
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-main)',
+                  background: 'var(--bg-surface)',
+                  color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  opacity: currentPage === 1 ? 0.5 : 1
+                }}
+              >
+                ‹ Anterior
+              </button>
+              {getPageNumbers().map((page, idx) => (
+                page === '...' ? (
+                  <span key={`ellipsis-${idx}`} style={{ padding: '6px 4px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>...</span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: currentPage === page ? '1px solid #2563EB' : '1px solid var(--border-main)',
+                      background: currentPage === page ? '#2563EB' : 'var(--bg-surface)',
+                      color: currentPage === page ? 'white' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: currentPage === page ? 700 : 500,
+                      minWidth: '36px'
+                    }}
+                  >
+                    {page}
+                  </button>
+                )
+              ))}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-main)',
+                  background: 'var(--bg-surface)',
+                  color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  opacity: currentPage === totalPages ? 0.5 : 1
+                }}
+              >
+                Siguiente ›
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL: REGISTRAR PAGO */}
