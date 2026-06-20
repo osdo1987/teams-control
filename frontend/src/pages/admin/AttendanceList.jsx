@@ -134,7 +134,6 @@ const AttendanceList = () => {
 
   // ─── TAKE ATTENDANCE ───────────────────────────
   const handleOpenBulk = async (group) => {
-    clearMessages();
     setSelectedGroup(group);
     setBulkDate(today());
     setAttendanceTakenInfo(null);
