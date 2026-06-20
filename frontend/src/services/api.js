@@ -23,9 +23,16 @@ export const api = async (endpoint, options = {}) => {
     // (token expired / invalid). Do NOT auto-logout on the login endpoint itself.
     // Check BEFORE parsing JSON to ensure this always triggers.
     if (response.status === 401 && token && !endpoint.includes('/auth/login')) {
+      const userStr = localStorage.getItem('user');
+      let clubSlug = null;
+      try {
+        const user = JSON.parse(userStr);
+        clubSlug = user?.club_slug || null;
+      } catch (e) { /* ignore parse errors */ }
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Redirect to club login if user belonged to a club, otherwise to super-admin login
+      window.location.href = clubSlug ? `/${clubSlug}` : '/login';
       return null;
     }
 

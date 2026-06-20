@@ -21,9 +21,9 @@ const AthleteList = () => {
   const [groups, setGroups] = useState([]);
   const [clubs, setClubs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true); // Keep loading state
-  const { showError, showSuccess } = useToast(); // Use toast for errors/success
-  const [filterNoGroup, setFilterNoGroup] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { showError, showSuccess } = useToast();
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'inactive', 'overdue'
 
   // Create modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -43,6 +43,10 @@ const AthleteList = () => {
   // Delete
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [athleteToDelete, setAthleteToDelete] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const openCreate = (defaultGroupId = '') => {
     setCreateForm({
@@ -70,7 +74,6 @@ const AthleteList = () => {
   }, [searchParams, loading]);
 
   const fetchAll = async () => {
-    // clearMessages(); // No longer needed with toast
     try {
       const [athletesData, groupsData, clubsData] = await Promise.all([
         athleteService.getAthletes(),
@@ -87,16 +90,29 @@ const AthleteList = () => {
   const currentUser = authService.getCurrentUser();
   const clubGroups = groups.filter(g => parseInt(g.club_id) === parseInt(currentUser?.club_id));
 
+  // Filter logic
   const filteredAthletes = athletes.filter(a => {
     const name = `${a.user?.first_name} ${a.user?.last_name}`.toLowerCase();
     const id = (a.user?.identification_number || '').toString();
-    const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
+    const phone = (a.phone || '').toLowerCase();
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm) || phone.includes(searchTerm);
     if (!matchesSearch) return false;
-    if (filterNoGroup) {
-      return !a.current_groups || a.current_groups.length === 0;
+
+    if (filterStatus === 'active') return a.is_active !== false;
+    if (filterStatus === 'inactive') return a.is_active === false;
+    if (filterStatus === 'overdue') {
+      // Check if athlete has overdue payments
+      return a.is_overdue === true;
     }
     return true;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAthletes.length / ITEMS_PER_PAGE);
+  const paginatedAthletes = filteredAthletes.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleCreateChange = e => {
     setCreateForm({ ...createForm, [e.target.name]: e.target.value });
@@ -142,7 +158,6 @@ const AthleteList = () => {
     } catch (err) { showError(err.message || 'Error al crear atleta'); }
   };
 
-  // --- EDIT ---
   const openEdit = (athlete) => {
     setEditingAthlete(athlete);
     setEditForm({
@@ -174,7 +189,6 @@ const AthleteList = () => {
     } catch (err) { showError(err.message || 'Error al guardar cambios'); }
   };
 
-  // --- DELETE ---
   const confirmDelete = async () => {
     if (!athleteToDelete) return;
     try {
@@ -185,157 +199,188 @@ const AthleteList = () => {
     finally { setIsConfirmOpen(false); setAthleteToDelete(null); }
   };
 
+  const getAge = (birthDate) => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+
+  const totalActive = athletes.filter(a => a.is_active !== false).length;
+  const totalInactive = athletes.filter(a => a.is_active === false).length;
+
   if (loading) return <div className="loading-state"><p>Cargando atletas...</p></div>;
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="athlete-list-page">
+      {/* Header */}
+      <div className="header">
         <div>
           <h1>Atletas</h1>
-          <p className="text-muted">Gestión de atletas, transferencias y hoja de vida deportiva.</p>
+          <p>Gestiona los perfiles, estados y asignaciones de los jugadores del club.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Nuevo Atleta</button>
-      </div>
-
-      <div className="filter-row" style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="search-field" style={{ flex: 1, minWidth: '280px' }}>
-          <input type="text" placeholder="🔍 Buscar por nombre o identificación..." className="form-input"
-            style={{ borderRadius: '12px' }} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className={`btn ${!filterNoGroup ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ borderRadius: '12px', padding: '8px 16px' }}
-            onClick={() => setFilterNoGroup(false)}
-          >
-            Todos ({athletes.length})
-          </button>
-          <button
-            className={`btn ${filterNoGroup ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ borderRadius: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
-            onClick={() => setFilterNoGroup(true)}
-          >
-            Sin Grupo
-            <span style={{
-              background: '#ef4444',
-              color: 'white',
-              borderRadius: '20px',
-              padding: '2px 8px',
-              fontSize: '0.75rem',
-              fontWeight: 'bold'
-            }}>
-              {athletes.filter(a => !a.current_groups || a.current_groups.length === 0).length}
-            </span>
-          </button>
+        <div className="header-actions">
+          <div className="search-bar">
+            🔍 <input type="text" placeholder="Buscar por nombre, ID o teléfono..."
+              value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+          </div>
+          <button className="btn-primary" onClick={openCreate}>+ Nuevo Atleta</button>
         </div>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Atleta</th>
-              <th>Identificación</th>
-              <th>Contacto</th>
-              <th>Grupo Actual</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAthletes.length === 0 ? (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron atletas</td></tr>
-            ) : filteredAthletes.map(a => (
-              <tr key={a.id}>
-                <td>
-                  <div className="table-cell-name">
-                    <div className="table-avatar" style={{
-                      background: avatarColor(a.user?.first_name || 'A'), width: '40px', height: '40px',
-                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontWeight: '600', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }}>{initials(a.user?.first_name, a.user?.last_name)}</div>
-                    <div>
-                      <strong>{a.user?.first_name} {a.user?.last_name}</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{a.user?.email || 'Sin email'}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{a.user?.identification_number}</td>
-                <td style={{ fontSize: '0.85rem' }}>📞 {a.phone || '—'}</td>
-                <td>
-                  {a.current_groups && a.current_groups.length > 0 ? (
-                    a.current_groups.map(g => (
-                      <span key={g.id} className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginRight: '4px' }}>
-                        {g.name}
-                        <button
-                          style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '0 2px', fontSize: '0.75rem', fontWeight: 'bold' }}
-                          onClick={async () => {
-                            if (window.confirm(`¿Remover a ${a.user?.first_name} del grupo ${g.name}?`)) {
-                              try {
-                                await athleteService.updateAthlete(a.id, {
-                                  athlete: { birth_date: a.birth_date, phone: a.phone, address: a.address },
-                                  group_id: null
-                                });
-                                fetchAll();
-                              } catch (err) {
-                                showError(err.message || 'Error al remover del grupo');
-                              }
-                            }
-                          }}
-                          title="Remover del grupo"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))
-                  ) : (
-                    <select
-                      className="form-input"
-                      style={{ padding: '4px 8px', fontSize: '0.8rem', height: 'auto', width: 'auto', minWidth: '130px', borderRadius: '8px', border: '1px solid #ef4444' }}
-                      value=""
-                      onChange={async (e) => {
-                        const groupId = e.target.value;
-                        if (!groupId) return;
-                        try {
-                          await athleteService.updateAthlete(a.id, {
-                            athlete: { birth_date: a.birth_date, phone: a.phone, address: a.address },
-                            group_id: parseInt(groupId)
-                          });
-                          fetchAll();
-                        } catch (err) {
-                          showError(err.message || 'Error al asignar grupo');
-                        }
-                      }}
-                    >
-                      <option value="">⚠️ Asignar grupo...</option>
-                      {clubGroups.map(g => (
-                        <option key={g.id} value={g.id}>{g.name}</option>
-                      ))}
-                    </select>
-                  )}
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/admin/athletes/${a.id}`)}>👁 Ver</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(a)}>✏️ Editar</button>
-                    {a.is_active !== false ? (
-                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                        onClick={() => { setAthleteToDelete(a); setIsConfirmOpen(true); }}>✕</button>
-                    ) : (
-                      <button className="btn btn-sm btn-success"
-                        onClick={async () => {
-                          try {
-                            await athleteService.reactivateAthlete(a.id);
-                            showSuccess('Atleta reactivado correctamente');
-                            fetchAll();
-                          } catch (err) { showError(err.message || 'Error al reactivar atleta'); }
-                        }}>Reactivar</button>
-                    )}
-                  </div>
-                </td>
+      {/* Mini KPIs */}
+      <div className="kpi-mini-grid">
+        <div className="mini-kpi">
+          <div>
+            <h3>Total Atletas</h3>
+            <div className="val">{athletes.length}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}>👥</div>
+        </div>
+        <div className="mini-kpi">
+          <div>
+            <h3>Activos (Mes)</h3>
+            <div className="val">{totalActive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#ECFDF5', color: '#10B981' }}>🟢</div>
+        </div>
+        <div className="mini-kpi">
+          <div>
+            <h3>Inactivos / Suspendidos</h3>
+            <div className="val">{totalInactive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>🔴</div>
+        </div>
+      </div>
+
+      {/* Table Card */}
+      <div className="table-card">
+        <div className="table-filters">
+          <div className="filter-pills">
+            <div className={`filter-pill ${filterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('all'); setCurrentPage(1); }}>
+              Todos ({athletes.length})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'active' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('active'); setCurrentPage(1); }}>
+              Activos ({totalActive})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'inactive' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('inactive'); setCurrentPage(1); }}>
+              Inactivos ({totalInactive})
+            </div>
+          </div>
+          <div className="sort-info">
+            Ordenar por: <span className="sort-value">Nombre A-Z ↓</span>
+          </div>
+        </div>
+
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Atleta</th>
+                <th>Identificación</th>
+                <th>Contacto</th>
+                <th>Grupo Asignado</th>
+                <th>Estado</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedAthletes.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="empty-cell">No se encontraron atletas</td>
+                </tr>
+              ) : paginatedAthletes.map(a => {
+                const age = getAge(a.birth_date);
+                const groupName = a.current_groups?.[0]?.name || null;
+                const isActive = a.is_active !== false;
+                const colorIdx = (a.user?.first_name || 'A').charCodeAt(0) % 4;
+                const avatarClasses = ['blue', 'green', 'purple', 'blue'];
+                return (
+                  <tr key={a.id}>
+                    <td>
+                      <div className="athlete-cell">
+                        <div className={`athlete-avatar ${avatarClasses[colorIdx]}`}>
+                          {initials(a.user?.first_name, a.user?.last_name)}
+                        </div>
+                        <div>
+                          <div className="athlete-name">{a.user?.first_name} {a.user?.last_name}</div>
+                          <div className="athlete-sub">{age ? `${age} años` : '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{a.user?.identification_number}</td>
+                    <td>
+                      <div style={{ fontSize: '0.85rem' }}>
+                        {a.phone ? `📞 ${a.phone}` : '—'}
+                      </div>
+                    </td>
+                    <td>
+                      {groupName ? (
+                        <span className="group-badge">👥 {groupName}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Sin grupo</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="status-badge" style={{ color: isActive ? 'var(--text-dark)' : 'var(--accent-red)' }}>
+                        <div className={`status-dot ${isActive ? 'dot-green' : 'dot-red'}`}></div>
+                        {isActive ? 'Activo' : 'Inactivo'}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="actions-cell">
+                        <button className="action-btn" title="Ver Perfil"
+                          onClick={() => navigate(`/admin/athletes/${a.id}`)}>👁️</button>
+                        <button className="action-btn" title="Editar"
+                          onClick={() => openEdit(a)}>✏️</button>
+                        {isActive ? (
+                          <button className="action-btn danger" title="Desactivar"
+                            onClick={() => { setAthleteToDelete(a); setIsConfirmOpen(true); }}>🗑️</button>
+                        ) : (
+                          <button className="action-btn" title="Reactivar"
+                            style={{ color: '#10b981' }}
+                            onClick={async () => {
+                              try {
+                                await athleteService.reactivateAthlete(a.id);
+                                showSuccess('Atleta reactivado correctamente');
+                                fetchAll();
+                              } catch (err) { showError(err.message || 'Error al reactivar atleta'); }
+                            }}>🔄</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {filteredAthletes.length > ITEMS_PER_PAGE && (
+          <div className="pagination">
+            <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredAthletes.length)} de {filteredAthletes.length} resultados</span>
+            <div className="pagination-buttons">
+              <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}>←</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button key={page}
+                  className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
+                  onClick={() => setCurrentPage(page)}>
+                  {page}
+                </button>
+              ))}
+              <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}>→</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Crear Atleta */}
