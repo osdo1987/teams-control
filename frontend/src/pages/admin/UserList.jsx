@@ -47,24 +47,37 @@ const UserList = () => {
   const [passwordError, setPasswordError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClubId, setSelectedClubId] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const currentUser = authService.getCurrentUser();
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
   const filteredUsers = users.filter(u => {
-    if (u.role === 'ATHLETE') return false;
-    // Super admin solo ve ADMIN, admin normal ve todos excepto SUPER_ADMIN
-    if (isSuperAdmin && u.role !== 'ADMIN') return false;
+    // No mostrar atletas ni entrenadores en la sección de Usuarios
+    if (u.role === 'ATHLETE' || u.role === 'TRAINER') return false;
+    // Admin normal no ve SUPER_ADMIN
+    if (!isSuperAdmin && u.role === 'SUPER_ADMIN') return false;
     const name = `${u.first_name} ${u.last_name}`.toLowerCase();
     const id = (u.identification_number || '').toString();
     const matchesSearch = name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
     const matchesClub = selectedClubId === '' || parseInt(u.club_id) === parseInt(selectedClubId);
-    return matchesSearch && matchesClub;
+    if (!matchesSearch || !matchesClub) return false;
+    if (filterStatus === 'active') return u.is_active !== false;
+    if (filterStatus === 'inactive') return u.is_active === false;
+    return true;
   });
 
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, selectedClubId]);
 
   const fetchInitialData = async () => {
     // clearMessages(); // No longer needed with toast
@@ -194,110 +207,252 @@ const UserList = () => {
     }
   };
 
+  const totalActive = filteredUsers.filter(u => u.is_active !== false).length;
+  const totalInactive = filteredUsers.filter(u => u.is_active === false).length;
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      if (currentPage <= 3) { start = 2; end = 4; }
+      if (currentPage >= totalPages - 2) { start = totalPages - 3; end = totalPages - 1; }
+      if (start > 2) pages.push('...');
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (end < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   if (loading) return <div className="loading-state"><p>Cargando usuarios...</p></div>;
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="athlete-list-page">
+      {/* Header */}
+      <div className="header">
         <div>
-          <h1>Gestión de Usuarios</h1>
-          <p className="text-muted">Administra las cuentas de acceso al sistema y sus roles.</p>
+          <h1>Usuarios</h1>
+          <p>Gestiona las cuentas de acceso al sistema y sus roles.</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
+        <div className="header-actions">
+          <div className="search-bar">
+            🔍 <input type="text" placeholder="Buscar por nombre o identificación..."
+              value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+          </div>
+          {isSuperAdmin && (
+            <div className="filter-field" style={{ minWidth: '200px' }}>
+              <select
+                className="form-input"
+                value={selectedClubId}
+                onChange={(e) => setSelectedClubId(e.target.value)}
+                style={{ borderRadius: '12px' }}
+              >
+                <option value="">🏢 Todos los Clubes</option>
+                {clubs.map(club => (
+                  <option key={club.id} value={club.id}>{club.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button className="btn-primary" onClick={openCreateModal}>+ Nuevo Usuario</button>
+        </div>
       </div>
 
-      <div className="filter-row">
-        <div className="search-field">
-          <input
-            type="text"
-            placeholder="🔍 Buscar usuario por nombre o ID..."
-            className="form-input"
-            style={{ borderRadius: '12px' }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Mini KPIs */}
+      <div className="kpi-mini-grid">
+        <div className="mini-kpi">
+          <div>
+            <h3>Total Usuarios</h3>
+            <div className="val">{filteredUsers.length}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#EFF6FF', color: '#2563EB' }}>👥</div>
         </div>
-        {authService.getCurrentUser()?.role === 'SUPER_ADMIN' && (
-          <div className="filter-field">
-            <select
-              className="form-input"
-              style={{ borderRadius: '12px' }}
-              value={selectedClubId}
-              onChange={(e) => setSelectedClubId(e.target.value)}
-            >
-              <option value="">🏢 Todos los Clubes</option>
-              {clubs.map(club => (
-                <option key={club.id} value={club.id}>{club.name}</option>
+        <div className="mini-kpi">
+          <div>
+            <h3>Activos</h3>
+            <div className="val">{totalActive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#ECFDF5', color: '#10B981' }}>🟢</div>
+        </div>
+        <div className="mini-kpi">
+          <div>
+            <h3>Inactivos</h3>
+            <div className="val">{totalInactive}</div>
+          </div>
+          <div className="mini-icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>🔴</div>
+        </div>
+      </div>
+
+      {/* Table Card */}
+      <div className="table-card">
+        <div className="table-filters">
+          <div className="filter-pills">
+            <div className={`filter-pill ${filterStatus === 'all' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('all'); setCurrentPage(1); }}>
+              Todos ({filteredUsers.length})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'active' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('active'); setCurrentPage(1); }}>
+              Activos ({totalActive})
+            </div>
+            <div className={`filter-pill ${filterStatus === 'inactive' ? 'active' : ''}`}
+              onClick={() => { setFilterStatus('inactive'); setCurrentPage(1); }}>
+              Inactivos ({totalInactive})
+            </div>
+          </div>
+          <div className="sort-info">
+            Ordenar por: <span className="sort-value">Nombre A-Z ↓</span>
+          </div>
+        </div>
+
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Identificación</th>
+                <th>Rol</th>
+                <th>Club</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="empty-cell">No se encontraron usuarios</td>
+                </tr>
+              ) : paginatedUsers.map(user => (
+                <tr key={user.id}>
+                  <td>
+                    <div className="table-cell-name">
+                      <div className="table-avatar" style={{
+                        background: avatarColor(user.first_name || 'U'), width: '40px', height: '40px',
+                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontWeight: '600', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      }}>{initials(user.first_name, user.last_name)}</div>
+                      <div>
+                        <strong>{user.first_name} {user.last_name}</strong>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>#{user.id} · {user.email || 'Sin email'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{user.identification_number}</td>
+                  <td><span className={ROLE_BADGE[user.role] || 'badge badge-inactive'}>{user.role}</span></td>
+                  <td><span className="badge badge-primary">{user.club?.name || `Club ${user.club_id}`}</span></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>✏️ Editar</button>
+                      {user.is_active !== false ? (
+                        <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
+                          onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>✕</button>
+                      ) : (
+                        <button className="btn btn-sm btn-success"
+                          onClick={async () => {
+                            try {
+                              await userService.reactivateUser(user.id);
+                              showSuccess('Usuario reactivado correctamente');
+                              fetchInitialData();
+                            } catch (err) { showError(err.message || 'Error al reactivar usuario'); }
+                          }}>Reactivar</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </select>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {filteredUsers.length > ITEMS_PER_PAGE && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '14px 20px',
+            borderTop: '1px solid var(--border-main)'
+          }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} de {filteredUsers.length} usuarios
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-main)',
+                  background: 'var(--bg-surface)',
+                  color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  opacity: currentPage === 1 ? 0.5 : 1
+                }}
+              >
+                ‹ Anterior
+              </button>
+              {getPageNumbers().map((page, idx) => (
+                page === '...' ? (
+                  <span key={`ellipsis-${idx}`} style={{ padding: '6px 4px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>...</span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: currentPage === page ? '1px solid #2563EB' : '1px solid var(--border-main)',
+                      background: currentPage === page ? '#2563EB' : 'var(--bg-surface)',
+                      color: currentPage === page ? 'white' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: currentPage === page ? 700 : 500,
+                      minWidth: '36px'
+                    }}
+                  >
+                    {page}
+                  </button>
+                )
+              ))}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-main)',
+                  background: 'var(--bg-surface)',
+                  color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  opacity: currentPage === totalPages ? 0.5 : 1
+                }}
+              >
+                Siguiente ›
+              </button>
+            </div>
           </div>
         )}
-      </div>
-
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Identificación</th>
-              <th>Rol</th>
-              <th>Club</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.length === 0 ? (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron usuarios</td></tr>
-            ) : filteredUsers.map(user => (
-              <tr key={user.id}>
-                <td>
-                  <div className="table-cell-name">
-                    <div className="table-avatar" style={{
-                      background: avatarColor(user.first_name || 'U'),
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontWeight: '600',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }}>
-                      {initials(user.first_name, user.last_name)}
-                    </div>
-                    <div>
-                      <strong>{user.first_name} {user.last_name}</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>#{user.id} {user.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{user.identification_number}</td>
-                <td><span className={ROLE_BADGE[user.role] || 'badge badge-inactive'}>{user.role}</span></td>
-                <td><span className="badge badge-primary">{user.club?.name || `Club ${user.club_id}`}</span></td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(user)}>Editar</button>
-                    {user.is_active !== false ? (
-                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }}
-                        onClick={() => { setUserToDelete(user); setIsConfirmOpen(true); }}>Eliminar</button>
-                    ) : (
-                      <button className="btn btn-sm btn-success"
-                        onClick={async () => {
-                          try {
-                            await userService.reactivateUser(user.id);
-                            showSuccess('Usuario reactivado correctamente');
-                            fetchInitialData();
-                          } catch (err) { showError(err.message || 'Error al reactivar usuario'); }
-                        }}>Reactivar</button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       <ConfirmModal
