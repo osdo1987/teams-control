@@ -251,27 +251,20 @@ const GroupList = () => {
 
       const groupId = editingGroup ? editingGroup.id : savedGroup.id;
 
-      // Bulk assign / remove athletes
-      const initialAthleteIds = editingGroup
-        ? athletes.filter(a => a.current_groups?.some(g => g.id === editingGroup.id)).map(a => a.id)
-        : [];
+      // Bulk assign athletes (only add, never remove from this menu)
+      if (editingGroup) {
+        const initialAthleteIds = athletes
+          .filter(a => a.current_groups?.some(g => g.id === editingGroup.id))
+          .map(a => a.id);
 
-      const toAdd = selectedAthleteIds.filter(id => !initialAthleteIds.includes(id));
-      const toRemove = initialAthleteIds.filter(id => !selectedAthleteIds.includes(id));
+        const toAdd = selectedAthleteIds.filter(id => !initialAthleteIds.includes(id));
 
-      await Promise.all([
-        ...toAdd.map(athId => groupService.assignAthlete(groupId, athId)),
-        ...toRemove.map(athId => {
-          const athObj = athletes.find(a => a.id === athId);
-          return athleteService.updateAthlete(athId, {
-            athlete: { birth_date: athObj.birth_date, phone: athObj.phone, address: athObj.address },
-            group_id: null
-          });
-        })
-      ]);
+        if (toAdd.length > 0) {
+          await Promise.all(toAdd.map(athId => groupService.assignAthlete(groupId, athId)));
+        }
+      }
 
       setIsModalOpen(false);
-      setError('');
       showSuccess(editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado correctamente');
       fetchData();
     } catch (err) { showError(err.message || 'Error al guardar grupo'); }
@@ -719,7 +712,8 @@ const GroupList = () => {
               <div style={{ borderTop: '1px dashed var(--border-main)', paddingTop: 14 }}>
                 <div className="form-group">
                   <label className="form-label">Horario Resumido (texto libre)</label>
-                  <input type="text" name="schedule" value={formData.schedule} onChange={handleInputChange} className="form-input" placeholder="Lun-Mie-Vie 5PM a 7PM" />
+                  <input type="text" name="schedule" value={formData.schedule} disabled className="form-input" placeholder="Lun-Mie-Vie 5PM a 7PM" />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>El horario resumido se genera automáticamente desde los bloques de horario.</small>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Lugar de Entrenamiento</label>
@@ -924,7 +918,9 @@ const GroupList = () => {
           {activeTab === 'athletes' && (
             <div>
               <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: 12 }}>
-                Asigna atletas sin grupo en lote a este grupo:
+                {editingGroup
+                  ? 'Los atletas ya asignados al grupo no pueden removerse desde aquí. Puedes agregar atletas sin grupo seleccionándolos.'
+                  : 'Asigna atletas sin grupo en lote a este grupo:'}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
                 {athletes.filter(a => {
@@ -932,25 +928,31 @@ const GroupList = () => {
                   const isUnassigned = !a.current_groups || a.current_groups.length === 0;
                   return isInThisGroup || isUnassigned;
                 }).map(athlete => {
+                  const isInThisGroup = a => a.current_groups?.some(g => g.id === editingGroup?.id);
+                  const alreadyInGroup = isInThisGroup(athlete);
                   const isSelected = selectedAthleteIds.includes(athlete.id);
                   return (
-                    <div key={athlete.id} onClick={() => handleAthleteSelect(athlete.id)}
+                    <div key={athlete.id} onClick={() => {
+                      if (alreadyInGroup) return; // No permitir deseleccionar atletas ya en el grupo
+                      handleAthleteSelect(athlete.id);
+                    }}
                       style={{
                         padding: '10px',
                         borderRadius: 8,
                         border: isSelected ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
-                        cursor: 'pointer',
+                        cursor: alreadyInGroup ? 'default' : 'pointer',
                         background: isSelected ? 'rgba(37,99,235,0.05)' : 'white',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        opacity: alreadyInGroup ? 0.85 : 1
                       }}>
                       <div>
                         <strong>{athlete.user?.first_name} {athlete.user?.last_name}</strong>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {athlete.user?.identification_number}</div>
                       </div>
                       <span className={`badge ${isSelected ? 'badge-success' : 'badge-inactive'}`}>
-                        {isSelected ? '✓ Seleccionado' : 'Sin asignar'}
+                        {alreadyInGroup ? '✓ En el grupo' : (isSelected ? '✓ Seleccionado' : 'Sin asignar')}
                       </span>
                     </div>
                   );
