@@ -31,6 +31,10 @@ const TrainerList = () => {
   const { showError, showSuccess } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   // Create modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({ ...INITIAL_USER_FORM });
@@ -62,6 +66,13 @@ const TrainerList = () => {
     const id = (t.identification_number || '').toString();
     return name.includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTrainers.length / ITEMS_PER_PAGE);
+  const paginatedTrainers = filteredTrainers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // --- CREATE ---
   const openCreate = () => {
@@ -157,12 +168,6 @@ const TrainerList = () => {
     finally { setIsConfirmOpen(false); setTrainerToDelete(null); }
   };
 
-  const tabStyle = (tab) => ({
-    padding: '8px 16px', border: 'none',
-    background: activeTab === tab ? 'var(--primary-color)' : 'transparent',
-    color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
-    borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, transition: 'all 0.2s'
-  });
 
   if (loading) return <div className="loading-state"><p>Cargando entrenadores...</p></div>;
 
@@ -195,9 +200,9 @@ const TrainerList = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredTrainers.length === 0 ? (
+            {paginatedTrainers.length === 0 ? (
               <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>No se encontraron entrenadores</td></tr>
-            ) : filteredTrainers.map(t => (
+            ) : paginatedTrainers.map(t => (
               <tr key={t.id}>
                 <td>
                   <div className="table-cell-name">
@@ -280,11 +285,11 @@ const TrainerList = () => {
 
       {/* Modal Perfil Entrenador */}
       <Modal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} title={`Perfil de ${selectedTrainer?.first_name}`}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: 'var(--bg-main)', padding: 4, borderRadius: 10 }}>
-          <button type="button" style={tabStyle('personal')} onClick={() => setActiveTab('personal')}>👤 Personal</button>
-          <button type="button" style={tabStyle('payment')} onClick={() => setActiveTab('payment')}>💰 Pago</button>
-          <button type="button" style={tabStyle('education')} onClick={() => setActiveTab('education')}>🎓 Educación</button>
-          <button type="button" style={tabStyle('experience')} onClick={() => setActiveTab('experience')}>📋 Experiencia</button>
+        <div className="profile-tabs">
+          <button type="button" className={`profile-tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>👤 Personal</button>
+          <button type="button" className={`profile-tab ${activeTab === 'payment' ? 'active' : ''}`} onClick={() => setActiveTab('payment')}>💰 Pago</button>
+          <button type="button" className={`profile-tab ${activeTab === 'education' ? 'active' : ''}`} onClick={() => setActiveTab('education')}>🎓 Educación</button>
+          <button type="button" className={`profile-tab ${activeTab === 'experience' ? 'active' : ''}`} onClick={() => setActiveTab('experience')}>📋 Experiencia</button>
         </div>
         <form onSubmit={handleProfileSubmit} style={{ display: 'contents' }}>
           {activeTab === 'personal' && (
@@ -350,6 +355,26 @@ const TrainerList = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Pagination */}
+      {filteredTrainers.length > ITEMS_PER_PAGE && (
+        <div className="pagination">
+          <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredTrainers.length)} de {filteredTrainers.length} resultados</span>
+          <div className="pagination-buttons">
+            <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}>←</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button key={page}
+                className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
+                onClick={() => setCurrentPage(page)}>
+                {page}
+              </button>
+            ))}
+            <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}>→</button>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
         title="Desactivar Entrenador" message={`¿Desactivar a ${trainerToDelete?.first_name} ${trainerToDelete?.last_name}? No podrá iniciar sesión hasta que sea reactivado.`} />

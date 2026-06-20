@@ -62,6 +62,10 @@ const GroupList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTrainerForChange, setSelectedTrainerForChange] = useState(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   // Inline category/trainer states
   const [isAddingCategoryInline, setIsAddingCategoryInline] = useState(false);
   const [inlineCategoryName, setInlineCategoryName] = useState('');
@@ -100,6 +104,13 @@ const GroupList = () => {
   const filteredGroups = groups.filter(g =>
     g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (g.category_obj?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination
+  const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE);
+  const paginatedGroups = filteredGroups.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
 
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -348,17 +359,6 @@ const GroupList = () => {
     }
   };
 
-  const tabStyle = (tab) => ({
-    padding: '8px 16px',
-    border: 'none',
-    background: activeTab === tab ? 'var(--primary-color)' : 'transparent',
-    color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '0.82rem',
-    fontWeight: 600,
-    transition: 'all 0.2s'
-  });
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando grupos...</div>;
 
@@ -441,9 +441,9 @@ const GroupList = () => {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-          {filteredGroups.length === 0 ? (
+          {paginatedGroups.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>No se encontraron grupos.</p>
-          ) : filteredGroups.map(group => {
+          ) : paginatedGroups.map(group => {
             // Parse schedule blocks for display
             let blocks = [];
             try {
@@ -532,6 +532,26 @@ const GroupList = () => {
         </div>
       )}
 
+      {/* Pagination */}
+      {filteredGroups.length > ITEMS_PER_PAGE && (
+        <div className="pagination" style={{ marginTop: '20px' }}>
+          <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredGroups.length)} de {filteredGroups.length} resultados</span>
+          <div className="pagination-buttons">
+            <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}>←</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button key={page}
+                className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
+                onClick={() => setCurrentPage(page)}>
+                {page}
+              </button>
+            ))}
+            <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}>→</button>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
         title="Desactivar Grupo"
@@ -539,11 +559,11 @@ const GroupList = () => {
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingGroup ? "Editar Grupo" : "Crear Nuevo Grupo"}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: 'var(--bg-main)', padding: 4, borderRadius: 10 }}>
-          <button type="button" style={tabStyle('general')} onClick={() => setActiveTab('general')}>📋 General</button>
-          <button type="button" style={tabStyle('schedule')} onClick={() => setActiveTab('schedule')}>🕐 Horario</button>
-          <button type="button" style={tabStyle('trainer')} onClick={() => setActiveTab('trainer')}>🏅 Entrenador</button>
-          <button type="button" style={tabStyle('athletes')} onClick={() => setActiveTab('athletes')}>🏃 Atletas</button>
+        <div className="profile-tabs">
+          <button type="button" className={`profile-tab ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>📋 General</button>
+          <button type="button" className={`profile-tab ${activeTab === 'schedule' ? 'active' : ''}`} onClick={() => setActiveTab('schedule')}>🕐 Horario</button>
+          <button type="button" className={`profile-tab ${activeTab === 'trainer' ? 'active' : ''}`} onClick={() => setActiveTab('trainer')}>🏅 Entrenador</button>
+          <button type="button" className={`profile-tab ${activeTab === 'athletes' ? 'active' : ''}`} onClick={() => setActiveTab('athletes')}>🏃 Atletas</button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'contents' }}>

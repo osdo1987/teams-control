@@ -26,8 +26,8 @@ const TestList = () => {
   const [sessions, setSessions] = useState([]);
   const [stats, setStats] = useState(null);
   const [progress, setProgress] = useState([]);
-  const [loading, setLoading] = useState(true); // Keep loading state
-  const { showError, showSuccess } = useToast(); // Use toast for errors/success
+  const [loading, setLoading] = useState(true);
+  const { showError, showSuccess } = useToast();
 
   // Modal state
   const [isTemplateModal, setIsTemplateModal] = useState(false);
@@ -46,15 +46,18 @@ const TestList = () => {
   const [compareAthletes, setCompareAthletes] = useState([]);
   const [expandedAthlete, setExpandedAthlete] = useState(null);
   const [expandedSession, setExpandedSession] = useState(null);
-  const [expandedSessionAthlete, setExpandedSessionAthlete] = useState({}); // { sessionId-athleteId: true/false }
+  const [expandedSessionAthlete, setExpandedSessionAthlete] = useState({});
   const [athleteTestData, setAthleteTestData] = useState({});
   const [selectedCompareTest, setSelectedCompareTest] = useState('');
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => { if (activeTab === 'progress') fetchProgress(); }, [activeTab, filterGroup, filterTemplate, filterFrom, filterTo]);
 
   const fetchData = async () => {
-    // clearMessages(); // No longer needed with toast
     try {
       const [t, a, g, r, s, st] = await Promise.all([
         testService.getTemplates(), athleteService.getAthletes(),
@@ -94,7 +97,6 @@ const TestList = () => {
     const filtered = progress.filter(p =>
       compareAthletes.includes(p.athlete_id) && p.template_name === selectedCompareTest
     );
-    // Build date-indexed dataset
     const dateMap = {};
     filtered.forEach(p => {
       p.values.forEach(v => {
@@ -130,6 +132,13 @@ const TestList = () => {
   }, [progress]);
 
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // Pagination for progress table
+  const totalProgressPages = Math.ceil(progress.length / ITEMS_PER_PAGE);
+  const paginatedProgress = progress.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const openCreateTemplate = () => { setEditingTemplate(null); setFormData({ name: '', description: '', category: 'PERSONALIZADO', unit: '', higher_is_better: true }); setIsTemplateModal(true); };
   const openEditTemplate = (t) => { setEditingTemplate(t); setFormData({ name: t.name, description: t.description || '', category: t.category, unit: t.unit, higher_is_better: t.higher_is_better }); setIsTemplateModal(true); };
@@ -188,11 +197,11 @@ const TestList = () => {
         </div>
       </div>
 
-      <div className="tabs" style={{ display: 'flex', gap: 0, marginBottom: '24px', borderBottom: '2px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <button onClick={() => setActiveTab('progress')} className={`btn ${activeTab === 'progress' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📊 Progreso</button>
-        <button onClick={() => setActiveTab('sessions')} className={`btn ${activeTab === 'sessions' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📋 Sesiones</button>
-        <button onClick={() => setActiveTab('templates')} className={`btn ${activeTab === 'templates' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>📝 Plantillas</button>
-        <button onClick={() => setActiveTab('byathlete')} className={`btn ${activeTab === 'byathlete' ? 'btn-primary' : 'btn-ghost'}`} style={{ borderRadius: 0, flex: 1, whiteSpace: 'nowrap' }}>👤 Por Atleta</button>
+      <div className="profile-tabs">
+        <button type="button" className={`profile-tab ${activeTab === 'progress' ? 'active' : ''}`} onClick={() => setActiveTab('progress')}>📊 Progreso</button>
+        <button type="button" className={`profile-tab ${activeTab === 'sessions' ? 'active' : ''}`} onClick={() => setActiveTab('sessions')}>📋 Sesiones</button>
+        <button type="button" className={`profile-tab ${activeTab === 'templates' ? 'active' : ''}`} onClick={() => setActiveTab('templates')}>📝 Plantillas</button>
+        <button type="button" className={`profile-tab ${activeTab === 'byathlete' ? 'active' : ''}`} onClick={() => setActiveTab('byathlete')}>👤 Por Atleta</button>
       </div>
 
       {/* ============= TAB: PROGRESO ============= */}
@@ -338,7 +347,7 @@ const TestList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {progress.filter(p => !selectedCompareTest || p.template_name === selectedCompareTest).map(p => (
+                  {paginatedProgress.filter(p => !selectedCompareTest || p.template_name === selectedCompareTest).map(p => (
                     <tr key={`${p.athlete_id}-${p.template_id}`}>
                       <td>
                         <input type="checkbox" checked={compareAthletes.includes(p.athlete_id)}
@@ -362,6 +371,26 @@ const TestList = () => {
               </table>
             </div>
           </div>
+
+          {/* Pagination for Progress Table */}
+          {progress.length > ITEMS_PER_PAGE && (
+            <div className="pagination" style={{ marginTop: '16px' }}>
+              <span>Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, progress.length)} de {progress.length} resultados</span>
+              <div className="pagination-buttons">
+                <button className="action-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}>←</button>
+                {Array.from({ length: totalProgressPages }, (_, i) => i + 1).map(page => (
+                  <button key={page}
+                    className={`action-btn ${page === currentPage ? 'active-page' : ''}`}
+                    onClick={() => setCurrentPage(page)}>
+                    {page}
+                  </button>
+                ))}
+                <button className="action-btn" onClick={() => setCurrentPage(Math.min(totalProgressPages, currentPage + 1))}
+                  disabled={currentPage === totalProgressPages}>→</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -382,7 +411,6 @@ const TestList = () => {
               {expandedSession === s.id && (
                 <div className="session-body">
                   {s.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{s.notes}</p>}
-                  {/* Group results by athlete with accordion */}
                   {(() => {
                     const athleteMap = {};
                     (s.results || []).forEach(r => {
@@ -489,7 +517,6 @@ const TestList = () => {
             Haz clic en un atleta para ver sus resultados.
           </p>
 
-          {/* Group results by athlete */}
           {(() => {
             const grouped = {};
             results.forEach(r => {

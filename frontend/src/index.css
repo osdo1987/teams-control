@@ -3470,6 +3470,26 @@ select.form-input {
   overflow-x: auto;
 }
 
+.profile-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.profile-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.profile-tab.active {
+  background: var(--brand-500);
+  color: #fff;
+}
+
 .profile-tab-content {
   min-height: 400px;
 }

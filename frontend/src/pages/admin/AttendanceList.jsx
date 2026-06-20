@@ -277,30 +277,9 @@ const AttendanceList = () => {
       </div>
 
       {/* Tab Switcher */}
-      <div style={{
-        display: 'flex', gap: 4, marginBottom: 24,
-        background: 'var(--gray-100)', borderRadius: 12, padding: 4,
-        width: 'fit-content',
-      }}>
-        {[
-          { key: 'take', label: '📝 Tomar Asistencia', },
-          { key: 'history', label: '📊 Historial y Estadísticas', },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              padding: '10px 20px', borderRadius: 10, border: 'none',
-              fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
-              background: activeTab === tab.key ? '#fff' : 'transparent',
-              color: activeTab === tab.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-              boxShadow: activeTab === tab.key ? 'var(--shadow-sm)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="profile-tabs">
+        <button type="button" className={`profile-tab ${activeTab === 'take' ? 'active' : ''}`} onClick={() => setActiveTab('take')}>📝 Tomar Asistencia</button>
+        <button type="button" className={`profile-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>📊 Historial y Estadísticas</button>
       </div>
 
       {/* ═══════════ TAB: TAKE ATTENDANCE ═══════════ */}
@@ -367,30 +346,10 @@ const AttendanceList = () => {
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
 
-            <div style={{
-              display: 'flex', gap: 2, background: 'var(--gray-100)',
-              borderRadius: 10, padding: 3,
-            }}>
-              {[
-                { key: 'daily', label: '📅 Diario' },
-                { key: 'weekly', label: '📆 Semanal' },
-                { key: 'monthly', label: '🗓️ Mensual' },
-              ].map(v => (
-                <button
-                  key={v.key}
-                  onClick={() => setHistoryView(v.key)}
-                  style={{
-                    padding: '7px 14px', borderRadius: 8, border: 'none',
-                    fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer',
-                    background: historyView === v.key ? '#fff' : 'transparent',
-                    color: historyView === v.key ? 'var(--brand-600)' : 'var(--text-secondary)',
-                    boxShadow: historyView === v.key ? 'var(--shadow-xs)' : 'none',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {v.label}
-                </button>
-              ))}
+            <div className="profile-tabs">
+              <button type="button" className={`profile-tab ${historyView === 'daily' ? 'active' : ''}`} onClick={() => setHistoryView('daily')}>📅 Diario</button>
+              <button type="button" className={`profile-tab ${historyView === 'weekly' ? 'active' : ''}`} onClick={() => setHistoryView('weekly')}>📆 Semanal</button>
+              <button type="button" className={`profile-tab ${historyView === 'monthly' ? 'active' : ''}`} onClick={() => setHistoryView('monthly')}>🗓️ Mensual</button>
             </div>
           </div>
 
