@@ -1073,7 +1073,7 @@ const AttendanceList = () => {
   };
 
   return (
-    <div className="attendance-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '10px' }}>
+    <div className="attendance-container" style={{ width: '100%', maxWidth: '100%', margin: '0 auto', padding: '0 20px 20px' }}>
       <style dangerouslySetInnerHTML={{ __html: styles }} />
 
       {/* Header */}
