@@ -1,38 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { groupService } from '../../services/groupService';
 import { authService } from '../../services/authService';
 import { categoryService } from '../../services/categoryService';
 import { athleteService } from '../../services/athleteService';
 import { userService } from '../../services/userService';
-import Modal from '../../components/UI/Modal';
+import Drawer from '../../components/UI/Drawer';
 import ConfirmModal from '../../components/UI/ConfirmModal';
+import Modal from '../../components/UI/Modal';
 import { useToast } from '../../contexts/ToastContext';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#f59e0b'];
 const groupColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
 
 const LEVELS = [
-  'Recreativo',
-  'Principiante',
-  'Básico',
-  'Intermedio',
-  'Avanzado',
-  'Competitivo',
-  'Élite',
-  'Semiprofesional',
-  'Profesional',
-  'Pre-competitivo'
+  'Recreativo', 'Principiante', 'Básico', 'Intermedio', 'Avanzado',
+  'Competitivo', 'Élite', 'Semiprofesional', 'Profesional', 'Pre-competitivo'
 ];
 
-const WEEK_DAYS = [
-  'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'
-];
+const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-const STATUS_BADGE = {
-  ACTIVE: 'badge badge-success',
-  INACTIVE: 'badge badge-inactive',
-  FULL: 'badge badge-warning',
+const CATEGORY_CLASSES = {
+  'menores': 'cat-menores',
+  'juveniles': 'cat-juveniles',
+  'mayores': 'cat-mayores',
 };
 
 const INITIAL_FORM = {
@@ -40,6 +31,28 @@ const INITIAL_FORM = {
   max_capacity: '', schedule: '', schedule_days: '', schedule_start_time: '',
   schedule_end_time: '', schedule_blocks: '', training_location: '', level: '', season: '',
   monthly_fee: '', trainer_ids: []
+};
+
+// ─── Accordion component (defined OUTSIDE to avoid remounting on every render) ──
+const AccordionSection = ({ title, icon, defaultOpen = false, children }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="accordion-section">
+      <button
+        className={`accordion-header ${open ? 'active' : ''}`}
+        onClick={() => setOpen(!open)}
+        type="button"
+      >
+        <span className="acc-title">{icon} {title}</span>
+        <span className="acc-arrow">▼</span>
+      </button>
+      <div className={`accordion-content ${open ? 'active' : ''}`}>
+        <div className="inner-padding">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const GroupList = () => {
@@ -51,46 +64,22 @@ const GroupList = () => {
   const [selectedAthleteIds, setSelectedAthleteIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showError, showSuccess } = useToast();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  // Drawers
+  const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [viewGroup, setViewGroup] = useState(null);
+  const [viewGroupAthletes, setViewGroupAthletes] = useState([]);
+  const [loadingAthletes, setLoadingAthletes] = useState(false);
+
+  // Edit state
   const [editingGroup, setEditingGroup] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
-  const [activeTab, setActiveTab] = useState('general');
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTrainerForChange, setSelectedTrainerForChange] = useState(null);
+  const [scheduleBlocks, setScheduleBlocks] = useState([]);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-
-  const goToPage = (page) => {
-    setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pages = [];
-    const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE);
-    const maxVisible = 5;
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      let start = Math.max(2, currentPage - 1);
-      let end = Math.min(totalPages - 1, currentPage + 1);
-      if (currentPage <= 3) { start = 2; end = 4; }
-      if (currentPage >= totalPages - 2) { start = totalPages - 3; end = totalPages - 1; }
-      if (start > 2) pages.push('...');
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (end < totalPages - 1) pages.push('...');
-      pages.push(totalPages);
-    }
-    return pages;
-  };
-
-  // Inline category/trainer states
+  // Inline creation
   const [isAddingCategoryInline, setIsAddingCategoryInline] = useState(false);
   const [inlineCategoryName, setInlineCategoryName] = useState('');
   const [isAddingTrainerInline, setIsAddingTrainerInline] = useState(false);
@@ -98,22 +87,20 @@ const GroupList = () => {
     first_name: '', last_name: '', identification_number: '', phone: '', password: 'Entrenador123*'
   });
 
-  // Multi-block schedule
-  const [scheduleBlocks, setScheduleBlocks] = useState([]);
+  // Filters & Search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+
+  // Category modal
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const user = authService.getCurrentUser();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    // clearMessages(); // No longer needed with toast
     try {
       const [groupsData, trainersData, categoriesData, athletesData] = await Promise.all([
         groupService.getGroups(),
@@ -129,18 +116,137 @@ const GroupList = () => {
     finally { setLoading(false); }
   };
 
-  const filteredGroups = groups.filter(g =>
-    g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (g.category_obj?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ─── Compute KPIs ────────────────────────────────────────────
+  const activeGroups = groups.filter(g => g.status !== 'INACTIVE');
+  const totalAthletes = groups.reduce((sum, g) => sum + (g.athletes_count ?? g.athletes?.length ?? 0), 0);
+  const totalTrainers = new Set();
+  groups.forEach(g => (g.trainers || []).forEach(t => totalTrainers.add(t.id)));
+  const totalCapacity = groups.reduce((sum, g) => sum + (g.max_capacity || 0), 0);
+  const availableSpots = totalCapacity - totalAthletes;
 
-  // Pagination
-  const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE);
-  const paginatedGroups = filteredGroups.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  // ─── Category badge color helper ─────────────────────────────
+  const CATEGORY_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#f59e0b', '#84cc16', '#14b8a6', '#a855f7'];
+  const getCategoryColor = (catId) => CATEGORY_COLORS[(catId || 0) % CATEGORY_COLORS.length];
 
+  // ─── Filters ─────────────────────────────────────────────────
+  const filteredGroups = groups.filter(g => {
+    const matchesSearch = g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (g.category_obj?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filterCategory === 'all') return true;
+    return g.category_id === parseInt(filterCategory);
+  });
+
+  // ─── Filter pills (dynamic from actual categories) ───────────
+  const filterOptions = [
+    { key: 'all', label: `Todos los Grupos (${groups.length})` },
+    ...categories.map(cat => ({
+      key: cat.id.toString(),
+      label: `${cat.name} (${groups.filter(g => g.category_id === cat.id).length})`
+    })),
+  ];
+
+  // ─── Group helpers ───────────────────────────────────────────
+  const getScheduleBlocks = (group) => {
+    let blocks = [];
+    try {
+      blocks = group.schedule_blocks ? JSON.parse(group.schedule_blocks) : [];
+    } catch { blocks = []; }
+    return blocks;
+  };
+
+  const getCapacityPercent = (group) => {
+    const current = group.athletes_count ?? group.athletes?.length ?? 0;
+    const max = group.max_capacity || 1;
+    return Math.min(Math.round((current / max) * 100), 100);
+  };
+
+  const getCapacityFillClass = (percent) => {
+    if (percent >= 90) return 'fill-red';
+    if (percent >= 60) return 'fill-orange';
+    return 'fill-green';
+  };
+
+  const getStatusText = (group) => {
+    const current = group.athletes_count ?? group.athletes?.length ?? 0;
+    const max = group.max_capacity;
+    if (max && current >= max) return 'Lleno';
+    return 'Activo';
+  };
+
+  // ─── Drawer: View ────────────────────────────────────────────
+  const openViewDrawer = async (group) => {
+    setViewGroup(group);
+    setViewDrawerOpen(true);
+    setLoadingAthletes(true);
+    try {
+      const athletesData = await groupService.getGroupAthletes(group.id);
+      setViewGroupAthletes(athletesData || []);
+    } catch (err) {
+      setViewGroupAthletes([]);
+    } finally {
+      setLoadingAthletes(false);
+    }
+  };
+
+  const closeViewDrawer = () => {
+    setViewDrawerOpen(false);
+    setTimeout(() => {
+      setViewGroup(null);
+      setViewGroupAthletes([]);
+    }, 300);
+  };
+
+  // ─── Drawer: Edit ────────────────────────────────────────────
+  const openCreateDrawer = () => {
+    setEditingGroup(null);
+    setFormData({ ...INITIAL_FORM, club_id: user.club_id });
+    setSelectedAthleteIds([]);
+    setScheduleBlocks([]);
+    setIsAddingCategoryInline(false);
+    setIsAddingTrainerInline(false);
+    setEditDrawerOpen(true);
+  };
+
+  const openEditDrawer = (group) => {
+    setEditingGroup(group);
+    let parsedBlocks = getScheduleBlocks(group);
+    if (parsedBlocks.length === 0 && group.schedule_days && group.schedule_start_time && group.schedule_end_time) {
+      const days = (group.schedule_days || '').split(',').filter(Boolean);
+      parsedBlocks = [{ days, start: group.schedule_start_time || '', end: group.schedule_end_time || '' }];
+    }
+    setScheduleBlocks(parsedBlocks);
+    setFormData({
+      name: group.name,
+      club_id: group.club_id,
+      category_id: group.category_id || '',
+      description: group.description || '',
+      max_capacity: group.max_capacity || '',
+      schedule: group.schedule || '',
+      schedule_days: group.schedule_days || '',
+      schedule_start_time: group.schedule_start_time || '',
+      schedule_end_time: group.schedule_end_time || '',
+      schedule_blocks: group.schedule_blocks || '',
+      training_location: group.training_location || '',
+      level: group.level || '',
+      season: group.season || '',
+      monthly_fee: group.monthly_fee || '',
+      trainer_ids: (group.trainers || []).map(t => t.id)
+    });
+    const currentAthleteIds = athletes
+      .filter(a => a.current_groups?.some(g => g.id === group.id))
+      .map(a => a.id);
+    setSelectedAthleteIds(currentAthleteIds);
+    setIsAddingCategoryInline(false);
+    setIsAddingTrainerInline(false);
+    setEditDrawerOpen(true);
+  };
+
+  const closeEditDrawer = () => {
+    setEditDrawerOpen(false);
+  };
+
+  // ─── Form handlers ───────────────────────────────────────────
   const handleInputChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleTrainerSelect = (trainerId) => {
@@ -157,14 +263,11 @@ const GroupList = () => {
   const handleAthleteSelect = (athleteId) => {
     const id = parseInt(athleteId);
     setSelectedAthleteIds(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(aId => aId !== id);
-      }
+      if (prev.includes(id)) return prev.filter(aId => aId !== id);
       return [...prev, id];
     });
   };
 
-  // Multi-block schedule helpers
   const addScheduleBlock = () => {
     setScheduleBlocks([...scheduleBlocks, { days: [], start: '', end: '' }]);
   };
@@ -194,69 +297,6 @@ const GroupList = () => {
     return blocks.map(b => `${b.days.join('-')} ${b.start} a ${b.end}`).join(' | ');
   };
 
-  const openCreateModal = () => {
-    setEditingGroup(null);
-    setFormData({ ...INITIAL_FORM, club_id: user.club_id });
-    setSelectedAthleteIds([]);
-    setScheduleBlocks([]);
-    setSelectedTrainerForChange(null);
-    setIsAddingCategoryInline(false);
-    setIsAddingTrainerInline(false);
-    setInlineCategoryName('');
-    setActiveTab('general');
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (group) => {
-    setEditingGroup(group);
-
-    // Parse existing schedule_blocks from JSON or create from legacy fields
-    let parsedBlocks = [];
-    try {
-      parsedBlocks = group.schedule_blocks ? JSON.parse(group.schedule_blocks) : [];
-    } catch {
-      parsedBlocks = [];
-    }
-    // If no blocks but legacy schedule fields exist, create one block
-    if (parsedBlocks.length === 0 && group.schedule_days && group.schedule_start_time && group.schedule_end_time) {
-      const days = (group.schedule_days || '').split(',').filter(Boolean);
-      parsedBlocks = [{ days, start: group.schedule_start_time || '', end: group.schedule_end_time || '' }];
-    }
-
-    setScheduleBlocks(parsedBlocks);
-
-    setFormData({
-      name: group.name,
-      club_id: group.club_id,
-      category_id: group.category_id || '',
-      description: group.description || '',
-      max_capacity: group.max_capacity || '',
-      schedule: group.schedule || '',
-      schedule_days: group.schedule_days || '',
-      schedule_start_time: group.schedule_start_time || '',
-      schedule_end_time: group.schedule_end_time || '',
-      schedule_blocks: group.schedule_blocks || '',
-      training_location: group.training_location || '',
-      level: group.level || '',
-      season: group.season || '',
-      monthly_fee: group.monthly_fee || '',
-      trainer_ids: (group.trainers || []).map(t => t.id)
-    });
-
-    // Find athletes currently in this group
-    const currentAthleteIds = athletes
-      .filter(a => a.current_groups?.some(g => g.id === group.id))
-      .map(a => a.id);
-    setSelectedAthleteIds(currentAthleteIds);
-
-    setIsAddingCategoryInline(false);
-    setIsAddingTrainerInline(false);
-    setInlineCategoryName('');
-    setSelectedTrainerForChange(null);
-    setActiveTab('general');
-    setIsModalOpen(true);
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
     if (!formData.trainer_ids || formData.trainer_ids.length === 0) {
@@ -264,7 +304,6 @@ const GroupList = () => {
       return;
     }
     try {
-      // Build schedule_blocks JSON
       const validBlocks = scheduleBlocks.filter(b => b.days.length > 0 && b.start && b.end);
       const scheduleBlocksJson = validBlocks.length > 0 ? JSON.stringify(validBlocks) : null;
 
@@ -290,34 +329,20 @@ const GroupList = () => {
 
       const groupId = editingGroup ? editingGroup.id : savedGroup.id;
 
-      // Bulk assign athletes (only add, never remove from this menu)
       if (editingGroup) {
         const initialAthleteIds = athletes
           .filter(a => a.current_groups?.some(g => g.id === editingGroup.id))
           .map(a => a.id);
-
         const toAdd = selectedAthleteIds.filter(id => !initialAthleteIds.includes(id));
-
         if (toAdd.length > 0) {
           await Promise.all(toAdd.map(athId => groupService.assignAthlete(groupId, athId)));
         }
       }
 
-      setIsModalOpen(false);
+      setEditDrawerOpen(false);
       showSuccess(editingGroup ? 'Grupo actualizado correctamente' : 'Grupo creado correctamente');
       fetchData();
     } catch (err) { showError(err.message || 'Error al guardar grupo'); }
-  };
-
-  const handleCreateCategory = async (e) => {
-    e.preventDefault();
-    if (!newCategoryName) return;
-    try {
-      await categoryService.createCategory({ name: newCategoryName, club_id: user.club_id });
-      setNewCategoryName('');
-      showSuccess('Categoría creada correctamente');
-      fetchData();
-    } catch (err) { showError(err.message || 'Error al crear categoría'); }
   };
 
   const handleCreateCategoryInline = async (e) => {
@@ -365,14 +390,6 @@ const GroupList = () => {
     } catch (err) { showError(err.message || 'Error al crear entrenador'); }
   };
 
-  const handleDeleteCategory = async (id) => {
-    try {
-      await categoryService.deleteCategory(id);
-      showSuccess('Categoría eliminada correctamente');
-      fetchData();
-    } catch (err) { showError(err.message || 'Error al eliminar categoría'); }
-  };
-
   const confirmDelete = async () => {
     if (!groupToDelete) return;
     try {
@@ -387,171 +404,246 @@ const GroupList = () => {
     }
   };
 
+  // ─── Refresh only categories (avoids full loading state) ────
+  const refreshCategories = async () => {
+    try {
+      const categoriesData = await categoryService.getCategories();
+      setCategories(categoriesData || []);
+    } catch (err) {
+      showError(err.message || 'Error al cargar categorías');
+    }
+  };
+
+  // ─── Category Modal handlers ─────────────────────────────────
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategoryName) return;
+    try {
+      await categoryService.createCategory({ name: newCategoryName, club_id: user.club_id });
+      setNewCategoryName('');
+      setIsCategoryModalOpen(false);
+      showSuccess('Categoría creada correctamente');
+      await refreshCategories();
+    } catch (err) { showError(err.message || 'Error al crear categoría'); }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      await categoryService.deleteCategory(id);
+      showSuccess('Categoría eliminada correctamente');
+      await refreshCategories();
+    } catch (err) { showError(err.message || 'Error al eliminar categoría'); }
+  };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando grupos...</div>;
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="group-list-v2">
+      {/* HEADER */}
+      <div className="header-v2">
         <div>
-          <h1>Grupos de {user.club_name}</h1>
-          <p className="text-muted">Gestiona los grupos de {user.sport || 'Fútbol'} y categorías.</p>
+          <h1>Gestión de Grupos</h1>
+          <p>Administra los equipos, categorías, entrenadores y sedes del club.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost" onClick={() => setIsCategoryModalOpen(true)}>⚙️ Categorías</button>
-          <button className="btn btn-primary" onClick={openCreateModal}>+ Nuevo Grupo</button>
+        <div className="header-actions-v2">
+          <div className="search-bar-v2">
+            <span>🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar grupo, entrenador o sede..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="btn-primary-v2" onClick={openCreateDrawer}>
+            + Nuevo Grupo
+          </button>
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="🔍 Buscar grupo por nombre o categoría..."
-          className="form-input"
-          style={{ borderRadius: '12px' }}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* KPIs MINI */}
+      <div className="grid-4-v2">
+        <div className="mini-kpi-v2">
+          <div>
+            <h3>Grupos Activos</h3>
+            <div className="val">{activeGroups.length}</div>
+          </div>
+          <div className="mini-icon-v2" style={{ background: '#EFF6FF', color: '#2563EB' }}>⚽</div>
+        </div>
+        <div className="mini-kpi-v2">
+          <div>
+            <h3>Total Atletas</h3>
+            <div className="val">{totalAthletes}</div>
+          </div>
+          <div className="mini-icon-v2" style={{ background: '#ECFDF5', color: '#10B981' }}>👥</div>
+        </div>
+        <div className="mini-kpi-v2">
+          <div>
+            <h3>Entrenadores</h3>
+            <div className="val">{totalTrainers.size}</div>
+          </div>
+          <div className="mini-icon-v2" style={{ background: '#FEF3C7', color: '#F59E0B' }}>🧢</div>
+        </div>
+        <div className="mini-kpi-v2">
+          <div>
+            <h3>Cupos Disponibles</h3>
+            <div className="val">{Math.max(0, availableSpots)}</div>
+          </div>
+          <div className="mini-icon-v2" style={{ background: '#F5F3FF', color: '#8B5CF6' }}>🟢</div>
+        </div>
       </div>
 
+      {/* FILTERS */}
+      <div className="filters-bar-v2">
+        <div className="filter-pills-v2">
+          {filterOptions.map(opt => (
+            <div
+              key={opt.key}
+              className={`filter-pill-v2 ${filterCategory === opt.key ? 'active' : ''}`}
+              onClick={() => setFilterCategory(opt.key)}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+        <div>
+          <button className="btn btn-ghost btn-sm" onClick={() => setIsCategoryModalOpen(true)}>
+            ⚙️ Categorías
+          </button>
+        </div>
+      </div>
+
+      {/* GROUPS GRID */}
       {groups.length === 0 ? (
-        <div style={{
-          background: 'white',
-          border: '1px dashed var(--border-color)',
-          borderRadius: '16px',
-          padding: '40px',
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '40px auto',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>¡Te damos la bienvenida a la gestión de Grupos! 🚀</h2>
-          <p className="text-muted" style={{ marginBottom: '24px', fontSize: '0.9rem' }}>Para comenzar a operar, te recomendamos seguir estos sencillos pasos:</p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: categories.length > 0 ? '#10b981' : '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', flexShrink: 0 }}>
+        <div className="empty-state-v2">
+          <div className="empty-icon">⚽</div>
+          <h2>¡Te damos la bienvenida a la gestión de Grupos! 🚀</h2>
+          <p>Para comenzar a operar, te recomendamos seguir estos sencillos pasos:</p>
+          <div className="steps-v2">
+            <div className="step-item">
+              <div className={`step-num ${categories.length > 0 ? 'done' : ''}`}>
                 {categories.length > 0 ? '✓' : '1'}
               </div>
               <div>
                 <strong>Definir Categorías</strong>
-                <p className="text-muted" style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>Categorías por edad o nivel (ej: Sub-15, Principiantes). {categories.length > 0 ? <span style={{ color: '#10b981' }}>(Listo: {categories.length} creadas)</span> : <button className="btn btn-link btn-sm" style={{ padding: 0, height: 'auto', fontSize: '0.8rem', border: 'none', background: 'transparent', color: 'var(--primary-color)', cursor: 'pointer' }} onClick={() => setIsCategoryModalOpen(true)}>Crear ahora</button>}</p>
+                <p>Categorías por edad o nivel (ej: Sub-15, Principiantes).</p>
+                {categories.length > 0 ? (
+                  <span style={{ color: '#10B981', fontSize: '0.8rem' }}>(Listo: {categories.length} creadas)</span>
+                ) : (
+                  <button className="btn btn-link btn-sm" style={{ padding: 0, border: 'none', background: 'transparent', color: '#2563EB', cursor: 'pointer', fontSize: '0.8rem' }} onClick={() => setIsCategoryModalOpen(true)}>Crear ahora</button>
+                )}
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: trainers.length > 0 ? '#10b981' : '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', flexShrink: 0 }}>
+            <div className="step-item">
+              <div className={`step-num ${trainers.length > 0 ? 'done' : ''}`}>
                 {trainers.length > 0 ? '✓' : '2'}
               </div>
               <div>
                 <strong>Registrar Entrenadores</strong>
-                <p className="text-muted" style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>Los encargados de dirigir cada grupo. {trainers.length > 0 ? <span style={{ color: '#10b981' }}>(Listo: {trainers.length} registrados)</span> : <button className="btn btn-link btn-sm" style={{ padding: 0, height: 'auto', fontSize: '0.8rem', border: 'none', background: 'transparent', color: 'var(--primary-color)', cursor: 'pointer' }} onClick={() => navigate('/admin/trainers')}>Ir a Entrenadores</button>}</p>
+                <p>Los encargados de dirigir cada grupo.</p>
+                {trainers.length > 0 ? (
+                  <span style={{ color: '#10B981', fontSize: '0.8rem' }}>(Listo: {trainers.length} registrados)</span>
+                ) : (
+                  <button className="btn btn-link btn-sm" style={{ padding: 0, border: 'none', background: 'transparent', color: '#2563EB', cursor: 'pointer', fontSize: '0.8rem' }} onClick={() => navigate('/admin/trainers')}>Ir a Entrenadores</button>
+                )}
               </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.85rem', flexShrink: 0 }}>
-                3
-              </div>
+            <div className="step-item">
+              <div className="step-num">3</div>
               <div>
                 <strong>Crear tu primer Grupo</strong>
-                <p className="text-muted" style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>Asocia un entrenador, una categoría y horarios. <button className="btn btn-link btn-sm" style={{ padding: 0, height: 'auto', fontSize: '0.8rem', border: 'none', background: 'transparent', color: 'var(--primary-color)', cursor: 'pointer' }} onClick={openCreateModal} disabled={trainers.length === 0 || categories.length === 0}>Crear grupo</button></p>
+                <p>Asocia un entrenador, una categoría y horarios.</p>
+                <button className="btn btn-link btn-sm" style={{ padding: 0, border: 'none', background: 'transparent', color: '#2563EB', cursor: 'pointer', fontSize: '0.8rem' }} onClick={openCreateDrawer}>Crear grupo</button>
               </div>
             </div>
           </div>
-
-          <button className="btn btn-primary" onClick={openCreateModal} disabled={trainers.length === 0 || categories.length === 0}>
-            + Crear Grupo
-          </button>
-          {(trainers.length === 0 || categories.length === 0) && (
-            <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '12px' }}>* Debes completar el paso 1 y 2 antes de poder crear un grupo.</p>
-          )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-          {paginatedGroups.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>No se encontraron grupos.</p>
-          ) : paginatedGroups.map(group => {
-            // Parse schedule blocks for display
-            let blocks = [];
-            try {
-              blocks = group.schedule_blocks ? JSON.parse(group.schedule_blocks) : [];
-            } catch { blocks = []; }
-            const hasMultiBlock = blocks.length > 1;
+        <div className="groups-grid-v2">
+          {filteredGroups.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
+              No se encontraron grupos con los filtros actuales.
+            </p>
+          ) : filteredGroups.map(group => {
+            const blocks = getScheduleBlocks(group);
+            const capacityPercent = getCapacityPercent(group);
+            const currentCount = group.athletes_count ?? group.athletes?.length ?? 0;
 
             return (
-              <div key={group.id} className="card" style={{ padding: '22px', cursor: 'default' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: groupColor(group.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', marginBottom: 14 }}>
-                    {user.sport?.includes('Baloncesto') ? '🏀' : '⚽'}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <span className={STATUS_BADGE[group.status] || 'badge badge-success'}>{group.status || 'ACTIVE'}</span>
-                    {group.is_active !== false ? (
-                      <button className="btn btn-sm" style={{ background: '#fee2e2', color: '#b91c1c', border: 'none' }} onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}>
-                        ✕
-                      </button>
-                    ) : (
-                      <button className="btn btn-sm btn-success" onClick={async () => {
-                        try {
-                          await groupService.reactivateGroup(group.id);
-                          showSuccess('Grupo reactivado correctamente');
-                          fetchData();
-                        } catch (err) { showError(err.message || 'Error al reactivar grupo'); }
-                      }}>Reactivar</button>
+              <div key={group.id} className="group-card-v2">
+                <div className="card-top-v2">
+                  <div>
+                    <div className="group-name-v2">{group.name}</div>
+                    {group.category_obj?.name && (
+                      <div className="category-badge-v2" style={{ background: `${getCategoryColor(group.category_id)}20`, color: getCategoryColor(group.category_id), border: `1px solid ${getCategoryColor(group.category_id)}40` }}>
+                        {group.category_obj.name}
+                      </div>
                     )}
                   </div>
+                  <div className="status-badge-v2">🟢 {getStatusText(group)}</div>
                 </div>
-
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 4 }}>{group.name}</h3>
-
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                  {group.category_obj?.name && <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{group.category_obj.name}</span>}
-                  <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>{user.sport}</span>
-                  {group.level && <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{group.level}</span>}
-                </div>
-
-                {/* Schedule display - supports multi-block */}
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 4 }}>
-                  🕐 {hasMultiBlock ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {blocks.map((b, i) => (
-                        <span key={i}>{b.days.join(' - ')} {b.start} a {b.end}</span>
-                      ))}
-                    </div>
-                  ) : (group.schedule || 'Sin horario definido')}
-                </div>
-
-                {/* Show assigned trainer(s) on card */}
-                {group.trainers && group.trainers.length > 0 && (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                    🏅 {group.trainers.map((t, i) => (
-                      <span key={t.id} className="badge badge-info" style={{ fontSize: '0.68rem' }}>
-                        {t.first_name} {t.last_name}
+                <div className="card-details-v2">
+                  {blocks.length > 0 ? (
+                    <div className="detail-item-v2">
+                      📅 <span>
+                        <strong>{blocks.map(b => b.days.join(', ')).join(' | ')}</strong>
+                        {' - '}{blocks[0].start} a {blocks[0].end}
                       </span>
-                    ))}
+                    </div>
+                  ) : group.schedule ? (
+                    <div className="detail-item-v2">📅 <span><strong>{group.schedule}</strong></span></div>
+                  ) : null}
+                  {group.trainers && group.trainers.length > 0 && (
+                    <div className="detail-item-v2">
+                      🧢 <strong>{group.trainers.map(t => `${t.first_name} ${t.last_name}`).join(', ')}</strong>
+                    </div>
+                  )}
+                  {group.training_location && (
+                    <div className="detail-item-v2">📍 <strong>{group.training_location}</strong></div>
+                  )}
+                  {group.monthly_fee && (
+                    <div className="detail-item-v2">💰 <strong>${parseFloat(group.monthly_fee).toLocaleString()}</strong></div>
+                  )}
+                </div>
+                <div className="card-footer-v2">
+                  <div className="capacity-container-v2">
+                    <div className="capacity-label-v2">
+                      <span>Capacidad</span>
+                      <span style={capacityPercent >= 90 ? { color: '#EF4444' } : capacityPercent >= 60 ? { color: '#F59E0B' } : {}}>
+                        {currentCount}/{group.max_capacity || '∞'}
+                        {group.max_capacity && currentCount >= parseInt(group.max_capacity) ? ' (Lleno)' : ''}
+                      </span>
+                    </div>
+                    <div className="progress-bar-v2">
+                      <div
+                        className={`progress-fill-v2 ${getCapacityFillClass(capacityPercent)}`}
+                        style={{ width: `${capacityPercent}%` }}
+                      />
+                    </div>
                   </div>
-                )}
-
-                {group.training_location && (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-                    📍 {group.training_location}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
-                  <span className="badge badge-primary">
-                    {group.athletes_count ?? group.athletes?.length ?? 0}{group.max_capacity ? ` / ${group.max_capacity}` : ''} Atletas
-                  </span>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="action-icons-v2">
                     <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: 'var(--primary-color)' }}
-                      onClick={() => navigate(`/admin/athletes?openCreate=true&group_id=${group.id}`)}
+                      className="action-btn-v2"
+                      onClick={() => openViewDrawer(group)}
+                      title="Ver Detalle"
                     >
-                      + Atleta
+                      👁️
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openEditModal(group)}>Editar</button>
+                    <button
+                      className="action-btn-v2"
+                      onClick={() => openEditDrawer(group)}
+                      title="Editar"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="action-btn-v2"
+                      onClick={() => { setGroupToDelete(group); setIsConfirmOpen(true); }}
+                      title="Desactivar"
+                      style={{ color: '#EF4444' }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               </div>
@@ -560,526 +652,533 @@ const GroupList = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {filteredGroups.length > ITEMS_PER_PAGE && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '14px 20px',
-          borderTop: '1px solid var(--border-main)',
-          marginTop: '20px'
-        }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredGroups.length)} de {filteredGroups.length} grupos
-          </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-main)',
-                background: 'var(--bg-surface)',
-                color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
-                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-                opacity: currentPage === 1 ? 0.5 : 1
-              }}
-            >
-              ‹ Anterior
-            </button>
-            {getPageNumbers().map((page, idx) => (
-              page === '...' ? (
-                <span key={`ellipsis-${idx}`} style={{ padding: '6px 4px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>...</span>
-              ) : (
-                <button
-                  key={page}
-                  onClick={() => goToPage(page)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: currentPage === page ? '1px solid #2563EB' : '1px solid var(--border-main)',
-                    background: currentPage === page ? '#2563EB' : 'var(--bg-surface)',
-                    color: currentPage === page ? 'white' : 'var(--text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: currentPage === page ? 700 : 500,
-                    minWidth: '36px'
-                  }}
-                >
-                  {page}
-                </button>
-              )
-            ))}
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-main)',
-                background: 'var(--bg-surface)',
-                color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
-                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-                opacity: currentPage === totalPages ? 0.5 : 1
-              }}
-            >
-              Siguiente ›
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ─── DRAWER: VER DETALLE ───────────────────────────── */}
+      <Drawer
+        isOpen={viewDrawerOpen}
+        onClose={closeViewDrawer}
+        title="Detalle del Grupo"
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={closeViewDrawer}>Cerrar</button>
+            {viewGroup && (
+              <button
+                className="btn btn-primary"
+                onClick={() => { closeViewDrawer(); setTimeout(() => openEditDrawer(viewGroup), 300); }}
+              >
+                ✏️ Editar Grupo
+              </button>
+            )}
+          </>
+        }
+      >
+        {viewGroup && (
+          <>
+            <div className="view-hero-v2">
+              <div className="view-avatar-v2">
+                {viewGroup.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+              <div className="view-name-v2">{viewGroup.name}</div>
+              <div className="view-badges-v2">
+                {viewGroup.category_obj?.name && (
+                  <div className="category-badge-v2" style={{ background: `${getCategoryColor(viewGroup.category_id)}20`, color: getCategoryColor(viewGroup.category_id), border: `1px solid ${getCategoryColor(viewGroup.category_id)}40` }}>
+                    {viewGroup.category_obj.name}
+                  </div>
+                )}
+                <div className="status-badge-v2">🟢 {getStatusText(viewGroup)}</div>
+              </div>
+            </div>
 
+            <div className="info-card-v2">
+              {viewGroup.trainers && viewGroup.trainers.length > 0 && (
+                <div className="info-row-v2">
+                  <span className="info-label-v2">🧢 Entrenador</span>
+                  <span className="info-value-v2">
+                    {viewGroup.trainers.map(t => `${t.first_name} ${t.last_name}`).join(', ')}
+                  </span>
+                </div>
+              )}
+              {viewGroup.training_location && (
+                <div className="info-row-v2">
+                  <span className="info-label-v2">📍 Sede</span>
+                  <span className="info-value-v2">{viewGroup.training_location}</span>
+                </div>
+              )}
+              {(() => {
+                const blks = getScheduleBlocks(viewGroup);
+                const scheduleText = blks.length > 0
+                  ? blks.map(b => `${b.days.join(', ')} - ${b.start} a ${b.end}`).join(' | ')
+                  : viewGroup.schedule;
+                return scheduleText ? (
+                  <div className="info-row-v2">
+                    <span className="info-label-v2">📅 Horario</span>
+                    <span className="info-value-v2">{scheduleText}</span>
+                  </div>
+                ) : null;
+              })()}
+              {viewGroup.monthly_fee && (
+                <div className="info-row-v2">
+                  <span className="info-label-v2">💰 Cuota Mensual</span>
+                  <span className="info-value-v2" style={{ color: '#10B981' }}>
+                    ${parseFloat(viewGroup.monthly_fee).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {viewGroup.level && (
+                <div className="info-row-v2">
+                  <span className="info-label-v2">📊 Nivel</span>
+                  <span className="info-value-v2">{viewGroup.level}</span>
+                </div>
+              )}
+              <div className="capacity-row-v2">
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 5 }}>
+                  <span className="info-label-v2">👥 Capacidad</span>
+                  <span className="info-value-v2">
+                    {(viewGroup.athletes_count ?? viewGroup.athletes?.length ?? 0)} / {viewGroup.max_capacity || '∞'} Atletas
+                  </span>
+                </div>
+                <div className="capacity-bar-v2">
+                  <div
+                    className="capacity-fill-v2"
+                    style={{
+                      width: `${getCapacityPercent(viewGroup)}%`,
+                      background: getCapacityPercent(viewGroup) >= 90 ? '#EF4444' : getCapacityPercent(viewGroup) >= 60 ? '#F59E0B' : '#10B981'
+                    }}
+                  />
+                </div>
+              </div>
+              {viewGroup.description && (
+                <div className="info-row-v2" style={{ borderBottom: 'none', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                  <span className="info-label-v2">📝 Descripción</span>
+                  <span className="info-value-v2" style={{ textAlign: 'left', fontWeight: 400 }}>{viewGroup.description}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Athletes list */}
+            <div className="section-divider-v2">
+              Atletas Inscritos ({viewGroup.athletes_count ?? viewGroupAthletes.length ?? 0})
+            </div>
+            {loadingAthletes ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                Cargando atletas...
+              </p>
+            ) : viewGroupAthletes.length > 0 ? (
+              viewGroupAthletes.map((athlete, idx) => (
+                <div key={athlete.id || idx} className="list-card-v2">
+                  <div className="list-info-v2">
+                    <div className="list-avatar-v2">
+                      {(athlete.user?.first_name?.[0] || '')}{(athlete.user?.last_name?.[0] || '')}
+                    </div>
+                    <div>
+                      <div className="list-name-v2">
+                        {athlete.user?.first_name} {athlete.user?.last_name}
+                      </div>
+                      <div className="list-sub-v2">ID: {athlete.user?.identification_number}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 600 }}>
+                    <span className="dot-green-v2"></span> Activo
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                No hay atletas inscritos en este grupo.
+              </p>
+            )}
+          </>
+        )}
+      </Drawer>
+
+      {/* ─── DRAWER: CREAR / EDITAR ────────────────────────── */}
+      <Drawer
+        isOpen={editDrawerOpen}
+        onClose={closeEditDrawer}
+        title={editingGroup ? `Editar Grupo: ${editingGroup.name}` : 'Nuevo Grupo'}
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={closeEditDrawer}>Cancelar</button>
+            <button className="btn btn-primary" onClick={handleSubmit}>
+              {editingGroup ? 'Guardar Cambios' : 'Crear Grupo'}
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit}>
+          {/* SECCIÓN 1: GENERAL */}
+          <AccordionSection title="Información General" icon="⚙️" defaultOpen={true}>
+            <div className="form-group">
+              <label className="form-label">Nombre del Grupo</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="form-input"
+                required
+                placeholder="Ej: Sub-10 B - Intermedio"
+              />
+            </div>
+            <div className="form-grid-2">
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                  <label className="form-label" style={{ margin: 0 }}>Categoría</label>
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    style={{ padding: 0, fontSize: '0.75rem', border: 'none', background: 'transparent', color: 'var(--primary-color)', cursor: 'pointer', height: 'auto' }}
+                    onClick={() => setIsAddingCategoryInline(!isAddingCategoryInline)}
+                  >
+                    {isAddingCategoryInline ? 'Cancelar' : '+ Nueva'}
+                  </button>
+                </div>
+                {isAddingCategoryInline ? (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Nombre cat."
+                      value={inlineCategoryName}
+                      onChange={e => setInlineCategoryName(e.target.value)}
+                      style={{ flex: 1, padding: '6px 10px', fontSize: '0.85rem' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={handleCreateCategoryInline}
+                    >
+                      OK
+                    </button>
+                  </div>
+                ) : (
+                  <select name="category_id" value={formData.category_id} onChange={handleInputChange} className="form-input" required>
+                    <option value="">Seleccionar</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nivel</label>
+                <select name="level" value={formData.level} onChange={handleInputChange} className="form-input">
+                  <option value="">Seleccionar</option>
+                  {LEVELS.map(lvl => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label">Capacidad Máxima</label>
+                <input type="number" name="max_capacity" value={formData.max_capacity} onChange={handleInputChange} className="form-input" placeholder="15" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Cuota Mensual ($)</label>
+                <input type="number" name="monthly_fee" value={formData.monthly_fee} onChange={handleInputChange} className="form-input" placeholder="180000" />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Descripción</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="form-input"
+                rows={3}
+                placeholder="Descripción del grupo..."
+              />
+            </div>
+          </AccordionSection>
+
+          {/* SECCIÓN 2: HORARIO */}
+          <AccordionSection title="Horario y Sede" icon="📅">
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+              Define los bloques de horario. Cada bloque puede tener días y horarios diferentes.
+            </p>
+
+            {scheduleBlocks.map((block, index) => (
+              <div key={index} className="schedule-block-v2">
+                <div className="schedule-block-header">
+                  <strong>Bloque {index + 1}</strong>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{ background: '#FEF2F2', color: '#EF4444', border: 'none', padding: '2px 8px', fontSize: '0.75rem' }}
+                    onClick={() => removeScheduleBlock(index)}
+                  >
+                    ✕ Eliminar
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Días de Entrenamiento</label>
+                  <div className="days-selector-v2">
+                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                      <div
+                        key={day}
+                        className={`day-pill-v2 ${block.days.includes(day) ? 'active' : ''}`}
+                        onClick={() => toggleBlockDay(index, day)}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Hora Inicio</label>
+                    <input
+                      type="time"
+                      value={block.start}
+                      onChange={e => updateBlockField(index, 'start', e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Hora Fin</label>
+                    <input
+                      type="time"
+                      value={block.end}
+                      onChange={e => updateBlockField(index, 'end', e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={addScheduleBlock}
+              style={{ marginBottom: 12, fontSize: '0.8rem' }}
+            >
+              + Agregar bloque horario
+            </button>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Sede / Lugar</label>
+              <input
+                type="text"
+                name="training_location"
+                value={formData.training_location}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="Cancha Sintética El Campín"
+              />
+            </div>
+          </AccordionSection>
+
+          {/* SECCIÓN 3: ENTRENADOR */}
+          <AccordionSection title="Entrenador Asignado" icon="🧢">
+            {/* Current assigned trainers */}
+            {(formData.trainer_ids || []).length > 0 && (
+              <div style={{ marginBottom: 15 }}>
+                {formData.trainer_ids.map(tId => {
+                  const t = trainers.find(trainer => trainer.id === tId);
+                  if (!t) return null;
+                  return (
+                    <div key={tId} className="list-card-v2" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', marginBottom: 8 }}>
+                      <div className="list-info-v2">
+                        <div className="list-avatar-v2" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+                          {t.first_name?.[0]}{t.last_name?.[0]}
+                        </div>
+                        <div>
+                          <div className="list-name-v2">{t.first_name} {t.last_name}</div>
+                          <div className="list-sub-v2">Actualmente asignado</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-action-sm-v2 btn-remove-v2"
+                        onClick={() => handleTrainerSelect(tId)}
+                      >
+                        ✕ Quitar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {(formData.trainer_ids || []).length === 0 && (
+              <div style={{
+                padding: '14px',
+                background: '#FEF3C7',
+                border: '1px solid #F59E0B',
+                borderRadius: '10px',
+                marginBottom: 15,
+                fontSize: '0.85rem',
+                color: '#B45309',
+                fontWeight: 600
+              }}>
+                ⚠️ No hay entrenador asignado. Selecciona uno de la lista o crea uno nuevo.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label className="form-label" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
+                Disponibles para asignar
+              </label>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ height: 'auto', padding: '4px 8px', fontSize: '0.75rem' }}
+                onClick={() => setIsAddingTrainerInline(!isAddingTrainerInline)}
+              >
+                {isAddingTrainerInline ? 'Cancelar' : '+ Registrar Nuevo'}
+              </button>
+            </div>
+
+            {isAddingTrainerInline && (
+              <div className="inline-trainer-form">
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '0.85rem' }}>Nuevo Entrenador</h4>
+                <div className="form-grid-2">
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Nombre *"
+                    value={inlineTrainerForm.first_name}
+                    onChange={e => setInlineTrainerForm(prev => ({ ...prev, first_name: e.target.value }))}
+                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Apellido *"
+                    value={inlineTrainerForm.last_name}
+                    onChange={e => setInlineTrainerForm(prev => ({ ...prev, last_name: e.target.value }))}
+                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="N° Identificación *"
+                  value={inlineTrainerForm.identification_number}
+                  onChange={e => setInlineTrainerForm(prev => ({ ...prev, identification_number: e.target.value }))}
+                  style={{ padding: '6px 10px', fontSize: '0.8rem', marginBottom: 8 }}
+                />
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Teléfono"
+                  value={inlineTrainerForm.phone}
+                  onChange={e => setInlineTrainerForm(prev => ({ ...prev, phone: e.target.value }))}
+                  style={{ padding: '6px 10px', fontSize: '0.8rem', marginBottom: 8 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleCreateTrainerInline}
+                  style={{ alignSelf: 'flex-end' }}
+                >
+                  Crear y Asignar
+                </button>
+              </div>
+            )}
+
+            <div className="trainer-list-v2">
+              {trainers.map(trainer => {
+                const isSelected = (formData.trainer_ids || []).includes(trainer.id);
+                return (
+                  <div
+                    key={trainer.id}
+                    className={`list-card-v2 ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      if (isSelected) {
+                        handleTrainerSelect(trainer.id);
+                      } else {
+                        setFormData(prev => ({ ...prev, trainer_ids: [trainer.id] }));
+                      }
+                    }}
+                  >
+                    <div className="list-info-v2">
+                      <div className="list-avatar-v2" style={isSelected ? { background: '#2563EB', color: 'white' } : {}}>
+                        {trainer.first_name?.[0]}{trainer.last_name?.[0]}
+                      </div>
+                      <div>
+                        <div className="list-name-v2">{trainer.first_name} {trainer.last_name}</div>
+                        <div className="list-sub-v2">{trainer.identification_number || 'Sin ID'}</div>
+                      </div>
+                    </div>
+                    <span className={`badge ${isSelected ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.65rem' }}>
+                      {isSelected ? '✓ Asignado' : '+ Asignar'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </AccordionSection>
+
+          {/* SECCIÓN 4: ATLETAS */}
+          <AccordionSection title={`Atletas del Grupo (${selectedAthleteIds.length})`} icon="👥">
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+              {editingGroup
+                ? 'Los atletas ya asignados al grupo no pueden removerse desde aquí. Puedes agregar atletas sin grupo seleccionándolos.'
+                : 'Asigna atletas sin grupo en lote a este grupo:'}
+            </p>
+            <div className="athlete-list-v2">
+              {athletes.filter(a => {
+                const isInThisGroup = a.current_groups?.some(g => g.id === editingGroup?.id);
+                const isUnassigned = !a.current_groups || a.current_groups.length === 0;
+                return isInThisGroup || isUnassigned;
+              }).map(athlete => {
+                const alreadyInGroup = athlete.current_groups?.some(g => g.id === editingGroup?.id);
+                const isSelected = selectedAthleteIds.includes(athlete.id);
+                return (
+                  <div
+                    key={athlete.id}
+                    className={`list-card-v2 ${isSelected ? 'selected' : ''}`}
+                    onClick={() => { if (!alreadyInGroup) handleAthleteSelect(athlete.id); }}
+                    style={{ opacity: alreadyInGroup ? 0.85 : 1 }}
+                  >
+                    <div className="list-info-v2">
+                      <div className="list-avatar-v2">
+                        {(athlete.user?.first_name?.[0] || '')}{(athlete.user?.last_name?.[0] || '')}
+                      </div>
+                      <div>
+                        <div className="list-name-v2">
+                          {athlete.user?.first_name} {athlete.user?.last_name}
+                        </div>
+                        <div className="list-sub-v2">ID: {athlete.user?.identification_number}</div>
+                      </div>
+                    </div>
+                    {alreadyInGroup ? (
+                      <span className="badge-assigned-v2">✓ En grupo</span>
+                    ) : (
+                      <span className={`badge ${isSelected ? 'badge-success' : 'badge-inactive'}`}>
+                        {isSelected ? '✓ Seleccionado' : 'Sin asignar'}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {athletes.filter(a => {
+                const isInThisGroup = a.current_groups?.some(g => g.id === editingGroup?.id);
+                const isUnassigned = !a.current_groups || a.current_groups.length === 0;
+                return isInThisGroup || isUnassigned;
+              }).length === 0 && (
+                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px', fontSize: '0.85rem' }}>
+                    No hay atletas sin grupo disponibles en el club.
+                  </p>
+                )}
+            </div>
+          </AccordionSection>
+        </form>
+      </Drawer>
+
+      {/* ─── CONFIRM MODAL: DELETE ─────────────────────────── */}
       <ConfirmModal
-        isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={confirmDelete}
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
         title="Desactivar Grupo"
         message={`¿Está seguro de desactivar ${groupToDelete?.name}? El grupo dejará de estar visible para los usuarios. Puede reactivarlo después.`}
       />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingGroup ? "Editar Grupo" : "Crear Nuevo Grupo"}>
-        <div className="profile-tabs">
-          <button type="button" className={`profile-tab ${activeTab === 'general' ? 'active' : ''}`} onClick={() => setActiveTab('general')}>📋 General</button>
-          <button type="button" className={`profile-tab ${activeTab === 'schedule' ? 'active' : ''}`} onClick={() => setActiveTab('schedule')}>🕐 Horario</button>
-          <button type="button" className={`profile-tab ${activeTab === 'trainer' ? 'active' : ''}`} onClick={() => setActiveTab('trainer')}>🏅 Entrenador</button>
-          <button type="button" className={`profile-tab ${activeTab === 'athletes' ? 'active' : ''}`} onClick={() => setActiveTab('athletes')}>🏃 Atletas</button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
-          {activeTab === 'general' && (
-            <>
-              <div className="form-group">
-                <label className="form-label">Nombre del Grupo</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="form-input" required placeholder="Ej: Fútbol Sub-15 A" />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <label className="form-label" style={{ margin: 0 }}>Categoría</label>
-                    <button
-                      type="button"
-                      className="btn btn-link"
-                      style={{ padding: 0, fontSize: '0.75rem', border: 'none', background: 'transparent', color: 'var(--primary-color)', cursor: 'pointer', height: 'auto' }}
-                      onClick={() => setIsAddingCategoryInline(!isAddingCategoryInline)}
-                    >
-                      {isAddingCategoryInline ? 'Cancelar' : '+ Nueva'}
-                    </button>
-                  </div>
-                  {isAddingCategoryInline ? (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Nombre cat."
-                        value={inlineCategoryName}
-                        onChange={e => setInlineCategoryName(e.target.value)}
-                        style={{ flex: 1, padding: '4px 8px', fontSize: '0.85rem' }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleCreateCategoryInline}
-                        style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                      >
-                        OK
-                      </button>
-                    </div>
-                  ) : (
-                    <select name="category_id" value={formData.category_id} onChange={handleInputChange} className="form-input" required>
-                      <option value="">Seleccionar</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nivel</label>
-                  <select name="level" value={formData.level} onChange={handleInputChange} className="form-input">
-                    <option value="">Seleccionar</option>
-                    {LEVELS.map(lvl => (
-                      <option key={lvl} value={lvl}>{lvl}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group">
-                  <label className="form-label">Capacidad Máxima</label>
-                  <input type="number" name="max_capacity" value={formData.max_capacity} onChange={handleInputChange} className="form-input" placeholder="25" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Cuota Mensual ($)</label>
-                  <input type="number" name="monthly_fee" value={formData.monthly_fee} onChange={handleInputChange} className="form-input" placeholder="120000" />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Descripción</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} className="form-input" rows={3} placeholder="Descripción del grupo..." style={{ resize: 'vertical', minHeight: 60 }} />
-              </div>
-            </>
-          )}
-
-          {activeTab === 'schedule' && (
-            <>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-                Define los bloques de horario. Cada bloque puede tener días y horarios diferentes.
-              </p>
-
-              {/* Multi-block schedule */}
-              {scheduleBlocks.map((block, index) => (
-                <div key={index} style={{
-                  padding: '14px',
-                  border: '1px solid var(--border-main)',
-                  borderRadius: '12px',
-                  marginBottom: 12,
-                  background: 'var(--bg-app)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <strong style={{ fontSize: '0.85rem' }}>Bloque {index + 1}</strong>
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '2px 8px', fontSize: '0.75rem' }}
-                      onClick={() => removeScheduleBlock(index)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-
-                  {/* Day checkboxes */}
-                  <div style={{ marginBottom: 10 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 6, display: 'block' }}>Días</label>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {WEEK_DAYS.map(day => (
-                        <label
-                          key={day}
-                          onClick={() => toggleBlockDay(index, day)}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '20px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            background: block.days.includes(day) ? 'var(--brand-600)' : 'var(--bg-surface)',
-                            color: block.days.includes(day) ? '#fff' : 'var(--text-secondary)',
-                            border: block.days.includes(day) ? '1px solid var(--brand-600)' : '1px solid var(--border-main)',
-                            userSelect: 'none'
-                          }}
-                        >
-                          {day}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 4, display: 'block' }}>Hora Inicio</label>
-                      <input
-                        type="time"
-                        value={block.start}
-                        onChange={e => updateBlockField(index, 'start', e.target.value)}
-                        className="form-input"
-                        style={{ padding: '6px 10px', fontSize: '0.85rem' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: 4, display: 'block' }}>Hora Fin</label>
-                      <input
-                        type="time"
-                        value={block.end}
-                        onChange={e => updateBlockField(index, 'end', e.target.value)}
-                        className="form-input"
-                        style={{ padding: '6px 10px', fontSize: '0.85rem' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={addScheduleBlock}
-                style={{ marginBottom: 12, fontSize: '0.8rem' }}
-              >
-                + Agregar bloque horario
-              </button>
-
-              {/* Legacy single schedule fields (fallback) */}
-              <div style={{ borderTop: '1px dashed var(--border-main)', paddingTop: 14 }}>
-                <div className="form-group">
-                  <label className="form-label">Horario Resumido (texto libre)</label>
-                  <input type="text" name="schedule" value={formData.schedule} disabled className="form-input" placeholder="Lun-Mie-Vie 5PM a 7PM" />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>El horario resumido se genera automáticamente desde los bloques de horario.</small>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Lugar de Entrenamiento</label>
-                  <input type="text" name="training_location" value={formData.training_location} onChange={handleInputChange} className="form-input" placeholder="Cancha Principal, Gimnasio..." />
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'trainer' && (
-            <div>
-              {/* Current assigned trainers - prominent display */}
-              {(formData.trainer_ids || []).length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-                    🏅 Entrenador{formData.trainer_ids.length > 1 ? 'es' : ''} asignado{formData.trainer_ids.length > 1 ? 's' : ''} actual{formData.trainer_ids.length > 1 ? 'es' : ''}:
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {formData.trainer_ids.map(tId => {
-                      const t = trainers.find(trainer => trainer.id === tId);
-                      if (!t) return null;
-                      return (
-                        <div key={tId} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '12px 16px',
-                          background: 'var(--brand-50)',
-                          border: '2px solid var(--brand-500)',
-                          borderRadius: '12px'
-                        }}>
-                          <div style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            background: 'var(--brand-500)',
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: '0.9rem',
-                            flexShrink: 0
-                          }}>
-                            {t.first_name?.[0]}{t.last_name?.[0]}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <strong style={{ fontSize: '0.9rem' }}>{t.first_name} {t.last_name}</strong>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {t.identification_number || 'Sin ID'} {t.phone ? `· ${t.phone}` : ''}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '4px 10px', fontSize: '0.75rem' }}
-                            onClick={() => handleTrainerSelect(tId)}
-                          >
-                            ✕ Quitar
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {(formData.trainer_ids || []).length === 0 && (
-                <div style={{
-                  padding: '14px',
-                  background: 'var(--warning-50)',
-                  border: '1px solid var(--warning-500)',
-                  borderRadius: '10px',
-                  marginBottom: 16,
-                  fontSize: '0.85rem',
-                  color: 'var(--warning-700)',
-                  fontWeight: 600
-                }}>
-                  ⚠️ No hay entrenador asignado. Selecciona uno de la lista o crea uno nuevo.
-                </div>
-              )}
-
-              {/* Options to change: register new trainer + list */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  {formData.trainer_ids && formData.trainer_ids.length > 0
-                    ? '¿Cambiar entrenador? Selecciona de la lista:'
-                    : 'Selecciona entrenador(es) para el grupo:'}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ height: 'auto', padding: '4px 8px', fontSize: '0.75rem' }}
-                  onClick={() => setIsAddingTrainerInline(!isAddingTrainerInline)}
-                >
-                  {isAddingTrainerInline ? 'Cancelar' : '+ Registrar Nuevo'}
-                </button>
-              </div>
-
-              {isAddingTrainerInline && (
-                <div style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-main)', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>Nuevo Entrenador</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Nombre *"
-                      value={inlineTrainerForm.first_name}
-                      onChange={e => setInlineTrainerForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                    />
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Apellido *"
-                      value={inlineTrainerForm.last_name}
-                      onChange={e => setInlineTrainerForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="N° Identificación *"
-                    value={inlineTrainerForm.identification_number}
-                    onChange={e => setInlineTrainerForm(prev => ({ ...prev, identification_number: e.target.value }))}
-                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                  />
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Teléfono"
-                    value={inlineTrainerForm.phone}
-                    onChange={e => setInlineTrainerForm(prev => ({ ...prev, phone: e.target.value }))}
-                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={handleCreateTrainerInline}
-                    style={{ alignSelf: 'flex-end', marginTop: '4px' }}
-                  >
-                    Crear y Asignar
-                  </button>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
-                {trainers.map(trainer => {
-                  const isSelected = (formData.trainer_ids || []).includes(trainer.id);
-                  return (
-                    <div key={trainer.id} onClick={() => {
-                      // For single selection mode (common case), replace if already selected
-                      if (isSelected) {
-                        handleTrainerSelect(trainer.id);
-                      } else {
-                        // Replace all current with this one (single trainer mode)
-                        setFormData(prev => ({ ...prev, trainer_ids: [trainer.id] }));
-                      }
-                    }}
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        border: isSelected ? '2px solid var(--brand-500)' : '1px solid var(--border-main)',
-                        cursor: 'pointer',
-                        background: isSelected ? 'var(--brand-50)' : 'var(--bg-surface)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12
-                      }}>
-                      <div style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        background: isSelected ? 'var(--brand-500)' : 'var(--bg-hover)',
-                        color: isSelected ? 'white' : 'var(--text-muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                        fontSize: '0.8rem',
-                        flexShrink: 0
-                      }}>
-                        {trainer.first_name?.[0]}{trainer.last_name?.[0]}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ fontSize: '0.85rem' }}>{trainer.first_name} {trainer.last_name}</strong>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                          {trainer.identification_number || 'Sin ID'}
-                        </div>
-                      </div>
-                      <span className={`badge ${isSelected ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.65rem' }}>
-                        {isSelected ? '✓ Asignado' : 'Seleccionar'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'athletes' && (
-            <div>
-              <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: 12 }}>
-                {editingGroup
-                  ? 'Los atletas ya asignados al grupo no pueden removerse desde aquí. Puedes agregar atletas sin grupo seleccionándolos.'
-                  : 'Asigna atletas sin grupo en lote a este grupo:'}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
-                {athletes.filter(a => {
-                  const isInThisGroup = a.current_groups?.some(g => g.id === editingGroup?.id);
-                  const isUnassigned = !a.current_groups || a.current_groups.length === 0;
-                  return isInThisGroup || isUnassigned;
-                }).map(athlete => {
-                  const isInThisGroup = a => a.current_groups?.some(g => g.id === editingGroup?.id);
-                  const alreadyInGroup = isInThisGroup(athlete);
-                  const isSelected = selectedAthleteIds.includes(athlete.id);
-                  return (
-                    <div key={athlete.id} onClick={() => {
-                      if (alreadyInGroup) return; // No permitir deseleccionar atletas ya en el grupo
-                      handleAthleteSelect(athlete.id);
-                    }}
-                      style={{
-                        padding: '10px',
-                        borderRadius: 8,
-                        border: isSelected ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
-                        cursor: alreadyInGroup ? 'default' : 'pointer',
-                        background: isSelected ? 'rgba(37,99,235,0.05)' : 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        opacity: alreadyInGroup ? 0.85 : 1
-                      }}>
-                      <div>
-                        <strong>{athlete.user?.first_name} {athlete.user?.last_name}</strong>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {athlete.user?.identification_number}</div>
-                      </div>
-                      <span className={`badge ${isSelected ? 'badge-success' : 'badge-inactive'}`}>
-                        {alreadyInGroup ? '✓ En el grupo' : (isSelected ? '✓ Seleccionado' : 'Sin asignar')}
-                      </span>
-                    </div>
-                  );
-                })}
-                {athletes.filter(a => {
-                  const isInThisGroup = a.current_groups?.some(g => g.id === editingGroup?.id);
-                  const isUnassigned = !a.current_groups || a.current_groups.length === 0;
-                  return isInThisGroup || isUnassigned;
-                }).length === 0 && (
-                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px', fontSize: '0.85rem' }}>
-                      No hay atletas sin grupo disponibles en el club.
-                    </p>
-                  )}
-              </div>
-            </div>
-          )}
-
-          <div className="modal-footer" style={{ margin: '8px -24px -24px', padding: '16px 24px' }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">{editingGroup ? "Guardar" : "Crear"}</button>
-          </div>
-        </form>
-      </Modal>
-
+      {/* ─── CATEGORY MODAL ────────────────────────────────── */}
       <Modal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} title="Gestionar Categorías">
         <form onSubmit={handleCreateCategory} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           <input type="text" className="form-input" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="Nueva categoría (ej: Sub-15 A)" required />
@@ -1096,7 +1195,7 @@ const GroupList = () => {
                   try {
                     await categoryService.reactivateCategory(cat.id);
                     showSuccess('Categoría reactivada correctamente');
-                    fetchData();
+                    await refreshCategories();
                   } catch (err) { showError(err.message || 'Error al reactivar categoría'); }
                 }}>Reactivar</button>
               )}
