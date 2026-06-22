@@ -75,6 +75,10 @@ const GroupList = () => {
   // Edit state
   const [editingGroup, setEditingGroup] = useState(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [viewTab, setViewTab] = useState('plan'); // 'plan', 'atletas', 'asistencia', 'tests', 'finanzas'
+  const [activeDay, setActiveDay] = useState('Mié');
+  const [completedExercises, setCompletedExercises] = useState({ 0: true, 1: true });
+  const [selectedWeek, setSelectedWeek] = useState('1');
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [formData, setFormData] = useState({ ...INITIAL_FORM });
   const [scheduleBlocks, setScheduleBlocks] = useState([]);
@@ -177,6 +181,8 @@ const GroupList = () => {
   // ─── Drawer: View ────────────────────────────────────────────
   const openViewDrawer = async (group) => {
     setViewGroup(group);
+    setViewTab('plan');
+    setActiveDay('Mié');
     setViewDrawerOpen(true);
     setLoadingAthletes(true);
     try {
@@ -624,7 +630,7 @@ const GroupList = () => {
                   <div className="action-icons-v2">
                     <button
                       className="action-btn-v2"
-                      onClick={() => openViewDrawer(group)}
+                      onClick={() => navigate(`/admin/groups/${group.id}`)}
                       title="Ver Detalle"
                     >
                       👁️
@@ -673,12 +679,36 @@ const GroupList = () => {
       >
         {viewGroup && (
           <>
-            <div className="view-hero-v2">
-              <div className="view-avatar-v2">
+            {/* HERO IDENTITY */}
+            <div className="view-hero-v2" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              marginBottom: '20px',
+              paddingBottom: '20px',
+              borderBottom: '1px solid var(--border-soft)'
+            }}>
+              <div className="view-avatar-v2" style={{
+                width: '70px',
+                height: '70px',
+                borderRadius: '16px',
+                fontSize: '1.8rem',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #2563EB, #8B5CF6)',
+                color: 'white',
+                marginBottom: '10px',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+              }}>
                 {viewGroup.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
               </div>
-              <div className="view-name-v2">{viewGroup.name}</div>
-              <div className="view-badges-v2">
+              <div className="view-name-v2" style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '5px' }}>
+                {viewGroup.name}
+              </div>
+              <div className="view-badges-v2" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                 {viewGroup.category_obj?.name && (
                   <div className="category-badge-v2" style={{ background: `${getCategoryColor(viewGroup.category_id)}20`, color: getCategoryColor(viewGroup.category_id), border: `1px solid ${getCategoryColor(viewGroup.category_id)}40` }}>
                     {viewGroup.category_obj.name}
@@ -688,103 +718,502 @@ const GroupList = () => {
               </div>
             </div>
 
-            <div className="info-card-v2">
-              {viewGroup.trainers && viewGroup.trainers.length > 0 && (
-                <div className="info-row-v2">
-                  <span className="info-label-v2">🧢 Entrenador</span>
-                  <span className="info-value-v2">
-                    {viewGroup.trainers.map(t => `${t.first_name} ${t.last_name}`).join(', ')}
-                  </span>
-                </div>
-              )}
-              {viewGroup.training_location && (
-                <div className="info-row-v2">
-                  <span className="info-label-v2">📍 Sede</span>
-                  <span className="info-value-v2">{viewGroup.training_location}</span>
-                </div>
-              )}
-              {(() => {
-                const blks = getScheduleBlocks(viewGroup);
-                const scheduleText = blks.length > 0
-                  ? blks.map(b => `${b.days.join(', ')} - ${b.start} a ${b.end}`).join(' | ')
-                  : viewGroup.schedule;
-                return scheduleText ? (
-                  <div className="info-row-v2">
-                    <span className="info-label-v2">📅 Horario</span>
-                    <span className="info-value-v2">{scheduleText}</span>
-                  </div>
-                ) : null;
-              })()}
-              {viewGroup.monthly_fee && (
-                <div className="info-row-v2">
-                  <span className="info-label-v2">💰 Cuota Mensual</span>
-                  <span className="info-value-v2" style={{ color: '#10B981' }}>
-                    ${parseFloat(viewGroup.monthly_fee).toLocaleString()}
-                  </span>
-                </div>
-              )}
-              {viewGroup.level && (
-                <div className="info-row-v2">
-                  <span className="info-label-v2">📊 Nivel</span>
-                  <span className="info-value-v2">{viewGroup.level}</span>
-                </div>
-              )}
-              <div className="capacity-row-v2">
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 5 }}>
-                  <span className="info-label-v2">👥 Capacidad</span>
-                  <span className="info-value-v2">
-                    {(viewGroup.athletes_count ?? viewGroup.athletes?.length ?? 0)} / {viewGroup.max_capacity || '∞'} Atletas
-                  </span>
-                </div>
-                <div className="capacity-bar-v2">
-                  <div
-                    className="capacity-fill-v2"
+            {/* TAB SELECTOR */}
+            <div className="tabs" style={{
+              display: 'flex',
+              gap: '4px',
+              marginBottom: '20px',
+              background: '#F1F5F9',
+              padding: '4px',
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              overflowX: 'auto'
+            }}>
+              {[
+                { id: 'plan', label: 'Plan de Ent.' },
+                { id: 'atletas', label: 'Atletas' },
+                { id: 'asistencia', label: 'Asistencia' },
+                { id: 'tests', label: 'Tests Físicos' },
+                { id: 'finanzas', label: 'Finanzas' }
+              ].map((tab) => {
+                const isActive = viewTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setViewTab(tab.id)}
                     style={{
-                      width: `${getCapacityPercent(viewGroup)}%`,
-                      background: getCapacityPercent(viewGroup) >= 90 ? '#EF4444' : getCapacityPercent(viewGroup) >= 60 ? '#F59E0B' : '#10B981'
+                      flex: 1,
+                      padding: '8px 8px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isActive ? '#2563EB' : 'transparent',
+                      color: isActive ? '#FFFFFF' : '#64748B',
+                      fontWeight: '600',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      boxShadow: isActive ? '0 2px 8px rgba(37, 99, 235, 0.2)' : 'none',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
                     }}
-                  />
-                </div>
-              </div>
-              {viewGroup.description && (
-                <div className="info-row-v2" style={{ borderBottom: 'none', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-                  <span className="info-label-v2">📝 Descripción</span>
-                  <span className="info-value-v2" style={{ textAlign: 'left', fontWeight: 400 }}>{viewGroup.description}</span>
-                </div>
-              )}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Athletes list */}
-            <div className="section-divider-v2">
-              Atletas Inscritos ({viewGroup.athletes_count ?? viewGroupAthletes.length ?? 0})
-            </div>
-            {loadingAthletes ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
-                Cargando atletas...
-              </p>
-            ) : viewGroupAthletes.length > 0 ? (
-              viewGroupAthletes.map((athlete, idx) => (
-                <div key={athlete.id || idx} className="list-card-v2">
-                  <div className="list-info-v2">
-                    <div className="list-avatar-v2">
-                      {(athlete.user?.first_name?.[0] || '')}{(athlete.user?.last_name?.[0] || '')}
-                    </div>
-                    <div>
-                      <div className="list-name-v2">
-                        {athlete.user?.first_name} {athlete.user?.last_name}
-                      </div>
-                      <div className="list-sub-v2">ID: {athlete.user?.identification_number}</div>
-                    </div>
+            {/* TAB CONTENT: PLAN DE ENTRENAMIENTO */}
+            {viewTab === 'plan' && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                {/* MACRO PLAN ASSIGNED */}
+                <div className="macro-summary" style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-color)',
+                  borderLeft: '5px solid #2563EB',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  marginBottom: '20px',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div className="macro-info">
+                    <h2 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '3px' }}>Pretemporada Verano</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>📅 01 Jun - 30 Jun | Fase: Acumulación</p>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 600 }}>
-                    <span className="dot-green-v2"></span> Activo
+                  <div className="progress-ring" style={{
+                    width: '45px',
+                    height: '45px',
+                    borderRadius: '50%',
+                    background: 'conic-gradient(#2563EB 65%, #F1F5F9 0)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <span style={{
+                      width: '35px',
+                      height: '35px',
+                      background: '#FFFFFF',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      color: '#2563EB'
+                    }}>65%</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
-                No hay atletas inscritos en este grupo.
-              </p>
+
+                {/* MICROCYCLE (WEEK) */}
+                <div className="card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '16px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Microciclo:</span>
+                      <select
+                        className="week-selector"
+                        value={selectedWeek}
+                        onChange={(e) => setSelectedWeek(e.target.value)}
+                        style={{
+                          background: '#F1F5F9',
+                          border: '1px solid var(--border-color)',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          fontWeight: '600',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="1">Semana 3 (10 Jun - 16 Jun)</option>
+                        <option value="2">Semana 4 - Descarga (17 Jun - 23 Jun)</option>
+                      </select>
+                      <span className={`tag ${selectedWeek === '2' ? 'tag-orange' : 'tag-green'}`} style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '700' }}>
+                        {selectedWeek === '2' ? 'Descarga' : 'Carga'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="days-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
+                    {[
+                      { day: 'Lun', num: '10', type: 'Fuerza' },
+                      { day: 'Mar', num: '11', type: 'Descanso' },
+                      { day: 'Mié', num: '12', type: 'Velocidad' },
+                      { day: 'Jue', num: '13', type: 'Técnica' },
+                      { day: 'Vie', num: '14', type: 'Partido' },
+                      { day: 'Sáb', num: '15', type: 'Recup.' },
+                      { day: 'Dom', num: '16', type: 'Descanso' }
+                    ].map((d) => {
+                      const isActive = activeDay === d.day;
+                      const isRest = d.type.includes('Descanso');
+                      return (
+                        <div
+                          key={d.day}
+                          onClick={() => setActiveDay(d.day)}
+                          className={`day-card ${isActive ? 'active' : ''}`}
+                          style={{
+                            background: isActive ? '#2563EB' : '#F8FAFC',
+                            color: isActive ? '#FFFFFF' : '#0F172A',
+                            border: `1px solid ${isActive ? '#2563EB' : '#E2E8F0'}`,
+                            borderRadius: '10px',
+                            padding: '10px 4px',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: '0.2s'
+                          }}
+                        >
+                          <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: '700', color: isActive ? '#FFFFFF' : '#64748B' }}>{d.day}</div>
+                          <div style={{ fontSize: '1rem', fontWeight: '800', margin: '2px 0' }}>{d.num}</div>
+                          <div style={{
+                            fontSize: '0.6rem',
+                            padding: '2px 2px',
+                            borderRadius: '4px',
+                            background: isActive ? 'rgba(255, 255, 255, 0.2)' : (isRest ? '#F1F5F9' : 'rgba(37, 99, 235, 0.1)'),
+                            color: isActive ? '#FFFFFF' : (isRest ? '#64748B' : '#2563EB'),
+                            fontWeight: '600',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden'
+                          }}>{d.type}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* DETALLE DE SESION */}
+                <div className="card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
+                  <div className="session-header" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px',
+                    background: '#F1F5F9',
+                    padding: '12px',
+                    borderRadius: '10px'
+                  }}>
+                    <div className="session-title">
+                      <h3 style={{ fontSize: '0.95rem', fontWeight: '700' }}>
+                        {activeDay === 'Lun' && 'Lunes 10 - Fuerza Base'}
+                        {activeDay === 'Mar' && 'Martes 11 - Descanso'}
+                        {activeDay === 'Mié' && 'Miércoles 12 - Velocidad y Agilidad'}
+                        {activeDay === 'Jue' && 'Jueves 13 - Técnica Individual'}
+                        {activeDay === 'Vie' && 'Viernes 14 - Táctica Colectiva'}
+                        {activeDay === 'Sáb' && 'Sábado 15 - Recuperación'}
+                        {activeDay === 'Dom' && 'Domingo 16 - Descanso Total'}
+                      </h3>
+                      <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '2px' }}>
+                        Sub-10 B | 16:00 - 18:00 | Intensidad: Alta
+                      </p>
+                    </div>
+                  </div>
+
+                  {['Mar', 'Sáb', 'Dom'].includes(activeDay) ? (
+                    <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748B', fontWeight: '600', fontSize: '0.85rem' }}>
+                      😴 Día de Descanso. No hay sesión programada.
+                    </div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ borderBottom: '2px solid #E2E8F0', padding: '8px 4px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'left' }}>Estado</th>
+                          <th style={{ borderBottom: '2px solid #E2E8F0', padding: '8px 4px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'left' }}>Ejercicio</th>
+                          <th style={{ borderBottom: '2px solid #E2E8F0', padding: '8px 4px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'left' }}>Bloque</th>
+                          <th style={{ borderBottom: '2px solid #E2E8F0', padding: '8px 4px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'left' }}>Series</th>
+                          <th style={{ borderBottom: '2px solid #E2E8F0', padding: '8px 4px', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'left' }}>Carga</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { id: 0, name: 'Sprint 30m', icon: '🏃', block: 'Principal', blockClass: 'tag-orange', series: '5 x 1', load: '30m' },
+                          { id: 1, name: 'Sentadilla Jump', icon: '🦵', block: 'Principal', blockClass: 'tag-orange', series: '4 x 8', load: 'P. Corp' },
+                          { id: 2, name: 'Estiramientos', icon: '🧘', block: 'Calma', blockClass: 'tag-purple', series: '1 x 10m', load: 'Global' }
+                        ].map((ex) => {
+                          const isCompleted = completedExercises[ex.id];
+                          return (
+                            <tr key={ex.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                              <td style={{ padding: '10px 4px' }}>
+                                <div
+                                  onClick={() => setCompletedExercises(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}
+                                  style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    border: '2px solid #CBD5E1',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: isCompleted ? '#10B981' : '#FFFFFF',
+                                    borderColor: isCompleted ? '#10B981' : '#CBD5E1',
+                                    color: isCompleted ? '#FFFFFF' : 'transparent',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  ✔
+                                </div>
+                              </td>
+                              <td style={{ padding: '10px 4px', fontWeight: '600', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                                <span style={{ marginRight: '4px' }}>{ex.icon}</span> {ex.name}
+                              </td>
+                              <td style={{ padding: '10px 4px' }}>
+                                <span className={`tag ${ex.blockClass}`} style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.65rem' }}>{ex.block}</span>
+                              </td>
+                              <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#0F172A' }}>{ex.series}</td>
+                              <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#64748B' }}>{ex.load}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: ATLETAS */}
+            {viewTab === 'atletas' && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <div className="info-card-v2" style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '15px', marginBottom: '15px' }}>
+                  {viewGroup.trainers && viewGroup.trainers.length > 0 && (
+                    <div className="info-row-v2" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)' }}>
+                      <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>🧢 Entrenador</span>
+                      <span className="info-value-v2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {viewGroup.trainers.map(t => `${t.first_name} ${t.last_name}`).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                  {viewGroup.training_location && (
+                    <div className="info-row-v2" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)' }}>
+                      <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>📍 Sede</span>
+                      <span className="info-value-v2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{viewGroup.training_location}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const blks = getScheduleBlocks(viewGroup);
+                    const scheduleText = blks.length > 0
+                      ? blks.map(b => `${b.days.join(', ')} - ${b.start} a ${b.end}`).join(' | ')
+                      : viewGroup.schedule;
+                    return scheduleText ? (
+                      <div className="info-row-v2" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)' }}>
+                        <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>📅 Horario</span>
+                        <span className="info-value-v2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{scheduleText}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {viewGroup.monthly_fee && (
+                    <div className="info-row-v2" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)' }}>
+                      <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>💰 Cuota Mensual</span>
+                      <span className="info-value-v2" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#10B981' }}>
+                        ${parseFloat(viewGroup.monthly_fee).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {viewGroup.level && (
+                    <div className="info-row-v2" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)' }}>
+                      <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>📊 Nivel</span>
+                      <span className="info-value-v2" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{viewGroup.level}</span>
+                    </div>
+                  )}
+                  <div className="capacity-row-v2" style={{ marginTop: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 5 }}>
+                      <span className="info-label-v2" style={{ fontWeight: 600 }}>👥 Capacidad</span>
+                      <span className="info-value-v2" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {(viewGroup.athletes_count ?? viewGroup.athletes?.length ?? 0)} / {viewGroup.max_capacity || '∞'} Atletas
+                      </span>
+                    </div>
+                    <div className="capacity-bar-v2" style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '10px', overflow: 'hidden', marginTop: '5px' }}>
+                      <div
+                        className="capacity-fill-v2"
+                        style={{
+                          height: '100%',
+                          borderRadius: '10px',
+                          width: `${getCapacityPercent(viewGroup)}%`,
+                          background: getCapacityPercent(viewGroup) >= 90 ? '#EF4444' : getCapacityPercent(viewGroup) >= 60 ? '#F59E0B' : '#10B981'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {viewGroup.description && (
+                    <div className="info-row-v2" style={{ borderBottom: 'none', flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: '8px 0' }}>
+                      <span className="info-label-v2" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>📝 Descripción</span>
+                      <span className="info-value-v2" style={{ textAlign: 'left', fontWeight: 400, color: 'var(--text-primary)' }}>{viewGroup.description}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="section-divider-v2" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, margin: '20px 0 10px' }}>
+                  Atletas Inscritos ({viewGroup.athletes_count ?? viewGroupAthletes.length ?? 0})
+                </div>
+
+                {loadingAthletes ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                    Cargando atletas...
+                  </p>
+                ) : viewGroupAthletes.length > 0 ? (
+                  viewGroupAthletes.map((athlete, idx) => (
+                    <div key={athlete.id || idx} className="list-card-v2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '8px', background: 'var(--bg-surface)' }}>
+                      <div className="list-info-v2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="list-avatar-v2" style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
+                          {(athlete.user?.first_name?.[0] || '')}{(athlete.user?.last_name?.[0] || '')}
+                        </div>
+                        <div>
+                          <div className="list-name-v2" style={{ fontWeight: '600', fontSize: '0.85rem' }}>
+                            {athlete.user?.first_name} {athlete.user?.last_name}
+                          </div>
+                          <div className="list-sub-v2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {athlete.user?.identification_number}</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 600 }}>
+                        <span className="dot-green-v2"></span> Activo
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                    No hay atletas inscritos en este grupo.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: ASISTENCIA */}
+            {viewTab === 'asistencia' && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>Fecha: Hoy (22 Jun 2026)</span>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => showSuccess('Asistencia guardada correctamente')}>
+                    💾 Guardar Asistencia
+                  </button>
+                </div>
+                {viewGroupAthletes.length > 0 ? (
+                  viewGroupAthletes.map((athlete) => (
+                    <div key={athlete.id} className="list-card-v2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '8px', cursor: 'default' }}>
+                      <div className="list-info-v2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="list-avatar-v2" style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
+                          {athlete.user?.first_name?.[0]}{athlete.user?.last_name?.[0]}
+                        </div>
+                        <div>
+                          <div className="list-name-v2" style={{ fontWeight: '600', fontSize: '0.85rem' }}>{athlete.user?.first_name} {athlete.user?.last_name}</div>
+                          <div className="list-sub-v2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {athlete.user?.identification_number}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <button
+                          type="button"
+                          className="btn-action-sm-v2"
+                          style={{
+                            background: '#ECFDF5',
+                            color: '#10B981',
+                            border: '1px solid #10B981',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Presente
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-action-sm-v2"
+                          style={{
+                            background: '#F1F5F9',
+                            color: '#64748B',
+                            border: '1px solid #CBD5E1',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Ausente
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                    No hay atletas inscritos para tomar asistencia.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: TESTS FISICOS */}
+            {viewTab === 'tests' && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <div className="card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '12px' }}>Historial de Tests Recientes</h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
+                        <th style={{ padding: '8px 4px', textAlign: 'left', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B' }}>Test</th>
+                        <th style={{ padding: '8px 4px', textAlign: 'left', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B' }}>Fecha</th>
+                        <th style={{ padding: '8px 4px', textAlign: 'left', fontSize: '0.7rem', textTransform: 'uppercase', color: '#64748B' }}>Promedio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', fontWeight: '600' }}>⚡ Control Velocidad 30m</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#64748B' }}>15 Jun 2026</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#10B981', fontWeight: '600' }}>4.82 seg</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', fontWeight: '600' }}>🦵 Test de Salto Vertical</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#64748B' }}>12 Jun 2026</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#2563EB', fontWeight: '600' }}>38.5 cm</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', fontWeight: '600' }}>🫁 Resistencia Yo-Yo Lvl 1</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#64748B' }}>05 Jun 2026</td>
+                        <td style={{ padding: '10px 4px', fontSize: '0.8rem', color: '#F59E0B', fontWeight: '600' }}>14.2 (1620m)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: FINANZAS */}
+            {viewTab === 'finanzas' && (
+              <div style={{ animation: 'fadeIn 0.3s' }}>
+                <div className="card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Estado de Mensualidades (Junio)</h3>
+                    <span style={{ fontSize: '0.75rem', background: '#ECFDF5', color: '#10B981', padding: '3px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                      Recaudado: 85%
+                    </span>
+                  </div>
+                  {viewGroupAthletes.length > 0 ? (
+                    viewGroupAthletes.map((athlete, idx) => {
+                      const isPaid = idx % 4 !== 0;
+                      return (
+                        <div key={athlete.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{athlete.user?.first_name} {athlete.user?.last_name}</span>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            padding: '3px 6px',
+                            borderRadius: '5px',
+                            background: isPaid ? '#ECFDF5' : '#FEE2E2',
+                            color: isPaid ? '#047857' : '#B91C1C'
+                          }}>
+                            {isPaid ? 'Al día' : 'Pendiente'}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+                      No hay atletas inscritos para ver pagos.
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </>
         )}

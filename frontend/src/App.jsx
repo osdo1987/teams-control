@@ -19,6 +19,7 @@ import PaymentList from './pages/admin/PaymentList';
 import AttendanceList from './pages/admin/AttendanceList';
 import TestList from './pages/admin/TestList';
 import AthleteProfile from './pages/admin/AthleteProfile';
+import GroupProfile from './pages/admin/GroupProfile';
 import PermissionsPage from './pages/admin/PermissionsPage';
 import SuperAdminLayout from './components/SuperAdmin/SuperAdminLayout';
 import ClubList from './pages/superadmin/ClubList';
@@ -61,6 +62,7 @@ function App() {
             <Route path="athletes" element={<AthleteList />} />
             <Route path="athletes/:id" element={<AthleteProfile />} />
             <Route path="groups" element={<GroupList />} />
+            <Route path="groups/:id" element={<GroupProfile />} />
             <Route path="users" element={<UserList />} />
             <Route path="trainers" element={<TrainerList />} />
             <Route path="trainers/:id" element={<AdminTrainerProfile />} />
