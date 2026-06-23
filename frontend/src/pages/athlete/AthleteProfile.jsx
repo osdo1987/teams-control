@@ -147,6 +147,13 @@ const AthleteProfile = () => {
     const groupName = profileData.groups?.[0]?.name || '—';
     const clubName = athlete?.user?.club?.name || athlete?.user?.club_name || '—';
     const photoUrl = athlete?.photo_url;
+    const identificationNumber = athlete?.user?.identification_number || '—';
+    const athletePhone = athlete?.phone || athlete?.user?.phone || '—';
+    const bloodType = athlete?.medical_info?.blood_type || '—';
+    const emergencyContact = athlete?.medical_info?.emergency_contact || '—';
+    const schoolName = athlete?.academic_info?.school_name || '—';
+    const groupSchedule = profileData.groups?.[0]?.schedule || '—';
+    const trainingLocation = profileData.groups?.[0]?.training_location || '—';
 
     // Attendance stats
     const totalSessions = profileData.attendance.length;
@@ -411,6 +418,32 @@ const AthleteProfile = () => {
                                             <p className="font-orbitron" style={{ fontSize: '1.125rem' }}>{athlete?.academic_info?.grade || '—'}</p>
                                         </div>
                                     </div>
+                                    {schoolName !== '—' && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>COLEGIO</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{schoolName}</p>
+                                        </div>
+                                    )}
+                                    {groupSchedule !== '—' && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>HORARIO</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{groupSchedule}</p>
+                                        </div>
+                                    )}
+                                    {trainingLocation !== '—' && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>UBICACIÓN</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{trainingLocation}</p>
+                                        </div>
+                                    )}
+                                    <div style={{ width: '100%', marginTop: '12px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                        <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>CÉDULA</p>
+                                        <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{identificationNumber}</p>
+                                    </div>
+                                    <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                        <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>TELÉFONO</p>
+                                        <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{athletePhone}</p>
+                                    </div>
                                 </div>
 
                                 {/* Radar + Guardians */}
@@ -452,6 +485,9 @@ const AthleteProfile = () => {
                                                         <div style={{ flex: 1 }}>
                                                             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
                                                             <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
+                                                            {g.email && (
+                                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
+                                                            )}
                                                         </div>
                                                         {g.phone && (
                                                             <a href={`tel:${g.phone}`} style={{ color: '#22c55e', fontSize: '1.25rem', textDecoration: 'none' }}>📞</a>
@@ -549,6 +585,9 @@ const AthleteProfile = () => {
                                                 <div style={{ flex: 1 }}>
                                                     <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
                                                     <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
+                                                    {g.email && (
+                                                        <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))
@@ -627,6 +666,24 @@ const AthleteProfile = () => {
                                             <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Sin condiciones crónicas</p>
                                         </div>
                                     </div>
+                                    {bloodType !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,255,0.1)', border: '1px solid rgba(0,255,255,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>🩸</span>
+                                            <div>
+                                                <p style={{ fontWeight: 700, color: '#22d3ee', fontSize: '0.75rem' }}>TIPO DE SANGRE: {bloodType}</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Factor sanguíneo</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {emergencyContact !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>🚨</span>
+                                            <div>
+                                                <p style={{ fontWeight: 700, color: '#facc15', fontSize: '0.75rem' }}>CONTACTO EMERGENCIA</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{emergencyContact}</p>
+                                            </div>
+                                        </div>
+                                    )}
                                     {athlete?.medical_info?.allergies && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>🚫</span>
@@ -808,16 +865,18 @@ const AthleteProfile = () => {
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', fontSize: '0.875rem', textAlign: 'left', borderCollapse: 'collapse' }}>
                                 <thead style={{ borderBottom: '2px solid rgba(250,204,21,0.5)', color: '#facc15', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
-                                    <tr><th style={{ padding: '12px' }}>VENCIMIENTO</th><th style={{ padding: '12px' }}>CONCEPTO</th><th style={{ padding: '12px' }}>MONTO</th><th style={{ padding: '12px' }}>ESTADO</th></tr>
+                                    <tr><th style={{ padding: '12px' }}>FECHA PAGO</th><th style={{ padding: '12px' }}>CONCEPTO</th><th style={{ padding: '12px' }}>MONTO</th><th style={{ padding: '12px' }}>MÉTODO</th><th style={{ padding: '12px' }}>ESTADO</th></tr>
                                 </thead>
                                 <tbody style={{ color: '#d1d5db' }}>
                                     {payments.map(p => {
                                         const lc = PAYMENT_LABELS[p.status] || { label: p.status, class: 'bg-gray-500/20 text-gray-400' };
+                                        const paymentMethod = p.payment_method || '—';
                                         return (
                                             <tr key={p.id} style={{ borderBottom: '1px solid #1f2937' }}>
-                                                <td style={{ padding: '12px' }}>{p.due_date ? new Date(p.due_date).toLocaleDateString() : new Date(p.payment_date).toLocaleDateString()}</td>
+                                                <td style={{ padding: '12px' }}>{p.payment_date ? new Date(p.payment_date).toLocaleDateString() : (p.due_date ? new Date(p.due_date).toLocaleDateString() : '—')}</td>
                                                 <td style={{ padding: '12px', fontWeight: 500 }}>{p.description || 'Mensualidad'}</td>
                                                 <td style={{ padding: '12px', fontWeight: 700 }}>${parseFloat(p.amount).toFixed(2)}</td>
+                                                <td style={{ padding: '12px', color: '#9ca3af' }}>{paymentMethod}</td>
                                                 <td style={{ padding: '12px' }}><span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }} className={lc.class}>{lc.label}</span></td>
                                             </tr>
                                         );
