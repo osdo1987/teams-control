@@ -28,6 +28,10 @@ export const api = async (endpoint, options = {}) => {
       try {
         const user = JSON.parse(userStr);
         clubSlug = user?.club_slug || null;
+        // Save the club_slug in sessionStorage so ProtectedRoute can use it
+        if (clubSlug) {
+          sessionStorage.setItem('last_club_slug', clubSlug);
+        }
       } catch (e) { /* ignore parse errors */ }
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');

@@ -42,7 +42,10 @@ const SubscriptionGate = ({ children, status }) => {
           <button
             className="btn btn-primary"
             style={{ marginTop: '24px', width: '100%' }}
-            onClick={() => window.location.href = '/login'}
+            onClick={() => {
+              const user = authService.getCurrentUser();
+              window.location.href = user?.club_slug ? `/${user.club_slug}` : '/login';
+            }}
           >
             Volver al Inicio
           </button>

@@ -74,6 +74,29 @@ def create_athlete():
     athlete = AthleteService.create_athlete(data['user'], data['athlete'])
     return jsonify(athlete_schema.dump(athlete)), 201
 
+@athlete_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_my_profile():
+    """
+    Get Current Athlete Profile (Self)
+    ---
+    tags:
+      - Athletes
+    security:
+      - JWT: []
+    responses:
+      200:
+        description: Athlete profile data
+      404:
+        description: Athlete not found
+    """
+    user_id = get_jwt_identity()
+    from app.models.athlete import Athlete
+    athlete = Athlete.query.filter_by(user_id=user_id).first()
+    if not athlete:
+        return jsonify({"error": "Athlete not found"}), 404
+    return jsonify(athlete_schema.dump(athlete)), 200
+
 @athlete_bp.route('/profile', methods=['PUT'])
 @jwt_required()
 def update_profile():

@@ -36,8 +36,22 @@ import TrainingPlanList from './pages/admin/TrainingPlanList';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const user = authService.getCurrentUser();
-  if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/login" replace />;
+  if (!user) {
+    // If there's a saved club slug from a previous session, redirect to the club login
+    const lastClubSlug = sessionStorage.getItem('last_club_slug');
+    sessionStorage.removeItem('last_club_slug');
+    if (lastClubSlug) {
+      return <Navigate to={`/${lastClubSlug}`} replace />;
+    }
+    return <Navigate to="/login" replace />;
+  }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // If the user has a club_slug and doesn't have the right role, redirect to club login
+    if (user.club_slug) {
+      return <Navigate to={`/${user.club_slug}`} replace />;
+    }
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 };
@@ -212,30 +226,7 @@ function App() {
           } />
           <Route path="/athlete/profile" element={
             <ProtectedRoute allowedRoles={['ATHLETE']}>
-              <div className="app-shell">
-                <aside className="sidebar">
-                  <div className="sidebar-brand">
-                    <div className="brand-mark">⚡</div>
-                    <div className="brand-text">
-                      <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
-                      <span className="tag">Atleta</span>
-                    </div>
-                  </div>
-                  <nav className="sidebar-nav">
-                    <a href="/athlete" className="nav-link">🏠 Inicio</a>
-                    <a href="/athlete/profile" className="nav-link active">👤 Mi Perfil</a>
-                  </nav>
-                  <div className="sidebar-footer">
-                    <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
-                  </div>
-                </aside>
-                <div className="app-main">
-                  <Topbar breadcrumb="Club" title="Mi Perfil" />
-                  <div className="app-content">
-                    <AthleteSelfProfile />
-                  </div>
-                </div>
-              </div>
+              <AthleteSelfProfile />
             </ProtectedRoute>
           } />
 

@@ -82,8 +82,15 @@ def delete_result(result_id):
 
 @test_bp.route('/athletes/<int:athlete_id>/history', methods=['GET'])
 @jwt_required()
-@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER', 'ATHLETE'])
 def get_athlete_history(athlete_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if user.role == 'ATHLETE':
+        from app.models.athlete import Athlete
+        athlete = Athlete.query.filter_by(user_id=current_user_id).first()
+        if not athlete or athlete.id != athlete_id:
+            return jsonify({"error": "Unauthorized"}), 403
     template_id = request.args.get('template_id', type=int)
     results = TestService.get_athlete_history(athlete_id, template_id=template_id)
     return jsonify(results_schema.dump(results)), 200
@@ -140,8 +147,15 @@ def get_tests_progress():
 
 @test_bp.route('/athletes/<int:athlete_id>/stats', methods=['GET'])
 @jwt_required()
-@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
+@role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER', 'ATHLETE'])
 def get_athlete_test_stats(athlete_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if user.role == 'ATHLETE':
+        from app.models.athlete import Athlete
+        athlete = Athlete.query.filter_by(user_id=current_user_id).first()
+        if not athlete or athlete.id != athlete_id:
+            return jsonify({"error": "Unauthorized"}), 403
     stats = TestService.get_athlete_stats(athlete_id)
     if not stats:
         return jsonify({
