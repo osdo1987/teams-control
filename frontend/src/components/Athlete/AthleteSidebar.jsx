@@ -1,15 +1,17 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import usePermissions from '../../hooks/usePermissions';
 import { IconHome, IconLogOut, IconZap, IconUser } from '../Icons';
 
 const links = [
-    { to: '/athlete', end: true, icon: IconHome, label: 'Inicio' },
-    { to: '/athlete/profile', icon: IconUser, label: 'Mi Perfil' },
+    { to: '/athlete', end: true, icon: IconHome, label: 'Inicio', perm: 'dashboard' },
+    { to: '/athlete/profile', icon: IconUser, label: 'Mi Perfil', perm: 'profile' },
 ];
 
 const AthleteSidebar = ({ open, onClose }) => {
     const user = authService.getCurrentUser();
+    const { hasPermission, loading } = usePermissions();
     const initials = ((user?.first_name || 'A')[0] + (user?.last_name || '')[0]).toUpperCase();
     const cn = user?.club_name || 'Club Manager';
     return (
@@ -23,7 +25,7 @@ const AthleteSidebar = ({ open, onClose }) => {
                 </div>
             </div>
             <nav className="sidebar-nav">
-                {links.map((l) => (
+                {links.filter((l) => loading || hasPermission(l.perm)).map((l) => (
                     <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
                         <l.icon size={19} />{l.label}
                     </NavLink>

@@ -2,6 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 
 const FEATURES_MAP = {
+    ADMIN: [
+        { key: 'dashboard', label: 'Dashboard', icon: '🏠', desc: 'Panel principal del administrador' },
+        { key: 'groups', label: 'Grupos', icon: '📋', desc: 'Gestionar grupos del club' },
+        { key: 'athletes', label: 'Atletas', icon: '👥', desc: 'Gestionar atletas del club' },
+        { key: 'users', label: 'Usuarios', icon: '👤', desc: 'Gestionar usuarios del club' },
+        { key: 'trainers', label: 'Entrenadores', icon: '🏋️', desc: 'Gestionar entrenadores del club' },
+        { key: 'payments', label: 'Pagos', icon: '💳', desc: 'Gestionar pagos y cuotas' },
+        { key: 'attendance', label: 'Asistencia', icon: '📊', desc: 'Registrar y ver asistencia' },
+        { key: 'tests', label: 'Tests', icon: '🧪', desc: 'Crear y administrar tests físicos' },
+        { key: 'training_plans', label: 'Planes de Ent.', icon: '📋', desc: 'Gestionar planes de entrenamiento' },
+        { key: 'landing', label: 'Landing Page', icon: '🌐', desc: 'Editar la página de inicio del club' },
+        { key: 'permissions', label: 'Permisos', icon: '🔐', desc: 'Configurar permisos de roles' },
+    ],
     TRAINER: [
         { key: 'dashboard', label: 'Dashboard', icon: '🏠', desc: 'Panel principal del entrenador' },
         { key: 'profile', label: 'Mi Perfil', icon: '👤', desc: 'Ver y editar información personal' },
@@ -142,7 +155,7 @@ const ClubPermissions = () => {
                             {Object.entries(FEATURES_MAP).map(([role, features]) => (
                                 <div key={role} className="card">
                                     <div className="card-header">
-                                        <h3>{role === 'TRAINER' ? '🏋️ Entrenador' : '⚽ Atleta'}</h3>
+                                        <h3>{role === 'ADMIN' ? '👨‍💼 Administrador' : role === 'TRAINER' ? '🏋️ Entrenador' : '⚽ Atleta'}</h3>
                                         <span className="badge badge-info">{role}</span>
                                     </div>
                                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16 }}>

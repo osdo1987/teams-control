@@ -25,6 +25,19 @@ class Club(db.Model):
     
     # Role permissions (JSON) - controls what each role can see
     role_permissions = db.Column(db.JSON, default=lambda: {
+        'ADMIN': {
+            'dashboard': True,
+            'groups': True,
+            'athletes': True,
+            'users': True,
+            'trainers': True,
+            'payments': True,
+            'attendance': True,
+            'tests': True,
+            'training_plans': True,
+            'landing': True,
+            'permissions': True,
+        },
         'TRAINER': {
             'dashboard': True,
             'profile': True,
