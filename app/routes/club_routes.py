@@ -173,8 +173,9 @@ def update_role_permissions(club_id):
     
     # Merge with existing permissions
     existing = club.role_permissions or {}
-    existing.update(data)
-    club.role_permissions = existing
+    # Create a NEW dict to force SQLAlchemy to detect the change
+    merged = {**existing, **data}
+    club.role_permissions = merged
     
     db.session.commit()
     return jsonify(club.role_permissions), 200
