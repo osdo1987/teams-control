@@ -378,14 +378,29 @@ def seed_demo():
             cedula = f"10{idx+1:08d}"
             email = f"{safe_email(fn)}.{safe_email(ln)}@futbolelite.com"
             
+            # Generar segundo apellido aleatorio
+            second_ln = random.choice(["García", "López", "Martínez", "Rodríguez", "Hernández", "González", "Díaz", "Moreno"])
+            
             u = User(
                 email=email,
                 identification_number=cedula,
+                document_type=random.choice(["CC", "TI", "CE"]),
                 first_name=fn,
                 last_name=ln,
+                second_last_name=second_ln,
+                gender=random.choice(["Masculino", "Femenino"]),
+                blood_type=random.choice(BLOOD_TYPES),
+                birth_city=random.choice(["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena"]),
+                birth_country="Colombia",
                 role="ATHLETE",
                 club_id=club.id,
-                phone=rphone()
+                phone=rphone(),
+                fixed_phone=f"601{random.randint(1000000, 9999999)}",
+                address=f"Calle {random.randint(10,80)} #{random.randint(10,80)}-{random.randint(10,80)}",
+                neighborhood=random.choice(["Centro", "Norte", "Sur", "Occidente", "Oriente"]),
+                insurance=random.choice(["Sura", "Nueva EPS", "Sanitas", "Coomeva"]),
+                uniforms=random.choice(["Completo", "Parcial", "Pendiente"]),
+                start_date=date.today() - timedelta(days=random.randint(30, 180))
             )
             u.set_password("athlete123")
             db.session.add(u)
@@ -394,27 +409,60 @@ def seed_demo():
             a = Athlete(
                 user_id=u.id,
                 birth_date=rbirth(8, 18),
-                phone=rphone(),
-                address=f"Calle {random.randint(10,80)} #{random.randint(10,80)}-{random.randint(10,80)}"
+                birth_city=u.birth_city,
+                birth_country=u.birth_country,
+                phone=u.phone,
+                fixed_phone=u.fixed_phone,
+                address=u.address,
+                neighborhood=u.neighborhood,
+                insurance=u.insurance,
+                uniforms=u.uniforms,
+                start_date=u.start_date,
+                eps=u.insurance,
+                physical_diseases=random.choice([None, "Ninguna", "Asma leve"]),
+                medical_diseases=random.choice([None, "Ninguna", "Dermatitis"]),
+                allergies=random.choice([None, "Ninguna", "Polen", "Lactosa"]),
+                physical_disability=random.choice([None, "Ninguna"])
             )
             db.session.add(a)
             db.session.flush()
 
             # Información médica
+            emergency_name = f"{random.choice(['María','Carlos','Jorge','Ana','Luis'])} {ln}"
             db.session.add(MedicalInfo(
                 athlete_id=a.id,
-                blood_type=random.choice(BLOOD_TYPES),
-                allergies=random.choice(["Ninguna", "Polen", "Lactosa", "Penicilina", "Ninguna"]),
-                conditions=random.choice(["Ninguna", "Asma leve", "Ninguna", "Dermatitis"]),
-                emergency_contact=f"{random.choice(['María','Carlos','Jorge','Ana','Luis'])} {ln}"
+                blood_type=u.blood_type,
+                allergies=a.allergies,
+                conditions=f"Enfermedades físicas: {a.physical_diseases or 'Ninguna'}\nEnfermedades médicas: {a.medical_diseases or 'Ninguna'}",
+                physical_diseases=a.physical_diseases,
+                medical_diseases=a.medical_diseases,
+                physical_disability=a.physical_disability,
+                emergency_contact=emergency_name,
+                emergency_phone=rphone(),
+                emergency_relationship=random.choice(["Padre", "Madre", "Tío/a", "Abuelo/a"]),
+                emergency_alternate=rphone()
             ))
 
-            # Acudiente
-            guardian_name = f"Acudiente {ln}"
+            # Acudiente (padre/madre)
+            father_name = f"{random.choice(['Carlos','Jorge','Luis','Miguel','Andrés'])} {ln} {second_ln}"
+            mother_name = f"{random.choice(['María','Ana','Patricia','Laura','Carmen'])} {ln} {second_ln}"
+            
             db.session.add(Guardian(
                 athlete_id=a.id,
-                name=guardian_name,
-                relationship=random.choice(["Padre/Madre", "Tío/a", "Abuelo/a"]),
+                father_first_last_name=ln,
+                father_second_last_name=second_ln,
+                father_first_name=random.choice(["Carlos", "Jorge", "Luis", "Miguel", "Andrés"]),
+                father_home_address=u.address,
+                father_work_address=f"Centro Empresarial, Bogotá",
+                father_phone=rphone(),
+                mother_first_last_name=ln,
+                mother_second_last_name=second_ln,
+                mother_first_name=random.choice(["María", "Ana", "Patricia", "Laura", "Carmen"]),
+                mother_home_address=u.address,
+                mother_work_address=f"Industrial Park, Bogotá",
+                mother_phone=rphone(),
+                name=random.choice([father_name, mother_name]),
+                relationship=random.choice(["Padre", "Madre"]),
                 phone=rphone(),
                 email=f"acudiente.{safe_email(ln)}@gmail.com"
             ))
@@ -423,7 +471,8 @@ def seed_demo():
             db.session.add(AcademicInfo(
                 athlete_id=a.id,
                 school_name=random.choice(SCHOOLS),
-                grade=random.choice(["5°", "6°", "7°", "8°", "9°", "10°", "11°"])
+                grade=random.choice(["5°", "6°", "7°", "8°", "9°", "10°", "11°"]),
+                academic_level=random.choice(["Primaria", "Secundaria", "Bachillerato"])
             ))
 
             # Asignar a grupo
@@ -733,4 +782,4 @@ def seed_demo():
         print("    - Contraseña: athlete123")
         print("    - Ejemplo: 1000000001 / athlete123")
         print()
-        print("
+        print("  ✅ Datos de prueba actualizados con todos los campos del CSV")

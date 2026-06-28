@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MI PERFIL - ATHLETE OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #f1f5f9;
+            /* Fondo claro estilo app */
+            background-image: linear-gradient(rgba(100, 116, 139, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(100, 116, 139, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #1e293b;
+            /* Texto base oscuro */
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .neon-text {
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Sombra suave en lugar de neón brillante */
+        .clip-card {
+            clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+        }
+
+        .clip-btn {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+
+        .scanline::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.02) 51%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        .hud-tab {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .hud-tab.active {
+            opacity: 1;
+            background: rgba(6, 182, 212, 0.1);
+            border-color: #06b6d4;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .hud-input {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 100%;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .hud-input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+        }
+
+        .hud-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 700;
+        }
+
+        .modal-section {
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f8fafc;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .modal-section h4 {
+            font-family: 'Orbitron';
+            color: #0891b2;
+            font-size: 12px;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen overflow-x-hidden">
+
+    <!-- Top Nav Bar -->
+    <nav
+        class="bg-white/80 backdrop-blur-sm border-b border-cyan-500/30 shadow-sm p-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h1 class="font-orbitron text-lg font-bold text-cyan-600 tracking-widest">ATHLETE_OS</h1>
+        </div>
+        <div class="flex items-center gap-4 md:gap-8 text-sm font-semibold text-slate-500">
+            <span class="hover:text-cyan-600 cursor-pointer">MI NÚCLEO</span>
+            <span class="hover:text-cyan-600 cursor-pointer">MI SQUAD</span>
+            <span class="hover:text-cyan-600 cursor-pointer">MISIONES</span>
+            <button onclick="openModal()"
+                class="bg-cyan-500/10 border border-cyan-500 text-cyan-600 px-4 py-1 rounded clip-btn hover:bg-cyan-500/20 font-bold">⚙
+                EDITAR</button>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 lg:p-8">
+
+        <!-- SECCIÓN PRINCIPAL: HERO CARD Y STATS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div
+                class="relative bg-white border border-slate-200 clip-card p-6 flex flex-col items-center justify-center scanline shadow-lg">
+                <div class="absolute top-4 left-4 flex flex-col items-center">
+                    <span class="font-orbitron text-4xl font-black text-yellow-500 neon-text">84</span>
+                    <span class="text-xs text-yellow-600 font-bold tracking-widest -mt-1">OVR</span>
+                </div>
+                <div class="absolute top-6 right-4 flex flex-col items-end">
+                    <span class="text-xs text-slate-400">FIT</span>
+                    <div class="w-16 h-2 bg-red-500 mt-1" style="clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);">
+                    </div>
+                    <div class="w-16 h-2 bg-green-500 mt-1"
+                        style="clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);"></div>
+                </div>
+                <div class="relative mt-8 mb-4">
+                    <div class="absolute inset-0 bg-cyan-500 blur-2xl opacity-20 rounded-full"></div>
+                    <img src="https://ui-avatars.com/api/?name=Juan+Perez&size=300&background=e2e8f0&color=0891b2&bold=true"
+                        alt="Atleta"
+                        class="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full border-2 border-cyan-400 shadow-md">
+                </div>
+                <h2 class="font-orbitron text-xl lg:text-2xl font-bold text-slate-800 tracking-wider text-center">JUAN
+                    PÉREZ</h2>
+                <p class="text-cyan-600 font-semibold tracking-widest text-xs mt-1">DELANTERO | #9</p>
+                <div class="w-full h-px bg-slate-200 my-4"></div>
+                <div class="grid grid-cols-3 gap-2 w-full text-center">
+                    <div>
+                        <p class="text-slate-400 text-[10px]">EDAD</p>
+                        <p class="font-orbitron text-lg text-slate-800">16</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-[10px]">CLUB</p>
+                        <p class="font-orbitron text-lg text-slate-800">TC</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-[10px]">ORIGEN</p>
+                        <p class="font-orbitron text-sm text-slate-800">Medellín</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <div class="relative bg-white border border-slate-200 clip-card p-6 scanline flex-1 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-orbitron text-lg font-bold text-purple-600 neon-text tracking-wider">MATRIX DE
+                            ATRIBUTOS</h3>
+                        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded font-bold">SYNC 98%</span>
+                    </div>
+                    <div class="h-56 lg:h-64 w-full"><canvas id="radarChart"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-slate-200 clip-card p-4 scanline shadow-lg">
+                    <h3
+                        class="font-orbitron text-sm font-bold text-green-600 tracking-wider mb-3 flex items-center gap-2">
+                        📡 SOPORTE EXTERNO (FAMILIA)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="flex items-center gap-3 bg-slate-50 p-2 rounded border border-slate-200">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg">👨
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate">Carlos Pérez</p>
+                                <p class="text-xs text-slate-400">Padre</p>
+                            </div>
+                            <a href="tel:5551234"
+                                class="text-green-500 text-xl hover:scale-125 transition-transform">📞</a>
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-50 p-2 rounded border border-slate-200">
+                            <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-lg">👩
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate">Ana Martínez</p>
+                                <p class="text-xs text-slate-400">Madre</p>
+                            </div>
+                            <a href="tel:5559876"
+                                class="text-green-500 text-xl hover:scale-125 transition-transform">📞</a>
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-50 p-2 rounded border border-slate-200">
+                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-lg">
+                                🚨</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-slate-800 truncate emerg">Luis Gómez</p>
+                                <p class="text-xs text-slate-400">Emergencia</p>
+                            </div>
+                            <a href="tel:5551111"
+                                class="text-green-500 text-xl hover:scale-125 transition-transform">📞</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MÉTRICAS GLOBALES -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white border border-slate-200 clip-card p-4 scanline text-center shadow-md">
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest mb-1">ASISTENCIA GLOBAL</p>
+                <p class="font-orbitron text-3xl text-cyan-600 neon-text">85<span class="text-lg">%</span></p>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div class="h-full bg-cyan-500" style="width: 85%"></div>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-200 clip-card p-4 scanline text-center shadow-md">
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest mb-1">RACHA ACTUAL</p>
+                <p class="font-orbitron text-3xl text-green-600 neon-text">🔥 5</p>
+                <p class="text-[10px] text-slate-400 mt-3">DÍAS SEGUIDOS</p>
+            </div>
+            <div class="bg-white border border-slate-200 clip-card p-4 scanline text-center shadow-md">
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest mb-1">RATIO VICTORIAS</p>
+                <p class="font-orbitron text-3xl text-yellow-500 neon-text">72<span class="text-lg">%</span></p>
+                <p class="text-[10px] text-slate-400 mt-3">W7 - L2 - D1</p>
+            </div>
+            <div class="bg-white border border-slate-200 clip-card p-4 scanline text-center shadow-md">
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest mb-1">XP TEMPORADA</p>
+                <p class="font-orbitron text-3xl text-purple-600 neon-text">1.2K</p>
+                <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div class="h-full bg-purple-500" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barras de Stats y Estado Vital -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-white border border-slate-200 clip-card p-6 scanline shadow-lg">
+                <h3 class="font-orbitron text-lg font-bold text-cyan-600 neon-text tracking-wider mb-6">PARÁMETROS
+                    FÍSICOS</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                        <div class="flex justify-between mb-1"><span
+                                class="font-bold text-slate-600 text-sm">VELOCIDAD</span><span
+                                class="font-orbitron text-green-600 text-sm">85</span></div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-green-600 to-green-400" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span
+                                class="font-bold text-slate-600 text-sm">RESISTENCIA</span><span
+                                class="font-orbitron text-yellow-500 text-sm">72</span></div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-yellow-600 to-yellow-400" style="width: 72%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span
+                                class="font-bold text-slate-600 text-sm">FUERZA</span><span
+                                class="font-orbitron text-orange-500 text-sm">68</span></div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-orange-600 to-orange-400" style="width: 68%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span
+                                class="font-bold text-slate-600 text-sm">AGILIDAD</span><span
+                                class="font-orbitron text-cyan-600 text-sm">90</span></div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-200 clip-card p-6 scanline shadow-lg">
+                <h3 class="font-orbitron text-lg font-bold text-red-500 neon-text tracking-wider mb-4">ESTADO VITAL Y
+                    MEDICO</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2 bg-green-50 border border-green-200 p-2 rounded"><span
+                            class="text-xl">🛡️</span>
+                        <div>
+                            <p class="font-bold text-green-700 text-xs">SALUDABLE</p>
+                            <p class="text-[10px] text-slate-500">Sin incapacidades físicas</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 p-2 rounded"><span
+                            class="text-xl">🚫</span>
+                        <div>
+                            <p class="font-bold text-orange-700 text-xs">ALERGIAS: MANÍ</p>
+                            <p class="text-[10px] text-slate-500">Daño crítico si se consume</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-blue-50 border border-blue-200 p-2 rounded"><span
+                            class="text-xl">🏥</span>
+                        <div>
+                            <p class="font-bold text-blue-700 text-xs">EPS: SURA</p>
+                            <p class="text-[10px] text-slate-500">Seguro Activo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MENU HUD INFERIOR -->
+        <div class="bg-white border border-slate-200 clip-card p-6 scanline shadow-lg">
+            <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4">
+                <button onclick="switchTab(event, 'tab-asistencia')"
+                    class="hud-tab active clip-btn border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:text-cyan-600">[01]
+                    MI ASISTENCIA</button>
+                <button onclick="switchTab(event, 'tab-finanzas')"
+                    class="hud-tab clip-btn border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:text-cyan-600">[02]
+                    MI TESORERÍA</button>
+                <button onclick="switchTab(event, 'tab-tests')"
+                    class="hud-tab clip-btn border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:text-cyan-600">[03]
+                    LABORATORIO</button>
+                <button onclick="switchTab(event, 'tab-mision')"
+                    class="hud-tab clip-btn border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:text-cyan-600">[04]
+                    MISIÓN ACTUAL</button>
+            </div>
+
+            <div id="tab-asistencia" class="tab-content active">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="border-b-2 border-cyan-500/50 text-cyan-600 font-orbitron text-xs">
+                            <tr>
+                                <th class="p-3">FECHA</th>
+                                <th class="p-3">GRUPO</th>
+                                <th class="p-3">ESTADO</th>
+                                <th class="p-3">NOTAS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-slate-600">
+                            <tr class="hover:bg-cyan-50">
+                                <td class="p-3">15/Nov/2024</td>
+                                <td class="p-3">Sub-16 A</td>
+                                <td class="p-3"><span
+                                        class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">PRESENTE</span>
+                                </td>
+                                <td class="p-3 text-slate-400">-</td>
+                            </tr>
+                            <tr class="hover:bg-cyan-50">
+                                <td class="p-3">13/Nov/2024</td>
+                                <td class="p-3">Sub-16 A</td>
+                                <td class="p-3"><span
+                                        class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">AUSENTE</span>
+                                </td>
+                                <td class="p-3 text-slate-400">Cita médica</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="tab-finanzas" class="tab-content">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="border-b-2 border-yellow-500/50 text-yellow-600 font-orbitron text-xs">
+                            <tr>
+                                <th class="p-3">VENCIMIENTO</th>
+                                <th class="p-3">CONCEPTO</th>
+                                <th class="p-3">MONTO</th>
+                                <th class="p-3">ESTADO</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-slate-600">
+                            <tr class="hover:bg-yellow-50">
+                                <td class="p-3">01/Dic/2024</td>
+                                <td class="p-3">Mensualidad Diciembre</td>
+                                <td class="p-3 font-bold">$100.00</td>
+                                <td class="p-3"><span
+                                        class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">PENDIENTE</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-yellow-50">
+                                <td class="p-3">01/Nov/2024</td>
+                                <td class="p-3">Mensualidad Noviembre</td>
+                                <td class="p-3 font-bold">$100.00</td>
+                                <td class="p-3"><span
+                                        class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">PAGADO</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="tab-tests" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200 text-center">
+                        <p class="text-xs text-slate-400">VELOCIDAD 30M</p>
+                        <p class="font-orbitron text-3xl text-purple-600 mt-2">4.2s</p>
+                        <p class="text-xs text-green-600 mt-1">▼ -0.1s</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200 text-center">
+                        <p class="text-xs text-slate-400">SALTO LARGO</p>
+                        <p class="font-orbitron text-3xl text-purple-600 mt-2">2.1m</p>
+                        <p class="text-xs text-green-600 mt-1">▲ +0.1m</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded border border-slate-200 text-center">
+                        <p class="text-xs text-slate-400">FUERZA MAX</p>
+                        <p class="font-orbitron text-3xl text-purple-600 mt-2">50kg</p>
+                        <p class="text-xs text-slate-400 mt-1">— ESTABLE</p>
+                    </div>
+                </div>
+            </div>
+            <div id="tab-mision" class="tab-content">
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">XP PROGRESS - CICLO 1:
+                        ADAPTACIÓN</span><span class="text-cyan-600 font-bold">70 / 100</span></div>
+                <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300 mb-6">
+                    <div class="h-full bg-gradient-to-r from-cyan-600 via-blue-500 to-cyan-400" style="width: 70%">
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded border border-slate-200">
+                    <h4 class="font-bold text-cyan-600 mb-2 text-sm">SESIONES DE HOY</h4>
+                    <ul class="space-y-2 text-sm text-slate-500">
+                        <li class="flex items-center gap-2 cursor-pointer hover:text-cyan-600"><span>○</span> Sesión 3:
+                            Resistencia (Próxima)</li>
+                        <li class="flex items-center gap-2 text-slate-400"><span>○</span> Sesión 4: Descanso Activo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDICIÓN COMPLETO (HUD STYLE) -->
+    <div id="editModal" class="modal-overlay">
+        <div
+            class="bg-white border-2 border-cyan-500 clip-card p-6 md:p-8 w-full max-w-4xl scanline relative max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg">
+            <button onclick="closeModal()"
+                class="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-2xl font-bold z-10">✕</button>
+            <h2
+                class="font-orbitron text-2xl font-bold text-cyan-600 neon-text tracking-widest mb-6 border-b border-slate-200 pb-4">
+                CONFIGURACIÓN DE PERFIL</h2>
+
+            <div class="modal-section">
+                <h4>IDENTIDAD Y NACIMIENTO</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div><label class="hud-label">Primer Apellido</label><input type="text" class="hud-input"
+                                value="Pérez"></div>
+                        <div><label class="hud-label">Segundo Apellido</label><input type="text" class="hud-input"
+                                value="Gómez"></div>
+                        <div class="md:col-span-2"><label class="hud-label">Nombres</label><input type="text"
+                                class="hud-input" value="Juan Carlos"></div>
+                    </div>
+                    <div><label class="hud-label">Fecha Nacimiento</label><input type="date" class="hud-input"
+                            value="2008-05-15"></div>
+                    <div><label class="hud-label">País Nacimiento</label><input type="text" class="hud-input"
+                            value="Colombia"></div>
+                    <div><label class="hud-label">Ciudad Nacimiento</label><input type="text" class="hud-input"
+                            value="Medellín"></div>
+                    <div><label class="hud-label">Género</label><select class="hud-input">
+                            <option>Masculino</option>
+                            <option>Femenino</option>
+                            <option>Otro</option>
+                        </select></div>
+                    <div><label class="hud-label">Tipo Documento</label><select class="hud-input">
+                            <option>RC (Registro Civil)</option>
+                            <option>TI (Tarjeta Identidad)</option>
+                            <option>CC (Cédula)</option>
+                        </select></div>
+                    <div><label class="hud-label">Número Documento</label><input type="text" class="hud-input"
+                            value="1234567890"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>CONTACTO Y RESIDENCIA</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2"><label class="hud-label">Dirección Residencia</label><input type="text"
+                            class="hud-input" value="Calle 123 #45-67"></div>
+                    <div><label class="hud-label">Barrio</label><input type="text" class="hud-input" value="Laureles">
+                    </div>
+                    <div><label class="hud-label">WhatsApp</label><input type="tel" class="hud-input"
+                            value="300 555 9876"></div>
+                    <div><label class="hud-label">Teléfono Fijo</label><input type="tel" class="hud-input"
+                            value="604 555 1234"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>INFORMACIÓN DEL CLUB</h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div><label class="hud-label">Club</label><input type="text" class="hud-input"
+                            value="Teams Control FC"></div>
+                    <div><label class="hud-label">Fecha Inicio</label><input type="date" class="hud-input"
+                            value="2022-08-10"></div>
+                    <div><label class="hud-label">Seguro</label><input type="text" class="hud-input"
+                            value="Poliza #98765"></div>
+                    <div><label class="hud-label">Uniformes</label><input type="text" class="hud-input"
+                            value="2 Completa"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>DATOS DEL PADRE</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="hud-label">Nombres y Apellidos</label><input type="text" class="hud-input"
+                            value="Carlos Eduardo Pérez"></div>
+                    <div><label class="hud-label">WhatsApp</label><input type="tel" class="hud-input"
+                            value="300 555 1111"></div>
+                    <div><label class="hud-label">Dir. Residencia</label><input type="text" class="hud-input"
+                            value="Calle 123 #45-67"></div>
+                    <div class="md:col-span-3"><label class="hud-label">Dirección Trabajo</label><input type="text"
+                            class="hud-input" value="Centro, Edificio Maja"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>DATOS DE LA MADRE</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="hud-label">Nombres y Apellidos</label><input type="text" class="hud-input"
+                            value="Ana Lucía Martínez"></div>
+                    <div><label class="hud-label">WhatsApp</label><input type="tel" class="hud-input"
+                            value="300 555 2222"></div>
+                    <div><label class="hud-label">Dir. Residencia</label><input type="text" class="hud-input"
+                            value="Calle 123 #45-67"></div>
+                    <div class="md:col-span-3"><label class="hud-label">Dirección Trabajo</label><input type="text"
+                            class="hud-input" value="El Poblado, Clínica Las Vegas"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>EMERGENCIA Y ACUDIENTE</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="hud-label">Emergencia: Nombre</label><input type="text" class="hud-input"
+                            value="Luis Gómez"></div>
+                    <div><label class="hud-label">Parentesco</label><input type="text" class="hud-input" value="Tío">
+                    </div>
+                    <div><label class="hud-label">WhatsApp</label><input type="tel" class="hud-input"
+                            value="300 555 3333"></div>
+                    <div><label class="hud-label">Contacto Alternativo</label><input type="tel" class="hud-input"
+                            value="604 555 4444"></div>
+                    <div><label class="hud-label">Acudiente Principal</label><input type="text" class="hud-input"
+                            value="Ana Lucía Martínez"></div>
+                    <div><label class="hud-label">Parentesco Acudiente</label><input type="text" class="hud-input"
+                            value="Madre"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>INFORMACIÓN ACADÉMICA</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="hud-label">Nivel Académico</label><select class="hud-input">
+                            <option>Bachillerato</option>
+                            <option>Universitario</option>
+                            <option>Primaria</option>
+                        </select></div>
+                    <div class="md:col-span-2"><label class="hud-label">Institución Educativa</label><input type="text"
+                            class="hud-input" value="Instituto XYZ"></div>
+                    <div><label class="hud-label">Grado/Semestre</label><input type="text" class="hud-input"
+                            value="10°"></div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h4>SALUD Y MÉDICOS</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="hud-label">RH (Tipo Sangre)</label><input type="text" class="hud-input"
+                            value="O+"></div>
+                    <div><label class="hud-label">EPS</label><input type="text" class="hud-input" value="Sura"></div>
+                    <div><label class="hud-label">Alergias</label><input type="text" class="hud-input"
+                            value="Maní, Polvo"></div>
+                    <div class="md:col-span-3"><label class="hud-label">Enfermedades Médicas</label><textarea
+                            class="hud-input" rows="2">Asma leve</textarea></div>
+                    <div class="md:col-span-2"><label class="hud-label">Enfermedades Físicas</label><input type="text"
+                            class="hud-input" value="Ninguna"></div>
+                    <div><label class="hud-label">Incapacidad Física</label><input type="text" class="hud-input"
+                            value="Ninguna"></div>
+                </div>
+            </div>
+
+            <div
+                class="mt-8 flex justify-end gap-4 sticky bottom-0 bg-white py-4 -mb-8 -mx-6 md:-mx-8 px-6 md:px-8 border-t border-slate-200 z-10">
+                <button onclick="closeModal()"
+                    class="px-6 py-2 text-slate-500 border border-slate-300 clip-btn hover:bg-slate-100 font-bold">CANCELAR</button>
+                <button onclick="closeModal()"
+                    class="px-6 py-2 bg-cyan-500 text-white font-bold clip-btn hover:bg-cyan-600 shadow-md hover:shadow-cyan-500/50">GUARDAR
+                    CAMBIOS</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(evt, tabId) {
+            var tabContents = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < tabContents.length; i++) tabContents[i].classList.remove("active");
+            var tabButtons = document.getElementsByClassName("hud-tab");
+            for (var i = 0; i < tabButtons.length; i++) tabButtons[i].classList.remove("active");
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function openModal() { document.getElementById("editModal").classList.add("active"); }
+        function closeModal() { document.getElementById("editModal").classList.remove("active"); }
+
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['SPD', 'STA', 'STR', 'AGI', 'TEC', 'JMP'],
+                datasets: [{
+                    label: 'Juan Pérez', data: [85, 72, 68, 90, 78, 75],
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    pointBackgroundColor: 'rgba(6, 182, 212, 1)',
+                    pointBorderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        suggestedMax: 100,
+                        angleLines: { color: 'rgba(100, 116, 139, 0.2)' },
+                        grid: { color: 'rgba(100, 116, 139, 0.2)' },
+                        pointLabels: { color: '#64748b', font: { family: 'Orbitron', size: 11, weight: 'bold' } },
+                        ticks: { color: 'rgba(100, 116, 139, 0.6)', backdropColor: 'transparent', stepSize: 20 }
+                    }
+                },
+                plugins: { legend: { labels: { color: '#334155', font: { family: 'Rajdhani', size: 12 } } } }
+            }
+        });
+    </script>
+</body>
+
+</html>

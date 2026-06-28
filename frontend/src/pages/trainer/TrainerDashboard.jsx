@@ -10,10 +10,10 @@ const TrainerDashboard = () => {
 
     const cards = [
         { feature: 'profile', icon: 'icon-brand', emoji: '👤', title: 'Mi Perfil', desc: 'Ver y editar tu información personal', path: '/trainer/profile' },
-        { feature: 'groups', icon: 'icon-success', emoji: '📋', title: 'Mis Grupos', desc: 'Gestionar grupos asignados', path: null },
-        { feature: 'attendance', icon: 'icon-warning', emoji: '📊', title: 'Asistencia', desc: 'Registrar asistencia de atletas', path: null },
-        { feature: 'tests', icon: 'icon-info', emoji: '🧪', title: 'Tests', desc: 'Crear y administrar tests físicos', path: null },
-        { feature: 'payments', icon: 'icon-purple', emoji: '💳', title: 'Pagos', desc: 'Ver información de pagos', path: null },
+        { feature: 'groups', icon: 'icon-success', emoji: '📋', title: 'Mis Grupos', desc: 'Gestionar grupos asignados', path: '/trainer/groups' },
+        { feature: 'attendance', icon: 'icon-warning', emoji: '📊', title: 'Asistencia', desc: 'Registrar asistencia de atletas', path: '/trainer/attendance' },
+        { feature: 'tests', icon: 'icon-info', emoji: '🧪', title: 'Tests', desc: 'Crear y administrar tests físicos', path: '/trainer/tests' },
+        { feature: 'payments', icon: 'icon-purple', emoji: '💳', title: 'Pagos', desc: 'Ver información de pagos', path: '/trainer/payments' },
     ];
 
     const visibleCards = cards.filter((c) => hasPermission(c.feature));

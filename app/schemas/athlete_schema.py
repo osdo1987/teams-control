@@ -1,6 +1,14 @@
 from app.extensions import ma
 from app.models.athlete import Athlete, Guardian, MedicalInfo, AcademicInfo
+from app.models.user import User
 from marshmallow import fields
+from app.schemas.user_schema import UserSchema as BaseUserSchema
+
+class UserSchema(BaseUserSchema):
+    """Schema simplificado de usuario para atletas (sin trainer_profile)"""
+    class Meta(BaseUserSchema.Meta):
+        exclude = ('password_hash', 'trainer_profile')
+        load_instance = True
 
 class GuardianSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -27,6 +35,6 @@ class AthleteSchema(ma.SQLAlchemyAutoSchema):
     medical_info = fields.Nested(MedicalInfoSchema)
     academic_info = fields.Nested(AcademicInfoSchema)
     
-    # We might want to include basic user info
-    user = fields.Nested("UserSchema")
-    current_groups = fields.List(fields.Nested("GroupSchema", only=("id", "name", "monthly_fee")))
+    # Incluir información completa del usuario
+    user = fields.Nested(UserSchema)
+    current_groups = fields.List(fields.Nested("GroupSchema", only=("id", "name", "monthly_fee", "schedule", "training_location")))

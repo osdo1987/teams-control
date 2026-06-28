@@ -75,10 +75,13 @@ const RadarChartComponent = ({ data, options }) => {
 };
 
 const AthleteProfile = () => {
-    const { showError } = useToast();
+    const { showError, showSuccess } = useToast();
     const [athlete, setAthlete] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('tab-asistencia');
+    const [showEditPanel, setShowEditPanel] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [editingSection, setEditingSection] = useState(null);
 
     const [profileData, setProfileData] = useState({
         payments: [],
@@ -140,8 +143,206 @@ const AthleteProfile = () => {
         setActiveTab(tabId);
     };
 
+    const [editForm, setEditForm] = useState({
+        // User fields
+        identification_number: '',
+        email: '',
+        document_type: '',
+        second_last_name: '',
+        gender: '',
+        blood_type: '',
+        birth_city: '',
+        birth_country: '',
+        fixed_phone: '',
+        neighborhood: '',
+        insurance: '',
+        uniforms: '',
+        start_date: '',
+        // Athlete fields
+        phone: '',
+        address: '',
+        birth_date: '',
+        eps: '',
+        physical_diseases: '',
+        medical_diseases: '',
+        allergies: '',
+        physical_disability: '',
+        // Medical info
+        emergency_contact: '',
+        emergency_phone: '',
+        emergency_relationship: '',
+        emergency_alternate: '',
+        // Academic info
+        school_name: '',
+        grade: '',
+        academic_level: '',
+        // Guardian fields
+        father_first_last_name: '',
+        father_second_last_name: '',
+        father_first_name: '',
+        father_home_address: '',
+        father_work_address: '',
+        father_phone: '',
+        mother_first_last_name: '',
+        mother_second_last_name: '',
+        mother_first_name: '',
+        mother_home_address: '',
+        mother_work_address: '',
+        mother_phone: '',
+        // Guardian contact fields
+        guardian_name: '',
+        guardian_relationship: '',
+        guardian_phone: '',
+        guardian_email: ''
+    });
+
+    const startEditing = (section) => {
+        setEditingSection(section);
+        const a = athlete;
+        setEditForm({
+            // User fields
+            identification_number: a?.user?.identification_number || '',
+            email: a?.user?.email || '',
+            document_type: a?.user?.document_type || '',
+            second_last_name: a?.user?.second_last_name || '',
+            gender: a?.user?.gender || '',
+            blood_type: a?.user?.blood_type || '',
+            birth_city: a?.user?.birth_city || '',
+            birth_country: a?.user?.birth_country || '',
+            fixed_phone: a?.user?.fixed_phone || '',
+            neighborhood: a?.user?.neighborhood || '',
+            insurance: a?.user?.insurance || '',
+            uniforms: a?.user?.uniforms || '',
+            start_date: a?.user?.start_date || '',
+            // Athlete fields
+            phone: a?.phone || '',
+            address: a?.address || '',
+            birth_date: a?.birth_date || '',
+            eps: a?.eps || '',
+            physical_diseases: a?.physical_diseases || '',
+            medical_diseases: a?.medical_diseases || '',
+            allergies: a?.allergies || '',
+            physical_disability: a?.physical_disability || '',
+            // Medical info
+            emergency_contact: a?.medical_info?.emergency_contact || '',
+            emergency_phone: a?.medical_info?.emergency_phone || '',
+            emergency_relationship: a?.medical_info?.emergency_relationship || '',
+            emergency_alternate: a?.medical_info?.emergency_alternate || '',
+            // Academic info
+            school_name: a?.academic_info?.school_name || '',
+            grade: a?.academic_info?.grade || '',
+            academic_level: a?.academic_info?.academic_level || '',
+            // Guardian fields
+            father_first_last_name: a?.guardians?.[0]?.father_first_last_name || '',
+            father_second_last_name: a?.guardians?.[0]?.father_second_last_name || '',
+            father_first_name: a?.guardians?.[0]?.father_first_name || '',
+            father_home_address: a?.guardians?.[0]?.father_home_address || '',
+            father_work_address: a?.guardians?.[0]?.father_work_address || '',
+            father_phone: a?.guardians?.[0]?.father_phone || '',
+            mother_first_last_name: a?.guardians?.[0]?.mother_first_last_name || '',
+            mother_second_last_name: a?.guardians?.[0]?.mother_second_last_name || '',
+            mother_first_name: a?.guardians?.[0]?.mother_first_name || '',
+            mother_home_address: a?.guardians?.[0]?.mother_home_address || '',
+            mother_work_address: a?.guardians?.[0]?.mother_work_address || '',
+            mother_phone: a?.guardians?.[0]?.mother_phone || '',
+            // Guardian contact fields
+            guardian_name: a?.guardians?.[0]?.name || '',
+            guardian_relationship: a?.guardians?.[0]?.relationship || '',
+            guardian_phone: a?.guardians?.[0]?.phone || '',
+            guardian_email: a?.guardians?.[0]?.email || ''
+        });
+    };
+
+    const cancelEditing = () => {
+        setEditingSection(null);
+    };
+
+    const saveProfile = async () => {
+        setSaving(true);
+        try {
+            const data = {
+                // User fields
+                user: {
+                    identification_number: editForm.identification_number,
+                    email: editForm.email,
+                    document_type: editForm.document_type,
+                    second_last_name: editForm.second_last_name,
+                    gender: editForm.gender,
+                    blood_type: editForm.blood_type,
+                    birth_city: editForm.birth_city,
+                    birth_country: editForm.birth_country,
+                    fixed_phone: editForm.fixed_phone,
+                    neighborhood: editForm.neighborhood,
+                    insurance: editForm.insurance,
+                    uniforms: editForm.uniforms,
+                    start_date: editForm.start_date
+                },
+                // Athlete fields
+                phone: editForm.phone,
+                address: editForm.address,
+                birth_date: editForm.birth_date,
+                eps: editForm.eps,
+                physical_diseases: editForm.physical_diseases,
+                medical_diseases: editForm.medical_diseases,
+                allergies: editForm.allergies,
+                physical_disability: editForm.physical_disability,
+                // Medical info
+                medical_info: {
+                    blood_type: editForm.blood_type,
+                    allergies: editForm.allergies,
+                    conditions: `Enfermedades físicas: ${editForm.physical_diseases || 'Ninguna'}\nEnfermedades médicas: ${editForm.medical_diseases || 'Ninguna'}`,
+                    physical_diseases: editForm.physical_diseases,
+                    medical_diseases: editForm.medical_diseases,
+                    physical_disability: editForm.physical_disability,
+                    emergency_contact: editForm.emergency_contact,
+                    emergency_phone: editForm.emergency_phone,
+                    emergency_relationship: editForm.emergency_relationship,
+                    emergency_alternate: editForm.emergency_alternate
+                },
+                // Academic info
+                academic_info: {
+                    school_name: editForm.school_name,
+                    grade: editForm.grade,
+                    academic_level: editForm.academic_level
+                },
+                // Guardian info
+                guardian: {
+                    father_first_last_name: editForm.father_first_last_name,
+                    father_second_last_name: editForm.father_second_last_name,
+                    father_first_name: editForm.father_first_name,
+                    father_home_address: editForm.father_home_address,
+                    father_work_address: editForm.father_work_address,
+                    father_phone: editForm.father_phone,
+                    mother_first_last_name: editForm.mother_first_last_name,
+                    mother_second_last_name: editForm.mother_second_last_name,
+                    mother_first_name: editForm.mother_first_name,
+                    mother_home_address: editForm.mother_home_address,
+                    mother_work_address: editForm.mother_work_address,
+                    mother_phone: editForm.mother_phone,
+                    name: editForm.guardian_name,
+                    relationship: editForm.guardian_relationship,
+                    phone: editForm.guardian_phone,
+                    email: editForm.guardian_email
+                }
+            };
+
+            await api(`/athletes/profile`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+
+            showSuccess('Perfil actualizado correctamente');
+            setEditingSection(null);
+            fetchProfile();
+        } catch (err) {
+            showError('Error al guardar cambios');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     // Derived stats
-    const fullName = athlete?.user ? `${athlete.user.first_name || ''} ${athlete.user.last_name || ''}`.trim() : 'CARGANDO...';
+    const fullName = athlete?.user ? `${athlete.user.first_name || ''} ${athlete.user.last_name || ''} ${athlete.user.second_last_name || ''}`.trim() : 'CARGANDO...';
     const initials = athlete?.user ? `${(athlete.user.first_name || '?')[0]}${(athlete.user.last_name || '?')[0]}`.toUpperCase() : '??';
     const age = computeAge(athlete?.birth_date);
     const groupName = profileData.groups?.[0]?.name || '—';
@@ -149,9 +350,16 @@ const AthleteProfile = () => {
     const photoUrl = athlete?.photo_url;
     const identificationNumber = athlete?.user?.identification_number || '—';
     const athletePhone = athlete?.phone || athlete?.user?.phone || '—';
-    const bloodType = athlete?.medical_info?.blood_type || '—';
+    const bloodType = athlete?.user?.blood_type || athlete?.medical_info?.blood_type || '—';
     const emergencyContact = athlete?.medical_info?.emergency_contact || '—';
+    const emergencyPhone = athlete?.medical_info?.emergency_phone || '—';
+    const emergencyRelationship = athlete?.medical_info?.emergency_relationship || '—';
     const schoolName = athlete?.academic_info?.school_name || '—';
+    const athleteEps = athlete?.eps || '—';
+    const athletePhysicalDiseases = athlete?.physical_diseases || '';
+    const athleteMedicalDiseases = athlete?.medical_diseases || '';
+    const athleteAllergies = athlete?.allergies || '';
+    const athletePhysicalDisability = athlete?.physical_disability || '';
     const groupSchedule = profileData.groups?.[0]?.schedule || '—';
     const trainingLocation = profileData.groups?.[0]?.training_location || '—';
 
@@ -419,9 +627,31 @@ const AthleteProfile = () => {
                                         </div>
                                     </div>
                                     {schoolName !== '—' && (
-                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937', position: 'relative' }}>
+                                            {/* Edit button */}
+                                            {editingSection !== 'academic' && (
+                                                <button onClick={() => startEditing('academic')} style={{ position: 'absolute', top: '2px', right: '2px', padding: '6px 12px', background: '#00ffff', border: 'none', borderRadius: '4px', color: '#000', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em', zIndex: 10 }}>✏️ EDITAR</button>
+                                            )}
                                             <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>COLEGIO</p>
                                             <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{schoolName}</p>
+                                        </div>
+                                    )}
+                                    {editingSection === 'academic' && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', border: '2px solid #a78bfa' }}>
+                                            <p style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>EDITAR INFORMACIÓN ACADÉMICA</p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nombre del colegio"
+                                                    value={editForm.school_name}
+                                                    onChange={(e) => setEditForm({ ...editForm, school_name: e.target.value })}
+                                                    style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }}
+                                                />
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button onClick={saveProfile} disabled={saving} style={{ flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>GUARDAR</button>
+                                                    <button onClick={cancelEditing} style={{ flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>CANCELAR</button>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                     {groupSchedule !== '—' && (
@@ -436,7 +666,11 @@ const AthleteProfile = () => {
                                             <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{trainingLocation}</p>
                                         </div>
                                     )}
-                                    <div style={{ width: '100%', marginTop: '12px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                    <div style={{ width: '100%', marginTop: '12px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937', position: 'relative' }}>
+                                        {/* Edit button for personal info */}
+                                        {editingSection !== 'personal' && (
+                                            <button onClick={() => startEditing('personal')} style={{ position: 'absolute', top: '2px', right: '2px', padding: '6px 12px', background: '#00ffff', border: 'none', borderRadius: '4px', color: '#000', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em', zIndex: 10 }}>✏️ EDITAR</button>
+                                        )}
                                         <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>CÉDULA</p>
                                         <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{identificationNumber}</p>
                                     </div>
@@ -444,6 +678,75 @@ const AthleteProfile = () => {
                                         <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>TELÉFONO</p>
                                         <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{athletePhone}</p>
                                     </div>
+                                    {athlete?.address && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>DIRECCIÓN</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{athlete.address}</p>
+                                        </div>
+                                    )}
+                                    {athlete?.user?.email && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>EMAIL</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{athlete.user.email}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Personal info edit form */}
+                                    {editingSection === 'personal' && (
+                                        <div style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', border: '2px solid #00ffff' }}>
+                                            <p style={{ color: '#00ffff', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>EDITAR INFORMACIÓN PERSONAL</p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <input type="text" placeholder="Cédula" value={editForm.identification_number} onChange={(e) => setEditForm({ ...editForm, identification_number: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                <input type="email" placeholder="Email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                <input type="text" placeholder="Teléfono" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                <input type="text" placeholder="Dirección" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button onClick={saveProfile} disabled={saving} style={{ flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{saving ? 'GUARDANDO...' : 'GUARDAR'}</button>
+                                                    <button onClick={cancelEditing} style={{ flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>CANCELAR</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* EPS */}
+                                    {athleteEps !== '—' && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <p style={{ color: '#6b7280', fontSize: '0.625rem', marginBottom: '4px' }}>EPS</p>
+                                            <p style={{ color: '#22d3ee', fontSize: '0.875rem', fontWeight: 700 }}>{athleteEps}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Enfermedades Físicas */}
+                                    {athletePhysicalDiseases && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(239,68,68,0.1)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.5)' }}>
+                                            <p style={{ color: '#ef4444', fontSize: '0.625rem', marginBottom: '4px' }}>ENFERMEDADES FÍSICAS</p>
+                                            <p style={{ color: '#fca5a5', fontSize: '0.75rem' }}>{athletePhysicalDiseases}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Enfermedades Médicas */}
+                                    {athleteMedicalDiseases && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(239,68,68,0.1)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.5)' }}>
+                                            <p style={{ color: '#ef4444', fontSize: '0.625rem', marginBottom: '4px' }}>ENFERMEDADES MÉDICAS</p>
+                                            <p style={{ color: '#fca5a5', fontSize: '0.75rem' }}>{athleteMedicalDiseases}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Alergias */}
+                                    {athleteAllergies && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(251,146,60,0.1)', borderRadius: '8px', border: '1px solid rgba(251,146,60,0.5)' }}>
+                                            <p style={{ color: '#fb923c', fontSize: '0.625rem', marginBottom: '4px' }}>ALERGIAS</p>
+                                            <p style={{ color: '#fdba74', fontSize: '0.75rem' }}>{athleteAllergies}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Incapacidad Física */}
+                                    {athletePhysicalDisability && (
+                                        <div style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'rgba(168,85,247,0.1)', borderRadius: '8px', border: '1px solid rgba(168,85,247,0.5)' }}>
+                                            <p style={{ color: '#a78bfa', fontSize: '0.625rem', marginBottom: '4px' }}>INCAPACIDAD FÍSICA</p>
+                                            <p style={{ color: '#c4b5fd', fontSize: '0.75rem' }}>{athletePhysicalDisability}</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Radar + Guardians */}
@@ -474,32 +777,68 @@ const AthleteProfile = () => {
                                     }}>
                                         <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.875rem', fontWeight: 700, color: '#22c55e', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                                             📡 SOPORTE EXTERNO (ACUDIENTES)
+                                            {editingSection !== 'guardian' && (
+                                                <button onClick={() => startEditing('guardian')} style={{ marginLeft: 'auto', padding: '4px 10px', background: '#22c55e', border: 'none', borderRadius: '4px', color: '#000', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }}>✏️ EDITAR</button>
+                                            )}
                                         </h3>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                            {(athlete?.guardians || []).length > 0 ? (
-                                                athlete.guardians.map((g, i) => (
-                                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px', border: '1px solid #1f2937' }}>
-                                                        <div style={{ width: 40, height: 40, background: 'rgba(34,197,94,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-                                                            {g.relationship?.toLowerCase().includes('madre') ? '👩' : g.relationship?.toLowerCase().includes('padre') ? '👨' : '👤'}
-                                                        </div>
-                                                        <div style={{ flex: 1 }}>
-                                                            <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
-                                                            <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
-                                                            {g.email && (
-                                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
+                                        {editingSection === 'guardian' ? (
+                                            <div style={{ padding: '12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', border: '2px solid #22c55e' }}>
+                                                <p style={{ color: '#22c55e', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>EDITAR ACUDIENTES</p>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+                                                    <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px' }}>👨 DATOS DEL PADRE</p>
+                                                    <input type="text" placeholder="Primer apellido" value={editForm.father_first_last_name} onChange={(e) => setEditForm({ ...editForm, father_first_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Segundo apellido" value={editForm.father_second_last_name} onChange={(e) => setEditForm({ ...editForm, father_second_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Nombres" value={editForm.father_first_name} onChange={(e) => setEditForm({ ...editForm, father_first_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Dirección residencia" value={editForm.father_home_address} onChange={(e) => setEditForm({ ...editForm, father_home_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Dirección trabajo" value={editForm.father_work_address} onChange={(e) => setEditForm({ ...editForm, father_work_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Teléfono" value={editForm.father_phone} onChange={(e) => setEditForm({ ...editForm, father_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+
+                                                    <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px', marginTop: '8px' }}>👩 DATOS DE LA MADRE</p>
+                                                    <input type="text" placeholder="Primer apellido" value={editForm.mother_first_last_name} onChange={(e) => setEditForm({ ...editForm, mother_first_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Segundo apellido" value={editForm.mother_second_last_name} onChange={(e) => setEditForm({ ...editForm, mother_second_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Nombres" value={editForm.mother_first_name} onChange={(e) => setEditForm({ ...editForm, mother_first_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Dirección residencia" value={editForm.mother_home_address} onChange={(e) => setEditForm({ ...editForm, mother_home_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Dirección trabajo" value={editForm.mother_work_address} onChange={(e) => setEditForm({ ...editForm, mother_work_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Teléfono" value={editForm.mother_phone} onChange={(e) => setEditForm({ ...editForm, mother_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+
+                                                    <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px', marginTop: '8px' }}>👤 DATOS DEL ACUDIENTE</p>
+                                                    <input type="text" placeholder="Nombre completo" value={editForm.guardian_name} onChange={(e) => setEditForm({ ...editForm, guardian_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Parentesco" value={editForm.guardian_relationship} onChange={(e) => setEditForm({ ...editForm, guardian_relationship: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="text" placeholder="Teléfono" value={editForm.guardian_phone} onChange={(e) => setEditForm({ ...editForm, guardian_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <input type="email" placeholder="Email" value={editForm.guardian_email} onChange={(e) => setEditForm({ ...editForm, guardian_email: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                        <button onClick={saveProfile} disabled={saving} style={{ flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{saving ? 'GUARDANDO...' : 'GUARDAR'}</button>
+                                                        <button onClick={cancelEditing} style={{ flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>CANCELAR</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                                {(athlete?.guardians || []).length > 0 ? (
+                                                    athlete.guardians.map((g, i) => (
+                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                                            <div style={{ width: 40, height: 40, background: 'rgba(34,197,94,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                                                                {g.relationship?.toLowerCase().includes('madre') ? '👩' : g.relationship?.toLowerCase().includes('padre') ? '👨' : '👤'}
+                                                            </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
+                                                                <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
+                                                                {g.email && (
+                                                                    <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
+                                                                )}
+                                                            </div>
+                                                            {g.phone && (
+                                                                <a href={`tel:${g.phone}`} style={{ color: '#22c55e', fontSize: '1.25rem', textDecoration: 'none' }}>📞</a>
                                                             )}
                                                         </div>
-                                                        {g.phone && (
-                                                            <a href={`tel:${g.phone}`} style={{ color: '#22c55e', fontSize: '1.25rem', textDecoration: 'none' }}>📞</a>
-                                                        )}
+                                                    ))
+                                                ) : (
+                                                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '0.875rem' }}>
+                                                        No hay acudientes registrados
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '0.875rem' }}>
-                                                    No hay acudientes registrados
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -574,29 +913,67 @@ const AthleteProfile = () => {
                                 clipPath: 'polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%)',
                                 padding: '16px'
                             }}>
-                                <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.875rem', fontWeight: 700, color: '#22c55e', letterSpacing: '0.05em', marginBottom: '12px' }}>📡 ACUDIENTES</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    {(athlete?.guardians || []).length > 0 ? (
-                                        athlete.guardians.map((g, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px', border: '1px solid #1f2937' }}>
-                                                <div style={{ width: 40, height: 40, background: 'rgba(34,197,94,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-                                                    {g.relationship?.toLowerCase().includes('madre') ? '👩' : g.relationship?.toLowerCase().includes('padre') ? '👨' : '👤'}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
-                                                    <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
-                                                    {g.email && (
-                                                        <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '0.875rem' }}>
-                                            No hay acudientes registrados
-                                        </div>
+                                <h3 style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.875rem', fontWeight: 700, color: '#22c55e', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    📡 ACUDIENTES
+                                    {editingSection !== 'guardian' && (
+                                        <button onClick={() => startEditing('guardian')} style={{ marginLeft: 'auto', padding: '4px 10px', background: '#22c55e', border: 'none', borderRadius: '4px', color: '#000', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em' }}>✏️ EDITAR</button>
                                     )}
-                                </div>
+                                </h3>
+                                {editingSection === 'guardian' ? (
+                                    <div style={{ padding: '12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', border: '2px solid #22c55e' }}>
+                                        <p style={{ color: '#22c55e', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>EDITAR ACUDIENTES</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
+                                            <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px' }}>👨 DATOS DEL PADRE</p>
+                                            <input type="text" placeholder="Primer apellido" value={editForm.father_first_last_name} onChange={(e) => setEditForm({ ...editForm, father_first_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Segundo apellido" value={editForm.father_second_last_name} onChange={(e) => setEditForm({ ...editForm, father_second_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Nombres" value={editForm.father_first_name} onChange={(e) => setEditForm({ ...editForm, father_first_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Dirección residencia" value={editForm.father_home_address} onChange={(e) => setEditForm({ ...editForm, father_home_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Dirección trabajo" value={editForm.father_work_address} onChange={(e) => setEditForm({ ...editForm, father_work_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Teléfono" value={editForm.father_phone} onChange={(e) => setEditForm({ ...editForm, father_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+
+                                            <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px', marginTop: '8px' }}>👩 DATOS DE LA MADRE</p>
+                                            <input type="text" placeholder="Primer apellido" value={editForm.mother_first_last_name} onChange={(e) => setEditForm({ ...editForm, mother_first_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Segundo apellido" value={editForm.mother_second_last_name} onChange={(e) => setEditForm({ ...editForm, mother_second_last_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Nombres" value={editForm.mother_first_name} onChange={(e) => setEditForm({ ...editForm, mother_first_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Dirección residencia" value={editForm.mother_home_address} onChange={(e) => setEditForm({ ...editForm, mother_home_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Dirección trabajo" value={editForm.mother_work_address} onChange={(e) => setEditForm({ ...editForm, mother_work_address: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Teléfono" value={editForm.mother_phone} onChange={(e) => setEditForm({ ...editForm, mother_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+
+                                            <p style={{ color: '#22c55e', fontSize: '0.7rem', fontWeight: 600, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: '4px', marginTop: '8px' }}>👤 DATOS DEL ACUDIENTE</p>
+                                            <input type="text" placeholder="Nombre completo" value={editForm.guardian_name} onChange={(e) => setEditForm({ ...editForm, guardian_name: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Parentesco" value={editForm.guardian_relationship} onChange={(e) => setEditForm({ ...editForm, guardian_relationship: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Teléfono" value={editForm.guardian_phone} onChange={(e) => setEditForm({ ...editForm, guardian_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="email" placeholder="Email" value={editForm.guardian_email} onChange={(e) => setEditForm({ ...editForm, guardian_email: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                                                <button onClick={saveProfile} disabled={saving} style={{ flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{saving ? 'GUARDANDO...' : 'GUARDAR'}</button>
+                                                <button onClick={cancelEditing} style={{ flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>CANCELAR</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        {(athlete?.guardians || []).length > 0 ? (
+                                            athlete.guardians.map((g, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                                    <div style={{ width: 40, height: 40, background: 'rgba(34,197,94,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                                                        {g.relationship?.toLowerCase().includes('madre') ? '👩' : g.relationship?.toLowerCase().includes('padre') ? '👨' : '👤'}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>{g.name}</p>
+                                                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{g.relationship || 'Acudiente'}</p>
+                                                        {g.email && (
+                                                            <p style={{ fontSize: '0.625rem', color: '#9ca3af', marginTop: 2 }}>✉️ {g.email}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '0.875rem' }}>
+                                                No hay acudientes registrados
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
@@ -659,13 +1036,6 @@ const AthleteProfile = () => {
                             <div className="scanline" style={{ position: 'relative', background: 'rgba(17,24,39,0.5)', border: '1px solid rgba(239,68,68,0.3)', clipPath: 'polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%)', padding: '24px' }}>
                                 <h3 className="font-orbitron" style={{ fontSize: '1.125rem', fontWeight: 700, color: '#ef4444', textShadow: '0 0 10px rgba(239,68,68,0.7)', letterSpacing: '0.05em', marginBottom: '16px' }}>ESTADO VITAL</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.5)', padding: '8px', borderRadius: '8px' }}>
-                                        <span style={{ fontSize: '1.25rem' }}>🛡️</span>
-                                        <div>
-                                            <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.75rem' }}>SALUDABLE</p>
-                                            <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Sin condiciones crónicas</p>
-                                        </div>
-                                    </div>
                                     {bloodType !== '—' && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,255,0.1)', border: '1px solid rgba(0,255,255,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>🩸</span>
@@ -675,34 +1045,62 @@ const AthleteProfile = () => {
                                             </div>
                                         </div>
                                     )}
+                                    {athleteEps !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>⚕️</span>
+                                            <div>
+                                                <p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.75rem' }}>EPS</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteEps}</p>
+                                            </div>
+                                        </div>
+                                    )}
                                     {emergencyContact !== '—' && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>🚨</span>
                                             <div>
                                                 <p style={{ fontWeight: 700, color: '#facc15', fontSize: '0.75rem' }}>CONTACTO EMERGENCIA</p>
-                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{emergencyContact}</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{emergencyContact} {emergencyPhone ? `📞 ${emergencyPhone}` : ''}</p>
+                                                {emergencyRelationship && <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Parentesco: {emergencyRelationship}</p>}
                                             </div>
                                         </div>
                                     )}
-                                    {athlete?.medical_info?.allergies && (
+                                    {athleteAllergies && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>🚫</span>
                                             <div>
-                                                <p style={{ fontWeight: 700, color: '#fb923c', fontSize: '0.75rem' }}>ALERGIA: {athlete.medical_info.allergies}</p>
-                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Requiere precaución</p>
+                                                <p style={{ fontWeight: 700, color: '#fb923c', fontSize: '0.75rem' }}>ALERGIAS</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteAllergies}</p>
                                             </div>
                                         </div>
                                     )}
-                                    {athlete?.medical_info?.conditions && (
+                                    {athletePhysicalDiseases && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>⚠️</span>
                                             <div>
-                                                <p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>CONDICIÓN: {athlete.medical_info.conditions}</p>
-                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Requiere atención</p>
+                                                <p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>ENFERMEDADES FÍSICAS</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athletePhysicalDiseases}</p>
                                             </div>
                                         </div>
                                     )}
-                                    {!athlete?.medical_info?.allergies && !athlete?.medical_info?.conditions && (
+                                    {athleteMedicalDiseases && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>💊</span>
+                                            <div>
+                                                <p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>ENFERMEDADES MÉDICAS</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteMedicalDiseases}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {athletePhysicalDisability && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>♿</span>
+                                            <div>
+                                                <p style={{ fontWeight: 700, color: '#a78bfa', fontSize: '0.75rem' }}>INCAPACIDAD FÍSICA</p>
+                                                <p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athletePhysicalDisability}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {!athleteAllergies && !athletePhysicalDiseases && !athleteMedicalDiseases && !athletePhysicalDisability && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>✅</span>
                                             <div>
@@ -712,6 +1110,35 @@ const AthleteProfile = () => {
                                         </div>
                                     )}
                                 </div>
+                                {/* Edit button for medical info */}
+                                {editingSection !== 'medical' && (
+                                    <button
+                                        onClick={() => startEditing('medical')}
+                                        style={{ position: 'absolute', top: '2px', right: '2px', padding: '6px 12px', background: '#ef4444', border: 'none', borderRadius: '4px', color: '#fff', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em', zIndex: 10 }}
+                                    >
+                                        ✏️ EDITAR
+                                    </button>
+                                )}
+                                {editingSection === 'medical' && (
+                                    <div style={{ width: '100%', marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', border: '2px solid #ef4444' }}>
+                                        <p style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>EDITAR INFORMACIÓN MÉDICA</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <input type="text" placeholder="Tipo de sangre" value={editForm.blood_type} onChange={(e) => setEditForm({ ...editForm, blood_type: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="EPS" value={editForm.eps} onChange={(e) => setEditForm({ ...editForm, eps: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <textarea placeholder="Alergias" value={editForm.allergies} onChange={(e) => setEditForm({ ...editForm, allergies: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem', resize: 'vertical' }} />
+                                            <textarea placeholder="Enfermedades físicas" value={editForm.physical_diseases} onChange={(e) => setEditForm({ ...editForm, physical_diseases: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem', resize: 'vertical' }} />
+                                            <textarea placeholder="Enfermedades médicas" value={editForm.medical_diseases} onChange={(e) => setEditForm({ ...editForm, medical_diseases: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem', resize: 'vertical' }} />
+                                            <textarea placeholder="Incapacidad física" value={editForm.physical_disability} onChange={(e) => setEditForm({ ...editForm, physical_disability: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem', resize: 'vertical' }} />
+                                            <input type="text" placeholder="Contacto emergencia" value={editForm.emergency_contact} onChange={(e) => setEditForm({ ...editForm, emergency_contact: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Teléfono emergencia" value={editForm.emergency_phone} onChange={(e) => setEditForm({ ...editForm, emergency_phone: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <input type="text" placeholder="Parentesco" value={editForm.emergency_relationship} onChange={(e) => setEditForm({ ...editForm, emergency_relationship: e.target.value })} style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid #374151', borderRadius: '4px', color: 'white', fontSize: '0.875rem' }} />
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button onClick={saveProfile} disabled={saving} style={{ flex: 1, padding: '8px', background: '#22c55e', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>{saving ? 'GUARDANDO...' : 'GUARDAR'}</button>
+                                                <button onClick={cancelEditing} style={{ flex: 1, padding: '8px', background: '#ef4444', border: 'none', borderRadius: '4px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>CANCELAR</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -745,19 +1172,43 @@ const AthleteProfile = () => {
                                         <span style={{ fontSize: '1.25rem' }}>🛡️</span>
                                         <div><p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.75rem' }}>SALUDABLE</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Sin condiciones crónicas</p></div>
                                     </div>
-                                    {athlete?.medical_info?.allergies && (
+                                    {bloodType !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,255,255,0.1)', border: '1px solid rgba(0,255,255,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>🩸</span>
+                                            <div><p style={{ fontWeight: 700, color: '#22d3ee', fontSize: '0.75rem' }}>TIPO DE SANGRE: {bloodType}</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Factor sanguíneo</p></div>
+                                        </div>
+                                    )}
+                                    {athleteEps !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>⚕️</span>
+                                            <div><p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.75rem' }}>EPS</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteEps}</p></div>
+                                        </div>
+                                    )}
+                                    {emergencyContact !== '—' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>🚨</span>
+                                            <div><p style={{ fontWeight: 700, color: '#facc15', fontSize: '0.75rem' }}>CONTACTO EMERGENCIA</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{emergencyContact}</p></div>
+                                        </div>
+                                    )}
+                                    {athleteAllergies && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>🚫</span>
-                                            <div><p style={{ fontWeight: 700, color: '#fb923c', fontSize: '0.75rem' }}>ALERGIA: {athlete.medical_info.allergies}</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Requiere precaución</p></div>
+                                            <div><p style={{ fontWeight: 700, color: '#fb923c', fontSize: '0.75rem' }}>ALERGIAS</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteAllergies}</p></div>
                                         </div>
                                     )}
-                                    {athlete?.medical_info?.conditions && (
+                                    {athletePhysicalDiseases && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-                                            <div><p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>CONDICIÓN: {athlete.medical_info.conditions}</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Requiere atención</p></div>
+                                            <div><p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>ENFERMEDADES FÍSICAS</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athletePhysicalDiseases}</p></div>
                                         </div>
                                     )}
-                                    {!athlete?.medical_info?.allergies && !athlete?.medical_info?.conditions && (
+                                    {athleteMedicalDiseases && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.5)', padding: '8px', borderRadius: '8px' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>💊</span>
+                                            <div><p style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.75rem' }}>ENFERMEDADES MÉDICAS</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>{athleteMedicalDiseases}</p></div>
+                                        </div>
+                                    )}
+                                    {!athleteAllergies && !athletePhysicalDiseases && !athleteMedicalDiseases && !athletePhysicalDisability && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.5)', padding: '8px', borderRadius: '8px' }}>
                                             <span style={{ fontSize: '1.25rem' }}>✅</span>
                                             <div><p style={{ fontWeight: 700, color: '#22c55e', fontSize: '0.75rem' }}>SIN NOVEDADES</p><p style={{ fontSize: '0.625rem', color: '#9ca3af' }}>Sin alergias ni condiciones</p></div>
@@ -805,7 +1256,7 @@ const AthleteProfile = () => {
                         </button>
                     </div>
 
-                    {/* Tab: Asistencia */}
+                    {/* Tab: Asistencia - Muestra TODOS los registros */}
                     <div id="tab-asistencia" className={`tab-content ${activeTab === 'tab-asistencia' ? 'active' : ''}`} style={{ display: activeTab === 'tab-asistencia' ? 'block' : 'none' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
                             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid #1f2937', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
@@ -821,13 +1272,13 @@ const AthleteProfile = () => {
                                 <p className="font-orbitron" style={{ fontSize: '1.5rem', color: '#ef4444', marginTop: 4 }}>{absentCount}</p>
                             </div>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
+                        <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
                             <table style={{ width: '100%', fontSize: '0.875rem', textAlign: 'left', borderCollapse: 'collapse' }}>
-                                <thead style={{ borderBottom: '2px solid rgba(0,255,255,0.5)', color: '#06b6d4', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
+                                <thead style={{ borderBottom: '2px solid rgba(0,255,255,0.5)', color: '#06b6d4', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem', position: 'sticky', top: 0, background: '#1f2937' }}>
                                     <tr><th style={{ padding: '12px' }}>FECHA</th><th style={{ padding: '12px' }}>GRUPO</th><th style={{ padding: '12px' }}>ESTADO</th><th style={{ padding: '12px' }}>NOTAS</th></tr>
                                 </thead>
                                 <tbody style={{ color: '#d1d5db' }}>
-                                    {profileData.attendance.slice(0, 5).map(a => {
+                                    {profileData.attendance.map(a => {
                                         const sc = ATTENDANCE_LABELS[a.status] || { label: a.status, class: 'bg-gray-500/20 text-gray-400' };
                                         return (
                                             <tr key={a.id} style={{ borderBottom: '1px solid #1f2937' }}>
@@ -846,7 +1297,7 @@ const AthleteProfile = () => {
                         </div>
                     </div>
 
-                    {/* Tab: Finanzas */}
+                    {/* Tab: Finanzas - Muestra TODOS los pagos */}
                     <div id="tab-finanzas" className={`tab-content ${activeTab === 'tab-finanzas' ? 'active' : ''}`} style={{ display: activeTab === 'tab-finanzas' ? 'block' : 'none' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
                             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid #1f2937', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
@@ -862,9 +1313,9 @@ const AthleteProfile = () => {
                                 <p className="font-orbitron" style={{ fontSize: '1.25rem', color: '#ef4444', marginTop: 4 }}>${totalOverdue.toFixed(2)}</p>
                             </div>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
+                        <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
                             <table style={{ width: '100%', fontSize: '0.875rem', textAlign: 'left', borderCollapse: 'collapse' }}>
-                                <thead style={{ borderBottom: '2px solid rgba(250,204,21,0.5)', color: '#facc15', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
+                                <thead style={{ borderBottom: '2px solid rgba(250,204,21,0.5)', color: '#facc15', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem', position: 'sticky', top: 0, background: '#1f2937' }}>
                                     <tr><th style={{ padding: '12px' }}>FECHA PAGO</th><th style={{ padding: '12px' }}>CONCEPTO</th><th style={{ padding: '12px' }}>MONTO</th><th style={{ padding: '12px' }}>MÉTODO</th><th style={{ padding: '12px' }}>ESTADO</th></tr>
                                 </thead>
                                 <tbody style={{ color: '#d1d5db' }}>
@@ -881,124 +1332,78 @@ const AthleteProfile = () => {
                                             </tr>
                                         );
                                     })}
-                                    {payments.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>Sin registros de pagos</td></tr>}
+                                    {payments.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>Sin registros de pagos</td></tr>}
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    {/* Tab: Laboratorio */}
+                    {/* Tab: Tests - Muestra TODOS los tests */}
                     <div id="tab-tests" className={`tab-content ${activeTab === 'tab-tests' ? 'active' : ''}`} style={{ display: activeTab === 'tab-tests' ? 'block' : 'none' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(168,85,247,0.2)' }}>
-                            <div>
-                                <p style={{ fontSize: '0.75rem', color: '#6b7280', letterSpacing: '0.1em' }}>TENDENCIA GLOBAL DE RENDIMIENTO</p>
-                                <p style={{ fontSize: '0.875rem', color: '#d1d5db' }}>Basado en los últimos {totalTests} tests</p>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <p className="font-orbitron" style={{ fontSize: '1.75rem', color: '#22c55e', textShadow: '0 0 10px rgba(34,197,94,0.7)' }}>
-                                    {overallTrend === '↑' ? '▲' : overallTrend === '↓' ? '▼' : '—'}
-                                </p>
-                                <p style={{ fontSize: '0.625rem', color: '#6b7280' }}>TENDENCIA</p>
-                            </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
-                            {testStats?.categories?.slice(0, 3).map((cat, i) => (
-                                <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(168,85,247,0.3)', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
-                                    <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{cat.category}</p>
-                                    <p className="font-orbitron" style={{ fontSize: '1.75rem', color: '#a78bfa', marginTop: 8 }}>
-                                        {cat.templates?.[cat.templates.length - 1]?.latest_value || '—'}{cat.templates?.[cat.templates.length - 1]?.unit ? ' ' + cat.templates[cat.templates.length - 1].unit : ''}
-                                    </p>
-                                    <p style={{ fontSize: '0.75rem', color: cat.trend === 'up' ? '#22c55e' : cat.trend === 'down' ? '#ef4444' : '#6b7280', marginTop: 4 }}>
-                                        {cat.trend === 'up' ? '▲ MEJORA' : cat.trend === 'down' ? '▼ DECRECE' : '— ESTABLE'}
-                                    </p>
-                                </div>
-                            ))}
-                            {(!testStats?.categories || testStats.categories.length === 0) && (
-                                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                                    <p style={{ fontSize: '2rem', marginBottom: 8 }}>🔬</p>
-                                    <p>No hay tests registrados aún</p>
-                                </div>
-                            )}
+                        <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+                            <table style={{ width: '100%', fontSize: '0.875rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                <thead style={{ borderBottom: '2px solid rgba(168,85,247,0.5)', color: '#a78bfa', fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem', position: 'sticky', top: 0, background: '#1f2937' }}>
+                                    <tr><th style={{ padding: '12px' }}>FECHA</th><th style={{ padding: '12px' }}>TEST</th><th style={{ padding: '12px' }}>CATEGORÍA</th><th style={{ padding: '12px' }}>VALOR</th><th style={{ padding: '12px' }}>NOTAS</th></tr>
+                                </thead>
+                                <tbody style={{ color: '#d1d5db' }}>
+                                    {profileData.tests.map(t => (
+                                        <tr key={t.id} style={{ borderBottom: '1px solid #1f2937' }}>
+                                            <td style={{ padding: '12px' }}>{new Date(t.test_date).toLocaleDateString()}</td>
+                                            <td style={{ padding: '12px', fontWeight: 500 }}>{t.template?.name || 'Test'}</td>
+                                            <td style={{ padding: '12px' }}>{t.template?.category || '—'}</td>
+                                            <td style={{ padding: '12px', fontWeight: 700, color: '#a78bfa' }}>{t.value} {t.template?.unit || ''}</td>
+                                            <td style={{ padding: '12px', color: '#6b7280' }}>{t.notes || '-'}</td>
+                                        </tr>
+                                    ))}
+                                    {profileData.tests.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>Sin tests realizados</td></tr>}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
                     {/* Tab: Historial */}
                     <div id="tab-historial" className={`tab-content ${activeTab === 'tab-historial' ? 'active' : ''}`} style={{ display: activeTab === 'tab-historial' ? 'block' : 'none' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid #1f2937' }}>
-                            <div>
-                                <p style={{ fontSize: '0.75rem', color: '#6b7280', letterSpacing: '0.1em' }}>TIEMPO EN CLUB</p>
-                                <p style={{ fontSize: '0.875rem', color: '#d1d5db' }}>Fidelidad de la squadrón</p>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <p className="font-orbitron" style={{ fontSize: '1.75rem', color: '#06b6d4', textShadow: '0 0 10px rgba(0,255,255,0.7)' }}>
-                                    {profileData.movements.length > 0 ? (
-                                        (() => {
-                                            const firstJoin = profileData.movements.find(m => m.action === 'JOINED');
-                                            if (firstJoin?.date) {
-                                                const joined = new Date(firstJoin.date);
-                                                const now = new Date();
-                                                const years = now.getFullYear() - joined.getFullYear();
-                                                return `${years} ${years === 1 ? 'AÑO' : 'AÑOS'}`;
-                                            }
-                                            return '—';
-                                        })()
-                                    ) : '—'}
-                                </p>
-                                {profileData.movements.length > 0 && (
-                                    <p style={{ fontSize: '0.625rem', color: '#6b7280' }}>DESDE {new Date(profileData.movements[profileData.movements.length - 1]?.date).toLocaleDateString()}</p>
-                                )}
-                            </div>
-                        </div>
-                        <h3 className="font-orbitron" style={{ fontSize: '1.125rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.05em', marginBottom: '16px' }}>LOG DE TRANSFERENCIAS</h3>
-                        <div style={{ borderLeft: '2px solid #374151', marginLeft: '16px' }}>
-                            {profileData.movements.slice().reverse().map((m, i) => {
-                                const isJoined = m.action === 'JOINED';
-                                const isChanged = m.action === 'CHANGED';
-                                const dotColor = isJoined ? '#22c55e' : isChanged ? '#facc15' : '#6b7280';
-                                const textColor = isJoined ? '#22c55e' : isChanged ? '#facc15' : '#9ca3af';
-                                return (
-                                    <div key={i} style={{ position: 'relative', paddingLeft: '24px', paddingBottom: '24px' }}>
-                                        <div style={{ position: 'absolute', left: -9, top: 4, width: 16, height: 16, background: dotColor, borderRadius: '50%', border: '2px solid #000' }} />
-                                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{new Date(m.date).toLocaleDateString()}</p>
-                                        <p style={{ fontWeight: 700, color: textColor }}>{m.action}: {m.group_name || 'Grupo'}</p>
-                                    </div>
-                                );
-                            })}
-                            {profileData.movements.length === 0 && <div style={{ padding: '24px', color: '#6b7280', textAlign: 'center' }}>Sin historial de grupos registrado</div>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {profileData.movements.length > 0 ? (
+                                profileData.movements.slice().reverse().map((m, i) => {
+                                    const isJoined = m.action === 'JOINED';
+                                    return (
+                                        <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: isJoined ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>
+                                                {isJoined ? '✅' : '❌'}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <p style={{ fontWeight: 700, color: 'white', fontSize: '0.875rem' }}>
+                                                    {isJoined ? 'Ingresó a' : 'Salió de'} {m.group?.name || 'Grupo'}
+                                                </p>
+                                                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 2 }}>
+                                                    {new Date(m.date).toLocaleDateString()} • {m.action}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div style={{ padding: '24px', color: '#6b7280', textAlign: 'center' }}>Sin historial de grupos registrado</div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Tab: Plan/Misión */}
+                    {/* Tab: Plan */}
                     <div id="tab-plan" className={`tab-content ${activeTab === 'tab-plan' ? 'active' : ''}`} style={{ display: activeTab === 'tab-plan' ? 'block' : 'none' }}>
                         {activePlan ? (
-                            <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <h3 className="font-orbitron" style={{ fontSize: '1.125rem', fontWeight: 700, color: '#06b6d4', letterSpacing: '0.05em' }}>MISIÓN: {activePlan.plan_name || 'Plan activo'}</h3>
-                                    <span style={{ fontSize: '0.75rem', background: 'rgba(0,255,255,0.2)', color: '#06b6d4', padding: '4px 8px', borderRadius: '4px' }}>EN PROGRESO</span>
+                            <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid #1f2937' }}>
+                                <h4 style={{ color: '#22d3ee', fontSize: '1rem', fontWeight: 700, marginBottom: '8px' }}>{activePlan.plan?.name}</h4>
+                                <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '12px' }}>{activePlan.plan?.description}</p>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ padding: '4px 8px', background: 'rgba(34,197,94,0.2)', color: '#22c55e', borderRadius: '4px', fontSize: '0.75rem' }}>ACTIVO</span>
+                                    <span style={{ padding: '4px 8px', background: 'rgba(0,255,255,0.2)', color: '#22d3ee', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                        {activePlan.start_date ? new Date(activePlan.start_date).toLocaleDateString() : '—'} → {activePlan.end_date ? new Date(activePlan.end_date).toLocaleDateString() : '—'}
+                                    </span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
-                                    <span style={{ color: '#6b7280' }}>PROGRESO</span>
-                                    <span style={{ color: '#06b6d4', fontWeight: 700 }}>ACTIVO</span>
-                                </div>
-                                <div style={{ width: '100%', height: 12, background: '#1f2937', borderRadius: '9999px', overflow: 'hidden', border: '1px solid #374151', marginBottom: '24px' }}>
-                                    <div style={{ height: '100%', background: 'linear-gradient(to right, #0891b2, #06b6d4, #22d3ee)', width: '70%' }} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid #1f2937' }}>
-                                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>INICIO</p>
-                                        <p className="font-orbitron" style={{ color: '#22d3ee' }}>{activePlan.start_date ? new Date(activePlan.start_date).toLocaleDateString() : '—'}</p>
-                                    </div>
-                                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid #1f2937' }}>
-                                        <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>FIN</p>
-                                        <p className="font-orbitron" style={{ color: '#ef4444' }}>{activePlan.end_date ? new Date(activePlan.end_date).toLocaleDateString() : '—'}</p>
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                                <p style={{ fontSize: '2rem', marginBottom: 8 }}>🎯</p>
-                                <p>No hay plan de entrenamiento activo</p>
                             </div>
+                        ) : (
+                            <div style={{ padding: '24px', color: '#6b7280', textAlign: 'center' }}>No hay planes de entrenamiento activos</div>
                         )}
                     </div>
                 </div>

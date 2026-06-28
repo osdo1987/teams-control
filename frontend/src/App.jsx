@@ -116,6 +116,10 @@ function App() {
                     </div>
                     <nav className="sidebar-nav">
                       <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
                       <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
                       <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
                     </nav>
@@ -147,6 +151,10 @@ function App() {
                     </div>
                     <nav className="sidebar-nav">
                       <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
                       <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
                       <a href="/trainer/profile" className="nav-link active">👤 Mi Perfil</a>
                     </nav>
@@ -158,6 +166,146 @@ function App() {
                     <Topbar breadcrumb="Club" title="Mi Perfil" />
                     <div className="app-content">
                       <TrainerProfile />
+                    </div>
+                  </div>
+                </div>
+              </SubscriptionGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/trainer/groups" element={
+            <ProtectedRoute allowedRoles={['TRAINER']}>
+              <SubscriptionGate>
+                <div className="app-shell">
+                  <aside className="sidebar">
+                    <div className="sidebar-brand">
+                      <div className="brand-mark">⚡</div>
+                      <div className="brand-text">
+                        <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
+                        <span className="tag">Entrenador</span>
+                      </div>
+                    </div>
+                    <nav className="sidebar-nav">
+                      <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link active">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
+                      <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
+                      <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
+                    </nav>
+                    <div className="sidebar-footer">
+                      <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
+                    </div>
+                  </aside>
+                  <div className="app-main">
+                    <Topbar breadcrumb="Club" title="Mis Grupos" />
+                    <div className="app-content">
+                      <GroupList />
+                    </div>
+                  </div>
+                </div>
+              </SubscriptionGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/trainer/attendance" element={
+            <ProtectedRoute allowedRoles={['TRAINER']}>
+              <SubscriptionGate>
+                <div className="app-shell">
+                  <aside className="sidebar">
+                    <div className="sidebar-brand">
+                      <div className="brand-mark">⚡</div>
+                      <div className="brand-text">
+                        <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
+                        <span className="tag">Entrenador</span>
+                      </div>
+                    </div>
+                    <nav className="sidebar-nav">
+                      <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link active">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
+                      <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
+                      <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
+                    </nav>
+                    <div className="sidebar-footer">
+                      <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
+                    </div>
+                  </aside>
+                  <div className="app-main">
+                    <Topbar breadcrumb="Club" title="Asistencia" />
+                    <div className="app-content">
+                      <AttendanceList />
+                    </div>
+                  </div>
+                </div>
+              </SubscriptionGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/trainer/tests" element={
+            <ProtectedRoute allowedRoles={['TRAINER']}>
+              <SubscriptionGate>
+                <div className="app-shell">
+                  <aside className="sidebar">
+                    <div className="sidebar-brand">
+                      <div className="brand-mark">⚡</div>
+                      <div className="brand-text">
+                        <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
+                        <span className="tag">Entrenador</span>
+                      </div>
+                    </div>
+                    <nav className="sidebar-nav">
+                      <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link active">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
+                      <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
+                      <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
+                    </nav>
+                    <div className="sidebar-footer">
+                      <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
+                    </div>
+                  </aside>
+                  <div className="app-main">
+                    <Topbar breadcrumb="Club" title="Tests Físicos" />
+                    <div className="app-content">
+                      <TestList />
+                    </div>
+                  </div>
+                </div>
+              </SubscriptionGate>
+            </ProtectedRoute>
+          } />
+          <Route path="/trainer/payments" element={
+            <ProtectedRoute allowedRoles={['TRAINER']}>
+              <SubscriptionGate>
+                <div className="app-shell">
+                  <aside className="sidebar">
+                    <div className="sidebar-brand">
+                      <div className="brand-mark">⚡</div>
+                      <div className="brand-text">
+                        <span className="name">{authService.getCurrentUser()?.club_name || 'Club Manager'}</span>
+                        <span className="tag">Entrenador</span>
+                      </div>
+                    </div>
+                    <nav className="sidebar-nav">
+                      <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link active">💳 Pagos</a>
+                      <a href="/trainer/training-plans" className="nav-link">🏋️‍♂️ Planes de Ent.</a>
+                      <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
+                    </nav>
+                    <div className="sidebar-footer">
+                      <button className="logout-btn" onClick={() => authService.logout(authService.getCurrentUser()?.club_slug)}>🚪 Cerrar Sesión</button>
+                    </div>
+                  </aside>
+                  <div className="app-main">
+                    <Topbar breadcrumb="Club" title="Pagos" />
+                    <div className="app-content">
+                      <PaymentList />
                     </div>
                   </div>
                 </div>
@@ -178,6 +326,10 @@ function App() {
                     </div>
                     <nav className="sidebar-nav">
                       <a href="/trainer" className="nav-link">🏠 Inicio</a>
+                      <a href="/trainer/groups" className="nav-link">📋 Mis Grupos</a>
+                      <a href="/trainer/attendance" className="nav-link">📊 Asistencia</a>
+                      <a href="/trainer/tests" className="nav-link">🧪 Tests</a>
+                      <a href="/trainer/payments" className="nav-link">💳 Pagos</a>
                       <a href="/trainer/training-plans" className="nav-link active">🏋️‍♂️ Planes de Ent.</a>
                       <a href="/trainer/profile" className="nav-link">👤 Mi Perfil</a>
                     </nav>

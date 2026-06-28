@@ -26,6 +26,9 @@ def get_groups():
             groups = Group.query.all()
         else:
             groups = Group.query.filter(Group.status != 'INACTIVE').all()
+    elif user.role == 'TRAINER':
+        # Trainers only see groups they're assigned to
+        groups = [g for g in user.trainer_groups if include_inactive or g.status != 'INACTIVE']
     else:
         if include_inactive:
             groups = Group.query.filter_by(club_id=user.club_id).all()

@@ -1,6 +1,7 @@
 from app.extensions import ma
 from app.models.group import Group, GroupHistory
 from marshmallow import fields
+from app.schemas.user_schema import UserSchema
 
 class GroupHistorySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -19,7 +20,7 @@ class GroupSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    trainers = fields.List(fields.Nested("UserSchema", only=("id", "identification_number", "first_name", "last_name", "phone")))
+    trainers = fields.List(fields.Nested(UserSchema, only=("id", "identification_number", "first_name", "last_name", "phone")))
     category_obj = fields.Nested("CategorySchema", only=("id", "name"))
     athletes_count = fields.Method("get_athletes_count")
 
