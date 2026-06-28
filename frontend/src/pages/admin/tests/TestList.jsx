@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { testService } from '../../services/testService';
-import { athleteService } from '../../services/athleteService';
-import { groupService } from '../../services/groupService';
-import Modal from '../../components/UI/Modal';
-import { useToast } from '../../contexts/ToastContext';
-import ConfirmModal from '../../components/UI/ConfirmModal';
+import { testService } from '../../../services/testService';
+import { athleteService } from '../../../services/athleteService';
+import { groupService } from '../../../services/groupService';
+import Modal from '../../../components/UI/Modal';
+import { useToast } from '../../../contexts/ToastContext';
+import ConfirmModal from '../../../components/UI/ConfirmModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { athleteService } from '../../services/athleteService';
-import { testService } from '../../services/testService';
-import { trainingPlanService } from '../../services/trainingPlanService';
-import { api } from '../../services/api';
-import { useToast } from '../../contexts/ToastContext';
+import { athleteService } from '../../../services/athleteService';
+import { testService } from '../../../services/testService';
+import { trainingPlanService } from '../../../services/trainingPlanService';
+import { api } from '../../../services/api';
+import { useToast } from '../../../contexts/ToastContext';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];

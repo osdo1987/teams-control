@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { attendanceService } from '../../services/attendanceService';
-import { groupService } from '../../services/groupService';
-import { useToast } from '../../contexts/ToastContext';
+import { attendanceService } from '../../../services/attendanceService';
+import { groupService } from '../../../services/groupService';
+import { useToast } from '../../../contexts/ToastContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 /* ═══════════════════════════════════════════════════
@@ -808,7 +808,7 @@ const AttendanceList = () => {
       setDrawerAthletes(athletes);
 
       const statusMap = {};
-      
+
       if (info.taken) {
         // Fetch existing attendance records to edit them
         const existingRecords = await attendanceService.getGroupAttendanceRange(groupId, date, date);
@@ -1511,3 +1511,4 @@ const AttendanceList = () => {
 };
 
 export default AttendanceList;
+

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService';
-import { userService } from '../../services/userService';
-import trainerService from '../../services/trainerService';
-import { useToast } from '../../contexts/ToastContext';
+import { authService } from '../../../services/authService';
+import { userService } from '../../../services/userService';
+import trainerService from '../../../services/trainerService';
+import { useToast } from '../../../contexts/ToastContext';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];

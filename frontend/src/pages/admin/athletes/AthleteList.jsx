@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { athleteService } from '../../services/athleteService';
-import { userService } from '../../services/userService';
-import { groupService } from '../../services/groupService';
-import { authService } from '../../services/authService';
-import clubService from '../../services/clubService';
-import { useToast } from '../../contexts/ToastContext';
-import ConfirmModal from '../../components/UI/ConfirmModal';
-import Modal from '../../components/UI/Modal';
-import PasswordInput from '../../components/UI/PasswordInput';
+import { athleteService } from '../../../services/athleteService';
+import { userService } from '../../../services/userService';
+import { groupService } from '../../../services/groupService';
+import { authService } from '../../../services/authService';
+import clubService from '../../../services/clubService';
+import { useToast } from '../../../contexts/ToastContext';
+import ConfirmModal from '../../../components/UI/ConfirmModal';
+import Modal from '../../../components/UI/Modal';
+import PasswordInput from '../../../components/UI/PasswordInput';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9'];
 const avatarColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];

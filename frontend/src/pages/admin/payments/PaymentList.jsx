@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { paymentService } from '../../services/paymentService';
-import { athleteService } from '../../services/athleteService';
-import { groupService } from '../../services/groupService';
-import Modal from '../../components/UI/Modal';
-import { useToast } from '../../contexts/ToastContext';
+import { paymentService } from '../../../services/paymentService';
+import { athleteService } from '../../../services/athleteService';
+import { groupService } from '../../../services/groupService';
+import Modal from '../../../components/UI/Modal';
+import { useToast } from '../../../contexts/ToastContext';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell

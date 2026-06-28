@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { groupService } from '../../services/groupService';
-import { useToast } from '../../contexts/ToastContext';
+import { groupService } from '../../../services/groupService';
+import { useToast } from '../../../contexts/ToastContext';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#f59e0b', '#84cc16', '#14b8a6', '#a855f7'];
 const getCategoryColor = (catId) => COLORS[(catId || 0) % COLORS.length];
@@ -764,3 +764,4 @@ const GroupProfile = () => {
 };
 
 export default GroupProfile;
+

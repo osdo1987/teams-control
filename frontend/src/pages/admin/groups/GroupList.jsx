@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { groupService } from '../../services/groupService';
-import { authService } from '../../services/authService';
-import { categoryService } from '../../services/categoryService';
-import { athleteService } from '../../services/athleteService';
-import { userService } from '../../services/userService';
-import Drawer from '../../components/UI/Drawer';
-import ConfirmModal from '../../components/UI/ConfirmModal';
-import Modal from '../../components/UI/Modal';
-import { useToast } from '../../contexts/ToastContext';
+import { groupService } from '../../../services/groupService';
+import { authService } from '../../../services/authService';
+import { categoryService } from '../../../services/categoryService';
+import { athleteService } from '../../../services/athleteService';
+import { userService } from '../../../services/userService';
+import Drawer from '../../../components/UI/Drawer';
+import ConfirmModal from '../../../components/UI/ConfirmModal';
+import Modal from '../../../components/UI/Modal';
+import { useToast } from '../../../contexts/ToastContext';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#ec4899', '#0ea5e9', '#f59e0b'];
 const groupColor = (name = '') => COLORS[name.charCodeAt(0) % COLORS.length];
