@@ -1,122 +1,106 @@
 from app.extensions import db
 from app.models.athlete import Athlete, Guardian, MedicalInfo, AcademicInfo
 from app.models.user import User
-from app.models.group import GroupHistory
+from app.models.group import Group, GroupHistory
+from app.exceptions import NotFoundError, ValidationError
+from app.services.user_service import UserService
+
 
 class AthleteService:
-    @staticmethod
-    def create_athlete(user_data, athlete_data):
-        # First ensure the user exists or create it
-        user = User(
-            email=user_data['email'],
-            first_name=user_data['first_name'],
-            last_name=user_data['last_name'],
-            role='ATHLETE',
-            club_id=user_data['club_id']
-        )
-        user.set_password(user_data.get('password', 'Club123!')) # Default password
-        db.session.add(user)
-        db.session.flush() # Get user id
+    """Service for Athlete-related business logic."""
 
+    @staticmethod
+    def create_athlete(user_data, athlete_data, group_id=None):
+        """Create a new athlete with user and optional group assignment."""
+        # Create the user first
+        user = UserService.create_user(user_data)
+
+        # Create the athlete profile
         athlete = Athlete(
             user_id=user.id,
             birth_date=athlete_data.get('birth_date'),
+            birth_city=athlete_data.get('birth_city'),
+            birth_country=athlete_data.get('birth_country'),
             phone=athlete_data.get('phone'),
-            address=athlete_data.get('address')
+            fixed_phone=athlete_data.get('fixed_phone'),
+            address=athlete_data.get('address'),
+            neighborhood=athlete_data.get('neighborhood'),
+            insurance=athlete_data.get('insurance'),
+            uniforms=athlete_data.get('uniforms'),
+            start_date=athlete_data.get('start_date'),
+            eps=athlete_data.get('eps'),
+            physical_diseases=athlete_data.get('physical_diseases'),
+            medical_diseases=athlete_data.get('medical_diseases'),
+            allergies=athlete_data.get('allergies'),
+            physical_disability=athlete_data.get('physical_disability')
         )
         db.session.add(athlete)
+        db.session.flush()
+
+        # Assign to group if specified
+        if group_id:
+            group = Group.query.get(group_id)
+            if group:
+                athlete.current_groups.append(group)
+                db.session.add(GroupHistory(
+                    athlete_id=athlete.id,
+                    group_id=group_id,
+                    action="JOINED"
+                ))
+
         db.session.commit()
         return athlete
 
     @staticmethod
     def get_athlete_by_id(athlete_id):
-        return Athlete.query.get(athlete_id)
+        """Get an athlete by ID or raise NotFoundError."""
+        athlete = Athlete.query.get(athlete_id)
+        if not athlete:
+            raise NotFoundError(f"Athlete with id {athlete_id} not found")
+        return athlete
 
     @staticmethod
-    def get_all_athletes():
-        return Athlete.query.all()
+    def get_all_athletes(club_id=None, include_inactive=False, user_role=None):
+        """Get athletes filtered by club and active status."""
+        query = Athlete.query
+
+        if user_role != 'SUPER_ADMIN' and club_id:
+            # Filter by club through the user relationship
+            query = query.join(User).filter(User.club_id == club_id)
+
+        if not include_inactive:
+            query = query.filter(Athlete.is_active == True)
+
+        return query.all()
 
     @staticmethod
     def update_profile(athlete_id, data):
-        athlete = Athlete.query.get(athlete_id)
-        if not athlete:
-            return None
-        
+        """Update athlete profile including user, medical, academic, and guardian info."""
+        athlete = AthleteService.get_athlete_by_id(athlete_id)
+
         # Update athlete fields
-        if 'phone' in data:
-            athlete.phone = data['phone']
-        if 'address' in data:
-            athlete.address = data['address']
-        if 'birth_date' in data:
-            athlete.birth_date = data['birth_date']
-        # Nuevos campos del CSV
-        if 'birth_city' in data:
-            athlete.birth_city = data['birth_city']
-        if 'birth_country' in data:
-            athlete.birth_country = data['birth_country']
-        if 'fixed_phone' in data:
-            athlete.fixed_phone = data['fixed_phone']
-        if 'neighborhood' in data:
-            athlete.neighborhood = data['neighborhood']
-        if 'insurance' in data:
-            athlete.insurance = data['insurance']
-        if 'uniforms' in data:
-            athlete.uniforms = data['uniforms']
-        if 'start_date' in data:
-            athlete.start_date = data['start_date']
-        if 'eps' in data:
-            athlete.eps = data['eps']
-        if 'physical_diseases' in data:
-            athlete.physical_diseases = data['physical_diseases']
-        if 'medical_diseases' in data:
-            athlete.medical_diseases = data['medical_diseases']
-        if 'allergies' in data:
-            athlete.allergies = data['allergies']
-        if 'physical_disability' in data:
-            athlete.physical_disability = data['physical_disability']
-        
+        athlete_fields = [
+            'phone', 'address', 'birth_date', 'birth_city', 'birth_country',
+            'fixed_phone', 'neighborhood', 'insurance', 'uniforms', 'start_date',
+            'eps', 'physical_diseases', 'medical_diseases', 'allergies', 'physical_disability'
+        ]
+        for field in athlete_fields:
+            if field in data:
+                setattr(athlete, field, data[field])
+
         # Update user fields
         if 'user' in data and athlete.user:
-            user = athlete.user
-            if 'identification_number' in data['user']:
-                user.identification_number = data['user']['identification_number']
-            if 'email' in data['user']:
-                user.email = data['user']['email']
-            if 'phone' in data['user']:
-                user.phone = data['user']['phone']
-            # Nuevos campos del CSV en User
-            if 'document_type' in data['user']:
-                user.document_type = data['user']['document_type']
-            if 'second_last_name' in data['user']:
-                user.second_last_name = data['user']['second_last_name']
-            if 'gender' in data['user']:
-                user.gender = data['user']['gender']
-            if 'blood_type' in data['user']:
-                user.blood_type = data['user']['blood_type']
-            if 'birth_city' in data['user']:
-                user.birth_city = data['user']['birth_city']
-            if 'birth_country' in data['user']:
-                user.birth_country = data['user']['birth_country']
-            if 'fixed_phone' in data['user']:
-                user.fixed_phone = data['user']['fixed_phone']
-            if 'neighborhood' in data['user']:
-                user.neighborhood = data['user']['neighborhood']
-            if 'insurance' in data['user']:
-                user.insurance = data['user']['insurance']
-            if 'uniforms' in data['user']:
-                user.uniforms = data['user']['uniforms']
-            if 'start_date' in data['user']:
-                user.start_date = data['user']['start_date']
-        
-        # Update medical info if provided
+            UserService.update_user(athlete.user, data['user'])
+
+        # Update medical info
         if 'medical_info' in data:
             med = athlete.medical_info or MedicalInfo(athlete_id=athlete_id)
             for k, v in data['medical_info'].items():
                 if v is not None and v != '':
                     setattr(med, k, v)
             db.session.add(med)
-            
-        # Update academic info if provided
+
+        # Update academic info
         if 'academic_info' in data:
             acad = athlete.academic_info or AcademicInfo(athlete_id=athlete_id)
             for k, v in data['academic_info'].items():
@@ -124,7 +108,7 @@ class AthleteService:
                     setattr(acad, k, v)
             db.session.add(acad)
 
-        # Update guardian info if provided
+        # Update guardian info
         if 'guardian' in data:
             guardian = athlete.guardians[0] if athlete.guardians else Guardian(athlete_id=athlete_id)
             for k, v in data['guardian'].items():
@@ -136,28 +120,52 @@ class AthleteService:
         return athlete
 
     @staticmethod
+    def transfer_group(athlete_id, new_group_id):
+        """Transfer an athlete to a new group with history tracking."""
+        athlete = AthleteService.get_athlete_by_id(athlete_id)
+        new_group = Group.query.get(new_group_id)
+
+        if not new_group:
+            raise NotFoundError(f"Group with id {new_group_id} not found")
+
+        # Record exit from current groups
+        for old_group in list(athlete.current_groups):
+            if old_group.id != new_group_id:
+                db.session.add(GroupHistory(
+                    athlete_id=athlete.id,
+                    group_id=old_group.id,
+                    action="LEFT"
+                ))
+                athlete.current_groups.remove(old_group)
+
+        # Record entry to new group if not already there
+        if new_group not in athlete.current_groups:
+            athlete.current_groups.append(new_group)
+            db.session.add(GroupHistory(
+                athlete_id=athlete.id,
+                group_id=new_group_id,
+                action="JOINED"
+            ))
+
+        db.session.commit()
+        return athlete
+
+    @staticmethod
     def delete_athlete(athlete_id):
-        athlete = Athlete.query.get(athlete_id)
-        if not athlete:
-            return False, "Athlete not found"
-        
-        # Soft delete: mark athlete and user as inactive
+        """Soft delete an athlete (mark as inactive)."""
+        athlete = AthleteService.get_athlete_by_id(athlete_id)
         athlete.is_active = False
-        user = User.query.get(athlete.user_id)
-        if user:
-            user.is_active = False
+        if athlete.user:
+            athlete.user.is_active = False
         db.session.commit()
         return True, "Athlete desactivado correctamente"
-    
+
     @staticmethod
     def reactivate_athlete(athlete_id):
-        athlete = Athlete.query.get(athlete_id)
-        if not athlete:
-            return False, "Athlete not found"
-        
+        """Reactivate a soft-deleted athlete."""
+        athlete = AthleteService.get_athlete_by_id(athlete_id)
         athlete.is_active = True
-        user = User.query.get(athlete.user_id)
-        if user:
-            user.is_active = True
+        if athlete.user:
+            athlete.user.is_active = True
         db.session.commit()
         return True, "Athlete reactivado correctamente"

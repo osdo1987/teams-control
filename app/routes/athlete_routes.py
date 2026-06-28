@@ -1,38 +1,35 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.athlete_service import AthleteService
+from app.services.user_service import UserService
 from app.schemas.athlete_schema import AthleteSchema
+from app.schemas.create_athlete_schema import CreateAthleteSchema, UpdateAthleteSchema
 from app.utils.decorators import role_required
+from app.exceptions import NotFoundError
+from app.models.athlete import Athlete
+from app.models.user import User
 
 athlete_bp = Blueprint('athletes', __name__)
 athlete_schema = AthleteSchema()
 athletes_schema = AthleteSchema(many=True)
 
+
 @athlete_bp.route('', methods=['GET'])
 @jwt_required()
 @role_required(['SUPER_ADMIN', 'ADMIN', 'TRAINER'])
 def get_all_athletes():
-    from app.models.athlete import Athlete
-    from app.models.user import User
-    
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    
+    """Get all athletes with optional filtering by club and active status."""
+    current_user = UserService.get_current_user()
     include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
-    
-    if user.role == 'SUPER_ADMIN':
-        if include_inactive:
-            athletes = Athlete.query.all()
-        else:
-            athletes = Athlete.query.filter_by(is_active=True).all()
-    else:
-        # Unir con User para filtrar por club_id del usuario asociado al atleta
-        query = Athlete.query.join(User).filter(User.club_id == user.club_id)
-        if not include_inactive:
-            query = query.filter(Athlete.is_active == True)
-        athletes = query.all()
-        
+
+    athletes = AthleteService.get_all_athletes(
+        club_id=current_user.club_id,
+        include_inactive=include_inactive,
+        user_role=current_user.role
+    )
+
     return jsonify(athletes_schema.dump(athletes)), 200
+
 
 @athlete_bp.route('', methods=['POST'])
 @jwt_required()
@@ -70,74 +67,42 @@ def create_athlete():
       403:
         description: Role required
     """
-    data = request.get_json()
-    athlete = AthleteService.create_athlete(data['user'], data['athlete'])
+    # Validate request body against schema
+    schema = CreateAthleteSchema()
+    data = schema.load(request.get_json())
+
+    athlete = AthleteService.create_athlete(
+        user_data=data['user'],
+        athlete_data=data['athlete'],
+        group_id=data.get('group_id')
+    )
     return jsonify(athlete_schema.dump(athlete)), 201
+
 
 @athlete_bp.route('/profile', methods=['GET'])
 @jwt_required()
 def get_my_profile():
-    """
-    Get Current Athlete Profile (Self)
-    ---
-    tags:
-      - Athletes
-    security:
-      - JWT: []
-    responses:
-      200:
-        description: Athlete profile data
-      404:
-        description: Athlete not found
-    """
+    """Get current athlete's own profile."""
     user_id = get_jwt_identity()
-    from app.models.athlete import Athlete
     athlete = Athlete.query.filter_by(user_id=user_id).first()
     if not athlete:
-        return jsonify({"error": "Athlete not found"}), 404
+        raise NotFoundError("Athlete profile not found")
     return jsonify(athlete_schema.dump(athlete)), 200
+
 
 @athlete_bp.route('/profile', methods=['PUT'])
 @jwt_required()
 def update_profile():
-    """
-    Update Athlete Profile (Self)
-    ---
-    tags:
-      - Athletes
-    security:
-      - JWT: []
-    parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          type: object
-          properties:
-            medical_info:
-              type: object
-              properties:
-                blood_type: {type: string, example: "O+"}
-                allergies: {type: string, example: "Peanuts"}
-            academic_info:
-              type: object
-              properties:
-                school_name: {type: string, example: "Central High"}
-    responses:
-      200:
-        description: Profile updated successfully
-      404:
-        description: Athlete not found
-    """
+    """Update current athlete's own profile."""
     user_id = get_jwt_identity()
-    from app.models.athlete import Athlete
     athlete = Athlete.query.filter_by(user_id=user_id).first()
     if not athlete:
-        return jsonify({"error": "Athlete not found"}), 404
-    
+        raise NotFoundError("Athlete profile not found")
+
     data = request.get_json()
     updated = AthleteService.update_profile(athlete.id, data)
     return jsonify(athlete_schema.dump(updated)), 200
+
 
 @athlete_bp.route('/<int:id>', methods=['GET'])
 @jwt_required()
@@ -161,9 +126,8 @@ def get_athlete(id):
         description: Not found
     """
     athlete = AthleteService.get_athlete_by_id(id)
-    if not athlete:
-        return jsonify({"error": "Not found"}), 404
     return jsonify(athlete_schema.dump(athlete)), 200
+
 
 @athlete_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -171,75 +135,61 @@ def get_athlete(id):
 def update_athlete(id):
     """
     Update Athlete (Admin/Trainer)
+    ---
+    tags:
+      - Athletes
+    security:
+      - JWT: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            user: {type: object}
+            athlete: {type: object}
+            group_id: {type: integer}
+    responses:
+      200:
+        description: Athlete updated successfully
     """
-    data = request.get_json()
-    from app.models.athlete import Athlete
-    from app.models.user import User
-    athlete = Athlete.query.get_or_404(id)
-    user = User.query.get(athlete.user_id)
-    
-    if 'user' in data:
-        for k, v in data['user'].items():
-            if hasattr(user, k) and k != 'password':
-                setattr(user, k, v)
-    
-    if 'athlete' in data:
-        for k, v in data['athlete'].items():
-            if hasattr(athlete, k):
-                setattr(athlete, k, v)
-    
-    # Lógica de transferencia automática de grupo
-    if 'group_id' in data:
-        new_group_id = data['group_id']
-        from app.models.group import Group, GroupHistory
-        from app.extensions import db
-        
-        new_group = Group.query.get(new_group_id)
-        if new_group:
-            # 1. Registrar salida de grupos actuales
-            for old_group in list(athlete.current_groups):
-                if old_group.id != new_group_id:
-                    # Registrar historial de salida
-                    db.session.add(GroupHistory(
-                        athlete_id=athlete.id,
-                        group_id=old_group.id,
-                        action="LEFT"
-                    ))
-                    athlete.current_groups.remove(old_group)
-            
-            # 2. Registrar entrada al nuevo grupo si no está ya
-            if new_group not in athlete.current_groups:
-                athlete.current_groups.append(new_group)
-                db.session.add(GroupHistory(
-                    athlete_id=athlete.id,
-                    group_id=new_group_id,
-                    action="JOINED"
-                ))
-                
-    from app.extensions import db
-    db.session.commit()
+    # Validate request body
+    schema = UpdateAthleteSchema()
+    data = schema.load(request.get_json())
+
+    # Update profile fields
+    athlete_data = data.get('athlete', {})
+    if athlete_data:
+        AthleteService.update_profile(id, data)
+
+    # Transfer group if specified
+    group_id = data.get('group_id')
+    if group_id is not None:
+        athlete = AthleteService.transfer_group(id, group_id)
+    else:
+        athlete = AthleteService.get_athlete_by_id(id)
+
     return jsonify(athlete_schema.dump(athlete)), 200
+
 
 @athlete_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 @role_required(['ADMIN'])
 def delete_athlete(id):
-    """
-    Deactivate Athlete (Soft Delete)
-    """
+    """Deactivate Athlete (Soft Delete)."""
     success, message = AthleteService.delete_athlete(id)
-    if success:
-        return jsonify({"message": message}), 200
-    return jsonify({"error": message}), 404
+    return jsonify({"message": message}), 200
+
 
 @athlete_bp.route('/<int:id>/reactivate', methods=['PATCH'])
 @jwt_required()
 @role_required(['ADMIN'])
 def reactivate_athlete(id):
-    """
-    Reactivate Athlete
-    """
+    """Reactivate a soft-deleted athlete."""
     success, message = AthleteService.reactivate_athlete(id)
-    if success:
-        return jsonify({"message": message}), 200
-    return jsonify({"error": message}), 404
+    return jsonify({"message": message}), 200
