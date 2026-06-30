@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './LandingPage.css';
+import logoImg from '../assets/logo_v2_SC.png';
 
 /* ─────────────────────── DATA ─────────────────────── */
 const services = [
@@ -103,7 +104,7 @@ const LandingPage = () => {
         <div className="lp-container lp-header-inner">
           <a href="#" className="lp-logo" onClick={handleNavClick}>
             <img
-              src="/src/assets/logo_v2_SC.png"
+              src={logoImg}
               alt="Osdosoft"
               width={48}
               height={48}
@@ -431,7 +432,7 @@ const LandingPage = () => {
             <div className="lp-footer-brand">
               <a href="#" className="lp-logo" onClick={handleNavClick}>
                 <img
-                  src="/src/assets/logo_v2_SC.png"
+                  src={logoImg}
                   alt="Osdosoft"
                   width={42}
                   height={42}
