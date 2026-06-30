@@ -1,35 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './LandingPage.css';
 
-/* ─────────────────────────── DATA ─────────────────────────── */
+/* ─────────────────────── DATA ─────────────────────── */
+const services = [
+  { icon: '⚙️', title: 'Desarrollo Web', desc: 'SaaS y aplicaciones con React, Next.js y Python.' },
+  { icon: '📱', title: 'Apps Móviles', desc: 'Experiencias nativas con Flutter y Swift.' },
+  { icon: '☁️', title: 'Cloud & DevOps', desc: 'Infraestructura escalable en AWS y GCP.' },
+  { icon: '🧠', title: 'IA & Datos', desc: 'Automatización inteligente y modelos predictivos.' },
+];
+
+const techs = ['React', 'Python', 'Node.js', 'Docker', 'PostgreSQL', 'AWS', 'Flutter', 'FastAPI', 'Next.js', 'Kubernetes'];
+
+const products = [
+  {
+    badge: 'Disponible',
+    title: 'Club Manager',
+    desc: 'Gestión deportiva para academias y clubes. Control de atletas, pagos y asistencia.',
+    link: 'http://club-manager.osdosoft.com',
+    soon: false,
+  },
+  {
+    badge: 'Disponible',
+    title: 'E‑Shop',
+    desc: 'Tienda virtual con catálogo dinámico e integración con WhatsApp.',
+    link: 'http://e-shop.osdosoft.com',
+    soon: false,
+  },
+  {
+    badge: 'Próximamente',
+    title: 'HR Automation',
+    desc: 'Sistema de nómina con integración PILA Colombia y cálculo automático.',
+    link: null,
+    soon: true,
+  },
+];
+
 const plans = [
-  { name: 'Prueba Gratis', price: '0', period: '15 días', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'], trial: true },
-  { name: 'Básico Mensual', price: '120.000', period: 'mes', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
-  { name: 'Básico Semestral', price: '600.000', period: 'semestre', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
-  { name: 'Básico Anual', price: '1.080.000', period: 'año', highlight: true, features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Prueba Gratis', price: '0', period: '15 días', sub: 'Sin compromiso', trial: true, features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Básico Mensual', price: '120.000', period: 'mes', sub: 'Factura mensual', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Básico Semestral', price: '600.000', period: '6 meses', sub: 'Ahorra 16%', features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
+  { name: 'Básico Anual', price: '1.080.000', period: 'año', sub: 'Ahorra 25%', recommended: true, features: ['Atletas ilimitados', 'Categorías ilimitadas', 'Gestión de asistencia', 'Seguimiento de pagos', 'Reportes y estadísticas', 'Múltiples entrenadores', 'Soporte prioritario'] },
 ];
 
-const portfolio = [
-  {
-    id: 'clubmanager', tag: 'SaaS Deportivo', title: 'Club Manager',
-    desc: 'Plataforma de gestión deportiva para academias y clubes. Control de atletas, pagos y asistencia.',
-    link: 'http://club-manager.osdosoft.com'
-  },
-  {
-    id: 'ecommerce', tag: 'E-Commerce', title: 'E-Shop',
-    desc: 'Tu tienda virtual lista para vender. Catálogo dinámico e integración directa con WhatsApp en minutos.',
-    link: null
-  },
-  {
-    id: 'hrapp', tag: 'Automatización', title: 'HR Automation',
-    desc: 'Sistema de gestión de nómina con integración a PILA Colombia y cálculo automático.',
-    link: null
-  }
+const shopPlans = [
+  { name: 'Starter', price: '0', period: '15 días', sub: 'Prueba gratuita', trial: true, features: ['Hasta 50 productos', 'Catálogo básico', 'Integración WhatsApp', 'Pedidos manuales', 'Soporte por email'] },
+  { name: 'Profesional', price: '89.000', period: 'mes', sub: 'Factura mensual', features: ['Productos ilimitados', 'Catálogo dinámico', 'Integración WhatsApp', 'Panel de analytics', 'Soporte prioritario'] },
+  { name: 'Profesional Anual', price: '890.000', period: 'año', sub: 'Ahorra 16%', recommended: true, features: ['Productos ilimitados', 'Catálogo dinámico', 'Integración WhatsApp', 'Panel de analytics', 'Soporte prioritario', 'Dominio personalizado'] },
 ];
 
-const techs = ['React', 'Python', 'Node.js', 'Docker', 'PostgreSQL', 'AWS', 'Flutter', 'FastAPI', 'Next.js', 'Oracle Cloud'];
+const testimonios = [
+  { stars: '★★★★★', quote: '"Club Manager revolucionó la administración de nuestra academia. Pasamos de planillas a un sistema en tiempo real."', author: 'Carlos Méndez', role: 'Director, Academia Deportiva Élite' },
+  { stars: '★★★★★', quote: '"El equipo de Osdosoft entendió nuestras necesidades y construyó una plataforma escalable en tiempo récord."', author: 'Mariana Restrepo', role: 'CTO, Fintech Latam' },
+  { stars: '★★★★★', quote: '"La precisión técnica y el diseño estratégico hicieron la diferencia. Nuestros usuarios aman la experiencia."', author: 'Andrés Herrera', role: 'CEO, HealthApp' },
+];
 
-/* ─────────────────────── HOOKS & UTILS ─────────────────────── */
+/* ─────────────────────── HOOKS ─────────────────────── */
 function useInView(threshold = 0.1) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -57,191 +82,393 @@ function FadeIn({ children, delay = 0, className = '' }) {
   );
 }
 
-function LogoMark({ size = 32 }) {
-  const inner = Math.round(size * 0.53);
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'var(--text-main)', borderRadius: Math.round(size * 0.26), opacity: 0.1 }} />
-      <div style={{ position: 'absolute', inset: 2, background: 'var(--text-main)', borderRadius: Math.round(size * 0.21), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width={inner} height={inner} viewBox="0 0 20 20" fill="none">
-          <path d="M4 10 L10 4 L16 10 L10 16 Z" fill="white" opacity="0.9" />
-          <path d="M7 10 L10 7 L13 10 L10 13 Z" fill="rgba(255,255,255,0.5)" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────────────── MAIN PAGE ─────────────────────── */
 const LandingPage = () => {
-  return (
-    <div className="layout-container">
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="logo-container">
-          <LogoMark size={32} />
-          <div className="logo-text">OSDOSOFT.</div>
-        </div>
-        <div className="nav-links">
-          <a href="#about" className="nav-link">Nosotros</a>
-          <a href="#portfolio" className="nav-link">Proyectos</a>
-          <a href="#pricing" className="nav-link">Precios</a>
-        </div>
-        <a href="#contact" className="nav-button">Iniciar Proyecto</a>
-      </nav>
+  const [menuOpen, setMenuOpen] = useState(false);
 
-      {/* Hero */}
-      <header className="hero">
-        <FadeIn><h1 className="hero-title">Diseño.<br />Código.<br />Precisión.</h1></FadeIn>
-        <FadeIn delay={0.1}>
-          <p className="hero-subtitle">
-            Construimos software excepcional para empresas visionarias. Minimalismo estético y arquitectura de vanguardia.
-          </p>
-        </FadeIn>
+  const handleNavClick = useCallback((e) => {
+    const href = e.currentTarget.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      setMenuOpen(false);
+    }
+  }, []);
+
+  return (
+    <div className="lp">
+      {/* ─── HEADER ─── */}
+      <header className="lp-header">
+        <div className="lp-container lp-header-inner">
+          <a href="#" className="lp-logo" onClick={handleNavClick}>
+            <img
+              src="/src/assets/logo_v2_SC.png"
+              alt="Osdosoft"
+              width={48}
+              height={48}
+              className="lp-logo-img"
+            />
+            <div className="lp-logo-text">
+              <span className="lp-brand">Osdo<span>soft</span></span>
+            </div>
+          </a>
+          <nav className={`lp-nav ${menuOpen ? 'lp-nav--open' : ''}`} id="lpNav">
+            <a href="#nosotros" className="lp-nav-link" onClick={handleNavClick}>Nosotros</a>
+            <a href="#servicios" className="lp-nav-link" onClick={handleNavClick}>Servicios</a>
+            <a href="#tecnologia" className="lp-nav-link" onClick={handleNavClick}>Tecnología</a>
+            <a href="#productos" className="lp-nav-link" onClick={handleNavClick}>Productos</a>
+            <a href="#precios" className="lp-nav-link" onClick={handleNavClick}>Precios</a>
+            <a href="#contacto" className="lp-nav-link lp-nav-cta" onClick={handleNavClick}>Hablemos</a>
+          </nav>
+          <button
+            className="lp-mobile-toggle"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Menú"
+          >
+            <span></span><span></span><span></span>
+          </button>
+        </div>
       </header>
 
-      {/* Bento Grid (About, Mission, Vision, Services) */}
-      <section id="about" className="bento-grid">
-        <FadeIn className="bento-card card-large">
-          <div style={{ fontSize: '2.5rem', marginBottom: '24px' }}>🧠</div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '24px', letterSpacing: '-0.03em' }}>Quiénes Somos</h2>
-          <p style={{ fontSize: '1.125rem', color: 'var(--text-main)', lineHeight: 1.6 }}>
-            Somos un estudio boutique de ingeniería de software. Rechazamos lo convencional y el exceso visual. Nos enfocamos estrictamente en lo esencial: construir plataformas impecables y escalables.
-          </p>
-        </FadeIn>
-
-        <FadeIn delay={0.1} className="bento-card card-wide">
-          <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🔭</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '16px' }}>Nuestra Visión</h2>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>Ser el referente global en productos digitales, donde la ingeniería de alto rendimiento y el diseño minimalista convergen perfectamente.</p>
-        </FadeIn>
-
-        <FadeIn delay={0.2} className="bento-card card-wide">
-          <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🎯</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '16px' }}>Nuestra Misión</h2>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>Entregar soluciones precisas. Transformamos la complejidad empresarial en interfaces limpias y arquitecturas robustas que potencian el crecimiento.</p>
-        </FadeIn>
-
-        <FadeIn delay={0.3} className="bento-card card-small">
-          <div style={{ fontSize: '2rem', marginBottom: 'auto' }}>⚡</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '16px 0 8px' }}>Desarrollo Web</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Plataformas SaaS ultrarrápidas.</p>
-        </FadeIn>
-
-        <FadeIn delay={0.4} className="bento-card card-small">
-          <div style={{ fontSize: '2rem', marginBottom: 'auto' }}>📱</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '16px 0 8px' }}>Apps Móviles</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Experiencias iOS y Android nativas.</p>
-        </FadeIn>
-
-        <FadeIn delay={0.5} className="bento-card card-small">
-          <div style={{ fontSize: '2rem', marginBottom: 'auto' }}>☁️</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '16px 0 8px' }}>Cloud & DevOps</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>AWS, GCP y arquitecturas serverless.</p>
-        </FadeIn>
-
-        <FadeIn delay={0.6} className="bento-card card-small">
-          <div style={{ fontSize: '2rem', marginBottom: 'auto' }}>🤖</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '16px 0 8px' }}>IA & Datos</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Modelos y automatización inteligente.</p>
-        </FadeIn>
-      </section>
-
-      {/* Tech Stack */}
-      <FadeIn>
-        <div className="section-header">
-          <div className="section-tag">TECNOLOGÍA</div>
-          <h2 className="section-title">Stack de Vanguardia</h2>
-        </div>
-        <div className="tech-container">
-          {techs.map(t => <span key={t} className="tech-pill">{t}</span>)}
-        </div>
-      </FadeIn>
-
-      {/* Portfolio / Products */}
-      <section id="portfolio">
-        <FadeIn>
-          <div className="section-header">
-            <div className="section-tag">PRODUCTOS & PORTAFOLIO</div>
-            <h2 className="section-title">Soluciones Escalables</h2>
-          </div>
-        </FadeIn>
-        <div className="portfolio-grid">
-          {portfolio.map((p, i) => (
-            <FadeIn key={p.id} delay={i * 0.1}>
-              <div className="port-card">
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '16px' }}>{p.tag.toUpperCase()}</div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.03em' }}>{p.title}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, flex: 1 }}>{p.desc}</p>
-                {p.link ? (
-                  <a href={p.link} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '24px', color: 'var(--text-main)', fontWeight: 600, textDecoration: 'none' }}>Ver producto →</a>
-                ) : (
-                  <span style={{ display: 'inline-block', marginTop: '24px', color: '#a1a1aa', fontWeight: 500, fontSize: '0.85rem' }}>Próximamente</span>
-                )}
-              </div>
+      {/* ─── HERO ─── */}
+      <section className="lp-hero">
+        <div className="lp-container lp-hero-grid">
+          <div className="lp-hero-text">
+            <FadeIn>
+              <span className="lp-section-label">✦ Software que impulsa tu negocio</span>
             </FadeIn>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing">
-        <FadeIn>
-          <div className="section-header">
-            <div className="section-tag">CLUB MANAGER</div>
-            <h2 className="section-title">Planes Simples</h2>
-          </div>
-        </FadeIn>
-        <div className="pricing-grid">
-          {plans.map((plan, i) => (
-            <FadeIn key={plan.name} delay={i * 0.1}>
-              <div className={`price-card ${plan.highlight ? 'price-highlight' : ''}`}>
-                {plan.trial && <div style={{ position: 'absolute', top: -12, left: 24, background: 'var(--green-500)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '100px' }}>SIN COSTO</div>}
-                {plan.highlight && <div style={{ position: 'absolute', top: -12, left: 24, background: 'var(--text-main)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '100px' }}>RECOMENDADO</div>}
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '8px' }}>{plan.name}</div>
-                <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 800 }}>${plan.price}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>/{plan.period}</span>
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', flex: 1, color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 2 }}>
-                  {plan.features.map(f => <li key={f}>• {f}</li>)}
-                </ul>
-                <button className="nav-button" style={{ width: '100%', border: 'none', cursor: 'pointer', background: plan.highlight ? 'var(--text-main)' : 'var(--border)', color: plan.highlight ? '#fff' : 'var(--text-main)' }}>Elegir Plan</button>
-              </div>
+            <FadeIn delay={0.1}>
+              <h1 className="lp-hero-title">
+                Diseño estratégico<br />
+                <span className="lp-highlight">código robusto</span>
+              </h1>
             </FadeIn>
-          ))}
-        </div>
-      </section>
-
-      {/* Contact Form */}
-      <section id="contact" style={{ borderTop: '1px solid var(--border)', paddingTop: '120px', paddingBottom: '60px' }}>
-        <FadeIn>
-          <div className="contact-grid">
-            <div>
-              <h2 style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 24px' }}>Hablemos.</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '400px' }}>
-                Cuéntanos sobre tu proyecto. Nos pondremos en contacto contigo en menos de 24 horas con una propuesta técnica.
+            <FadeIn delay={0.2}>
+              <p className="lp-hero-sub">
+                Construimos plataformas escalables y experiencias digitales que transforman tu operación.
               </p>
-              <div style={{ marginTop: '40px' }}>
-                <div style={{ fontWeight: 600, marginBottom: '8px' }}>Email Directo</div>
-                <a href="mailto:contacto@osdosoft.com" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>contacto@osdosoft.com</a>
+            </FadeIn>
+            <FadeIn delay={0.3}>
+              <div className="lp-hero-buttons">
+                <a href="#contacto" className="lp-btn-primary" onClick={handleNavClick}>Impulsa tu proyecto</a>
+                <a href="#productos" className="lp-btn-secondary" onClick={handleNavClick}>Ver productos</a>
+              </div>
+            </FadeIn>
+          </div>
+          <FadeIn delay={0.2}>
+            <div className="lp-hero-visual">
+              <div className="lp-hero-code">
+                <div className="lp-dots">
+                  <span className="lp-dot lp-dot--red"></span>
+                  <span className="lp-dot lp-dot--yellow"></span>
+                  <span className="lp-dot lp-dot--green"></span>
+                </div>
+                <div className="lp-line"><span className="lp-kw">import</span> <span className="lp-str">'@osdosoft/core'</span></div>
+                <div className="lp-line"><span className="lp-kw">const</span> <span className="lp-fn">build</span> = <span className="lp-kw">async</span> () {'='}{'>'} {'{'}</div>
+                <div className="lp-line">&nbsp;&nbsp;<span className="lp-cmt">// escalable · mantenible · seguro</span></div>
+                <div className="lp-line">&nbsp;&nbsp;<span className="lp-kw">return</span> <span className="lp-fn">platform</span>.<span className="lp-fn">deploy</span>({'{'}</div>
+                <div className="lp-line">&nbsp;&nbsp;&nbsp;&nbsp;stack: <span className="lp-str">'modern'</span>,</div>
+                <div className="lp-line">&nbsp;&nbsp;&nbsp;&nbsp;ux: <span className="lp-kw">true</span></div>
+                <div className="lp-line">&nbsp;&nbsp;{'}'})</div>
+                <div className="lp-line">{'}'}</div>
               </div>
             </div>
-
-            <div style={{ background: 'var(--card-bg)', padding: '40px', borderRadius: '24px', border: '1px solid var(--border)' }}>
-              <input type="text" placeholder="Nombre completo" className="contact-input" />
-              <input type="email" placeholder="Correo electrónico" className="contact-input" />
-              <textarea placeholder="Cuéntanos tu idea o requerimiento..." className="contact-input" style={{ minHeight: '120px', resize: 'vertical' }}></textarea>
-              <button className="contact-btn">Enviar Mensaje</button>
-            </div>
-          </div>
-        </FadeIn>
-
-        <div style={{ textAlign: 'center', marginTop: '60px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          &copy; {new Date().getFullYear()} Osdosoft S.A.S. — Todos los derechos reservados.
+          </FadeIn>
         </div>
       </section>
 
+      {/* ─── NOSOTROS ─── */}
+      <section id="nosotros" className="lp-section lp-section--white">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">Quiénes somos</span>
+              <h2 className="lp-section-title">Construimos el futuro digital</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Somos un estudio de ingeniería de software comprometido con la excelencia técnica y el éxito de nuestros
+                clientes.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-about-grid">
+            <FadeIn delay={0.1}>
+              <div className="lp-about-card">
+                <h3><span className="lp-icon">🎯</span> Misión</h3>
+                <p>
+                  Desarrollar soluciones de software a medida que potencien la productividad y el crecimiento de nuestros
+                  clientes, mediante arquitecturas robustas y diseño centrado en el usuario.
+                </p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <div className="lp-about-card">
+                <h3><span className="lp-icon">🔭</span> Visión</h3>
+                <p>
+                  Ser reconocidos como el estudio de ingeniería de software de referencia en el Valle del Cauca Colombia por nuestra calidad
+                  técnica, innovación y compromiso con el éxito del cliente.
+                </p>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SERVICIOS ─── */}
+      <section id="servicios" className="lp-section">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">Qué hacemos</span>
+              <h2 className="lp-section-title">Soluciones que potencian tu negocio</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Desde el MVP hasta la plataforma enterprise, con foco en resultados.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-services-grid">
+            {services.map((s, i) => (
+              <FadeIn key={s.title} delay={i * 0.08}>
+                <div className="lp-service-card">
+                  <span className="lp-service-icon">{s.icon}</span>
+                  <h3>{s.title}</h3>
+                  <p>{s.desc}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TECNOLOGÍA ─── */}
+      <section id="tecnologia" className="lp-section lp-section--white">
+        <div className="lp-container lp-text-center">
+          <FadeIn>
+            <span className="lp-section-label">Stack tecnológico</span>
+            <h2 className="lp-section-title">Herramientas de vanguardia</h2>
+            <p className="lp-section-subtitle lp-mx-auto">
+              Elegimos tecnologías probadas, con gran ecosistema y rendimiento.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <div className="lp-tech-grid">
+              {techs.map((t) => (
+                <span key={t} className="lp-tech-tag">{t}</span>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ─── PRODUCTOS ─── */}
+      <section id="productos" className="lp-section">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">Portafolio</span>
+              <h2 className="lp-section-title">Productos que resuelven</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Proyectos construidos con arquitectura sólida y experiencia de usuario.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-productos-grid">
+            {products.map((p, i) => (
+              <FadeIn key={p.title} delay={i * 0.1}>
+                <div className="lp-product-card">
+                  <span className={`lp-badge ${p.soon ? 'lp-badge--soon' : ''}`}>{p.badge}</span>
+                  <h3>{p.title}</h3>
+                  <p>{p.desc}</p>
+                  {p.link ? (
+                    <a href={p.link} className="lp-link" target="_blank" rel="noreferrer">Ver producto →</a>
+                  ) : (
+                    <span className="lp-link-disabled">Próximamente</span>
+                  )}
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PRECIOS ─── */}
+      <section id="precios" className="lp-section lp-section--white">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">Planes transparentes</span>
+              <h2 className="lp-section-title">Elige el plan para tu club</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Club Manager · Prueba gratuita y opciones flexibles.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-pricing-grid">
+            {plans.map((plan, i) => (
+              <FadeIn key={plan.name} delay={i * 0.08}>
+                <div className={`lp-pricing-card ${plan.recommended ? 'lp-pricing-card--recommended' : ''}`}>
+                  {plan.recommended && <span className="lp-recommended-badge">Recomendado</span>}
+                  {plan.trial && <span className="lp-recommended-badge lp-recommended-badge--trial">SIN COSTO</span>}
+                  <div className="lp-plan-name">{plan.name}</div>
+                  <div className="lp-price">${plan.price} <small>/{plan.period}</small></div>
+                  <div className="lp-period">{plan.sub}</div>
+                  <ul>
+                    {plan.features.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                  <a href="#contacto" className="lp-btn-outline" onClick={handleNavClick}>Contratar</a>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PRECIOS E-SHOP ─── */}
+      <section id="precios-shop" className="lp-section">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">E‑Shop · Planes flexibles</span>
+              <h2 className="lp-section-title">Lleva tu tienda al siguiente nivel</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Comienza gratis y escala cuando lo necesites. Sin compromisos.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-pricing-grid">
+            {shopPlans.map((plan, i) => (
+              <FadeIn key={plan.name} delay={i * 0.08}>
+                <div className={`lp-pricing-card ${plan.recommended ? 'lp-pricing-card--recommended' : ''}`}>
+                  {plan.recommended && <span className="lp-recommended-badge">Recomendado</span>}
+                  {plan.trial && <span className="lp-recommended-badge lp-recommended-badge--trial">GRATIS</span>}
+                  <div className="lp-plan-name">{plan.name}</div>
+                  <div className="lp-price">${plan.price} <small>/{plan.period}</small></div>
+                  <div className="lp-period">{plan.sub}</div>
+                  <ul>
+                    {plan.features.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                  <a href="#contacto" className="lp-btn-outline" onClick={handleNavClick}>Comenzar</a>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIOS ─── */}
+      <section id="testimonios" className="lp-section">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label">Testimonios</span>
+              <h2 className="lp-section-title">Confianza de nuestros clientes</h2>
+              <p className="lp-section-subtitle lp-mx-auto">
+                Equipos que han potenciado su negocio con nuestro software.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-testimonios-grid">
+            {testimonios.map((t, i) => (
+              <FadeIn key={t.author} delay={i * 0.1}>
+                <div className="lp-testimonio-card">
+                  <div className="lp-stars">{t.stars}</div>
+                  <blockquote>{t.quote}</blockquote>
+                  <div className="lp-author">{t.author}</div>
+                  <div className="lp-role">{t.role}</div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CONTACTO ─── */}
+      <section id="contacto" className="lp-section lp-contacto">
+        <div className="lp-container">
+          <div className="lp-text-center">
+            <FadeIn>
+              <span className="lp-section-label lp-section-label--light">Hablemos</span>
+              <h2 className="lp-section-title lp-section-title--light">Cuéntanos tu proyecto</h2>
+              <p className="lp-section-subtitle lp-mx-auto lp-section-subtitle--light">
+                Te responderemos en menos de 24 horas con una propuesta técnica.
+              </p>
+            </FadeIn>
+          </div>
+          <div className="lp-contact-grid">
+            <FadeIn delay={0.1}>
+              <div className="lp-contact-info">
+                <h3>¿Tienes una idea en mente?</h3>
+                <p>
+                  Desde un MVP hasta una plataforma enterprise, estamos listos para acompañarte
+                  con la mejor ingeniería y diseño estratégico.
+                </p>
+                <div className="lp-detail">📧 Contacto@osdosoft.com</div>
+                <div className="lp-detail">📍 Guadalajara de Buga, Colombia</div>
+                <div className="lp-detail">⚡ Respuesta en {'<'} 24h</div>
+              </div>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <form className="lp-contact-form" onSubmit={(e) => e.preventDefault()}>
+                <input type="text" placeholder="Nombre completo" required />
+                <input type="email" placeholder="Correo electrónico" required />
+                <input type="text" placeholder="Empresa / Proyecto" />
+                <textarea placeholder="Cuéntanos más sobre tu proyecto..."></textarea>
+                <button type="submit" className="lp-btn-primary">Enviar mensaje</button>
+              </form>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer className="lp-footer">
+        <div className="lp-container">
+          <div className="lp-footer-grid">
+            <div className="lp-footer-brand">
+              <a href="#" className="lp-logo" onClick={handleNavClick}>
+                <img
+                  src="/src/assets/logo_v2_SC.png"
+                  alt="Osdosoft"
+                  width={42}
+                  height={42}
+                  className="lp-footer-logo-img"
+                />
+                <div className="lp-logo-text">
+                  <span className="lp-brand lp-brand--sm">Osdo<span>soft</span></span>
+                </div>
+              </a>
+              <p>Estudio de ingeniería de software. Construimos soluciones que impulsan tu negocio.</p>
+            </div>
+            <div className="lp-footer-col">
+              <h4>Servicios</h4>
+              <a href="#servicios" onClick={handleNavClick}>Desarrollo Web</a>
+              <a href="#servicios" onClick={handleNavClick}>Apps Móviles</a>
+              <a href="#servicios" onClick={handleNavClick}>Cloud & DevOps</a>
+              <a href="#servicios" onClick={handleNavClick}>IA & Datos</a>
+            </div>
+            <div className="lp-footer-col">
+              <h4>Productos</h4>
+              <a href="#productos" onClick={handleNavClick}>Club Manager</a>
+              <a href="#productos" onClick={handleNavClick}>E‑Shop</a>
+              <a href="#productos" onClick={handleNavClick}>HR Automation</a>
+            </div>
+            <div className="lp-footer-col">
+              <h4>Compañía</h4>
+              <a href="#nosotros" onClick={handleNavClick}>Nosotros</a>
+              <a href="#contacto" onClick={handleNavClick}>Contacto</a>
+              <a href="#">Política de privacidad</a>
+            </div>
+          </div>
+          <div className="lp-footer-bottom">
+            <span>© 2026 Osdosoft S.A.S. — Todos los derechos reservados.</span>
+            <span>Hecho con ⚡ en Colombia</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
