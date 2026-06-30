@@ -783,3 +783,6 @@ def seed_demo():
         print("    - Ejemplo: 1000000001 / athlete123")
         print()
         print("  ✅ Datos de prueba actualizados con todos los campos del CSV")
+
+if __name__ == "__main__":
+    seed_demo()
